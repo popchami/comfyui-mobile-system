@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.3, maximum-scale=3.0, user-scalable=yes">
+<title>Flux Studio</title>
+<link rel="manifest" href="data:application/manifest+json,{
+  &quot;name&quot;: &quot;FLUX STUDIO&quot;,
+  &quot;short_name&quot;: &quot;FLUX&quot;,
+  &quot;display&quot;: &quot;standalone&quot;,
+  &quot;orientation&quot;: &quot;portrait&quot;,
+  &quot;background_color&quot;: &quot;#080c10&quot;,
+  &quot;theme_color&quot;: &quot;#080c10&quot;,
+  &quot;start_url&quot;: &quot;.&quot;,
+  &quot;icons&quot;: [{
+    &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23080c10'/%3E%3Ctext x='256' y='320' font-size='280' text-anchor='middle' fill='%2300d4ff' font-family='sans-serif' font-weight='bold'%3EF%3C/text%3E%3C/svg%3E&quot;,
+    &quot;sizes&quot;: &quot;512x512&quot;,
+    &quot;type&quot;: &quot;image/svg+xml&quot;
+  }]
+}">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FLUX STUDIO">
+<meta name="theme-color" content="#080c10">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+:root {
+  --bg:#080c10;--surface:#0f1419;--border:#1e2a36;
+  --accent:#00d4ff;--accent2:#ff6b9d;--flux1:#f59e0b;--flux2:#00d4ff;
+  --text:#e2eaf4;--muted:#4a6278;--success:#22d3a0;--danger:#ff4d6d;
+  --surface2:#141b24;--border2:#243040;--muted2:#6a88a8;--accent3:#7fff7f;
+  --radius:10px;--radius-sm:7px;--warn:#ffb020;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:20px;min-height:100dvh;overflow-x:hidden}
+.header{position:sticky;top:0;z-index:100;background:rgba(8,12,16,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-title{font-weight:700;font-size:17px;letter-spacing:.05em}
+.model-badge{font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 8px;border-radius:4px;background:var(--flux2);color:#000;transition:all .3s}
+.model-badge.flux1{background:var(--flux1)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:all .3s}
+.status-dot.connected{background:var(--success);box-shadow:0 0 8px var(--success)}
+.status-dot.error{background:var(--danger);box-shadow:0 0 8px var(--danger)}
+.tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:99}
+.tab{flex:1;padding:12px 4px;text-align:center;font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;cursor:pointer}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+label{display:block;color:var(--muted);font-size:14px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;margin-top:18px}
+label:first-child{margin-top:0}
+.page{display:none;padding:16px 20px 32px}
+.page.active{display:block}
+.slider-row{display:flex;align-items:center;gap:10px}
+.slider-row input[type=range]{flex:1;padding:0;-webkit-appearance:none;background:var(--border);height:4px;border-radius:2px;border:none}
+.slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer}
+.slider-val{min-width:40px;text-align:right;color:var(--accent);font-weight:600;font-size:14px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px}
+.toggle{position:relative;width:40px;height:22px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:var(--border);border-radius:11px;transition:background .2s;cursor:pointer}
+.toggle input:checked+.toggle-track{background:var(--accent)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none}
+.toggle input:checked~.toggle-thumb{transform:translateX(18px)}
+.wc-row{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.wc-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px}
+.wc-body{display:none;padding:0 12px 12px;border-top:1px solid var(--border)}
+.wc-body.show{display:block}
+.seed-row{display:flex;gap:6px}
+input[type=text],input[type=url],input[type=number],textarea,select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:18px;padding:14px 14px;outline:none;transition:border-color .2s;-webkit-appearance:none;text-align:center}textarea{text-align:left;vertical-align:top}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:none;line-height:1.5}
+select option{background:var(--surface)}optgroup{background:var(--surface);color:var(--muted)}select optgroup{background:var(--surface)}
+.seed-row input[type=text]{flex:1}
+.btn-icon{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 10px;color:var(--muted);font-size:15px;cursor:pointer;transition:all .15s}
+.btn-icon:active{background:var(--border)}
+.lora-block{margin-bottom:10px}.lora-block select{text-align:center}
+.lora-block select{width:100%;font-size:14px;margin-bottom:4px}
+.lora-str-row{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.lora-str-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.lora-strength{width:100%;text-align:center;font-size:14px;padding:9px 12px}
+.url-row{display:flex;gap:6px}
+.model-switch{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.model-btn{width:100%;padding:8px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;transition:all .2s}
+.model-btn.af2{background:rgba(0,212,255,.1);border-color:var(--flux2);color:var(--flux2)}
+.model-btn.af1{background:rgba(245,158,11,.1);border-color:var(--flux1);color:var(--flux1)}
+.url-row input{flex:1}
+.btn-connect{background:var(--accent);border:none;border-radius:8px;color:#000;font-size:14px;font-weight:700;padding:0 14px;cursor:pointer;white-space:nowrap;transition:opacity .2s}
+.btn-connect:active{opacity:.8}
+.btn-generate{width:100%;margin-top:18px;padding:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#fff;font-size:17px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:opacity .2s,transform .1s}
+.btn-generate.f1{background:linear-gradient(135deg,var(--flux1),#ff6b9d)}
+.btn-generate:active{transform:scale(.98);opacity:.9}
+.btn-generate:disabled{opacity:.35;cursor:not-allowed}
+.progress-wrap{display:none;margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.progress-wrap.show{display:block}
+.progress-label{display:flex;justify-content:space-between;margin-bottom:7px;color:var(--muted);font-size:11px}
+.progress-bar-bg{background:var(--border);border-radius:3px;height:4px;overflow:hidden}
+.progress-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s ease;width:0%}
+.progress-bar.f1{background:linear-gradient(90deg,var(--flux1),#ff6b9d)}
+.result-wrap{display:none;margin-top:14px}
+.result-wrap.show{display:block}
+.result-img{width:100%;border-radius:10px;border:1px solid var(--border)}
+.result-meta{margin-top:8px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:11px}
+.result-seed{color:var(--accent);font-weight:600;margin-bottom:4px}
+.result-seed.f1{color:var(--flux1)}
+.translated{color:var(--muted);line-height:1.6;font-family:'JetBrains Mono',monospace;font-size:10px}
+.params-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.params-cell{display:flex;flex-direction:column;gap:5px}
+.params-cell label{margin-top:0}
+.compact-slider{display:flex;align-items:center;gap:6px}
+.compact-slider input[type=range]{flex:1;padding:0;-webkit-appearance:none;background:var(--border);height:4px;border-radius:2px;border:none}
+.compact-slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer}
+.compact-val{min-width:28px;text-align:right;color:var(--accent);font-size:11px;font-weight:600}
+.history-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.history-item{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);cursor:pointer;aspect-ratio:9/16;background:var(--surface)}
+.history-item img{width:100%;height:100%;object-fit:cover}
+.history-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 50%);opacity:0;transition:opacity .2s;display:flex;align-items:flex-end;padding:8px;font-size:10px;color:#fff;line-height:1.4}
+.history-item:active .history-overlay{opacity:1}
+.preview-modal{display:none;position:fixed;inset:0;background:#000;z-index:9999}
+.preview-modal.show{display:block}
+.preview-modal img{width:100%;height:100%;object-fit:contain}
+.preview-close-btn{position:absolute;top:16px;right:16px;width:36px;height:36px;background:rgba(0,0,0,.6);border:none;border-radius:50%;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10000;line-height:1}
+.preview-overlay-text{position:absolute;bottom:0;left:0;right:0;padding:40px 16px 24px;background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 100%);color:rgba(255,255,255,0.55);font-size:11px;line-height:1.5;pointer-events:none}
+.preview-seed{color:rgba(255,255,255,0.4);font-size:10px;margin-bottom:3px}
+.preview-jp{color:rgba(255,255,255,0.55);margin-bottom:2px}
+.preview-en{color:rgba(255,255,255,0.35);font-size:10px}
+.empty-state{text-align:center;color:var(--muted);padding:40px 20px;font-size:12px;line-height:2.2;grid-column:1/-1}
+
+.detail-section{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.detail-toggle{display:flex;align-items:center;justify-content:space-between;padding:14px 14px;cursor:pointer;font-size:14px;font-weight:600;user-select:none;text-align:center}
+.detail-body{display:none;padding:0 12px 14px;border-top:1px solid var(--border)}
+.detail-body.show{display:block}
+.selector-row{margin-top:12px}
+.selector-label{margin-top:0;margin-bottom:6px}
+.selector-select.selected{border-color:var(--accent);color:var(--text)}
+.btn-reset{width:100%;margin-top:18px;padding:10px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-reset:active{background:var(--border)}
+.i2i-wrap{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.i2i-header{display:flex;align-items:center;justify-content:space-between;padding:14px 14px;font-size:14px;font-weight:600}
+.i2i-body{display:none;padding:0 12px 12px;border-top:1px solid var(--border)}
+.i2i-body.show{display:block}
+.i2i-upload-area{margin-top:10px;border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;color:var(--muted);font-size:14px}
+.i2i-upload-area:active{border-color:var(--accent)}
+.i2i-upload-area.has-image{border-color:var(--accent);color:var(--accent)}
+.i2i-preview{width:100%;border-radius:8px;margin-top:10px;display:none;border:1px solid var(--border)}
+.i2i-preview.show{display:block}
+.btn-i2i-clear{width:100%;margin-top:8px;padding:7px;background:transparent;border:1px solid var(--danger);border-radius:8px;color:var(--danger);font-size:11px;font-weight:600;cursor:pointer;display:none}
+.btn-i2i-clear.show{display:block}
+
+/* i2i mode switch / inpaint mask */
+.i2i-mode-switch{display:flex;gap:6px;margin-top:10px}
+.i2i-mode-btn{flex:1;padding:7px;text-align:center;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;font-size:11px;font-weight:600;color:var(--muted);transition:all .2s}
+.i2i-mode-btn.active-i2i{background:rgba(0,212,255,.1);border-color:var(--accent);color:var(--accent)}
+.i2i-mode-btn.active-inpaint{background:rgba(255,107,157,.1);border-color:var(--accent2);color:var(--accent2)}
+.i2i-canvas-wrap{position:relative;border-radius:var(--radius-sm);overflow:hidden;margin-top:10px}
+.i2i-canvas-wrap img{width:100%;display:block;border-radius:var(--radius-sm)}
+.mask-wrap{display:none}
+.mask-wrap.show{display:block}
+#maskCanvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.mask-toolbar{display:flex;gap:6px;margin-top:8px}
+.mask-tool-btn{flex:1;padding:7px 4px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--muted2);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s}
+.mask-tool-btn.active{background:rgba(0,212,255,.1);border-color:var(--accent);color:var(--accent)}
+.mask-size-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.mask-size-row label{font-size:10px;color:var(--muted2);text-transform:uppercase;margin:0;white-space:nowrap}
+
+.mgmt-section{margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.mgmt-section-title{padding:12px 14px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.mgmt-section-body{padding:0 14px 14px}
+.mgmt-section.setup .mgmt-section-title{color:#38bdf8;border-bottom:1px solid rgba(56,189,248,.2);background:rgba(56,189,248,.06)}
+.mgmt-section.backup .mgmt-section-title{color:#f87171;border-bottom:1px solid rgba(248,113,113,.2);background:rgba(248,113,113,.06)}
+.exec-box{margin-top:18px;padding:14px;background:rgba(139,92,246,.10);border:1px solid rgba(139,92,246,.5);border-radius:8px}
+.btn-setup{width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#0ea5e9,#38bdf8);border:none;border-radius:10px;color:#fff;font-size:17px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-backup{width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#dc2626,#f87171);border:none;border-radius:10px;color:#fff;font-size:17px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-setup:active,.btn-backup:active{opacity:.8}
+.btn-setup:disabled,.btn-backup:disabled{opacity:.35;cursor:not-allowed}
+.mgmt-log{margin-top:10px;padding:10px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);min-height:60px;max-height:150px;overflow-y:auto;white-space:pre-wrap;display:none}
+.mgmt-log.show{display:block}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <span class="header-title">FLUX STUDIO</span>
+    <span class="model-badge flux1" id="modelBadge">FLUX.1</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="statusText" style="font-size:10px;color:var(--muted)">未接続</span>
+    <div class="status-dot" id="statusDot"></div>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('generate')">生成</div>
+  <div class="tab" onclick="switchTab('params')">パラメータ</div>
+  <div class="tab" onclick="switchTab('history')">履歴</div>
+  <div class="tab" onclick="switchTab('manage')">管理</div>
+</div>
+<div class="page active" id="page-generate">
+  <label>📝 日本語プロンプト</label>
+  <textarea id="prompt" rows="4" placeholder="日本語でプロンプトを入力..."></textarea>
+  <button class="btn-generate f1" id="generateBtn" onclick="generate()">生成</button>
+  <div class="i2i-wrap">
+    <div class="i2i-header">
+      <span>🖼️ i2i（画像変換）</span>
+      <label class="toggle" style="margin:0">
+        <input type="checkbox" id="i2iToggle" onchange="toggleI2I()">
+        <div class="toggle-track"></div><div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="i2i-body" id="i2iBody">
+      <div class="i2i-mode-switch">
+        <button class="i2i-mode-btn active-i2i" id="btnModeI2I" onclick="setI2IMode('i2i')">🖼️ i2i</button>
+        <button class="i2i-mode-btn" id="btnModeInpaint" onclick="setI2IMode('inpaint')">🎨 Inpaint</button>
+      </div>
+      <div class="i2i-upload-area" id="i2iUploadArea" onclick="document.getElementById('i2iFileInput').click()">
+        📁 タップして画像を選択
+      </div>
+      <input type="file" id="i2iFileInput" accept="image/*" style="display:none" onchange="handleI2IUpload(this)">
+      <div class="i2i-canvas-wrap" id="i2iPreviewWrap" style="display:none">
+        <img class="i2i-preview show" id="i2iPreview" src="" alt="プレビュー">
+      </div>
+      <div class="mask-wrap" id="maskWrap">
+        <div class="i2i-canvas-wrap">
+          <img id="maskBgImg" src="" alt="">
+          <canvas id="maskCanvas"></canvas>
+        </div>
+        <div class="mask-toolbar">
+          <button class="mask-tool-btn active" id="btnPaint" onclick="setMaskTool('paint')">✏️ 塗る</button>
+          <button class="mask-tool-btn" id="btnErase" onclick="setMaskTool('erase')">◻ 消す</button>
+          <button class="mask-tool-btn" onclick="clearMask()">🗑 全消去</button>
+        </div>
+        <div class="mask-size-row">
+          <label>ブラシ</label>
+          <div class="slider-row" style="flex:1">
+            <input type="range" id="brushSize" min="5" max="80" value="20" oninput="document.getElementById('brushVal').textContent=this.value">
+            <span class="slider-val" id="brushVal">20</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-i2i-clear" id="i2iClearBtn" onclick="clearI2I()">✕ 画像をクリア</button>
+    </div>
+  </div>
+  <label>🧩 LoRA 1</label>
+  <div class="lora-block">
+    <select id="lora1"><option value="">なし</option></select>
+    <div class="lora-str-row">
+      <span class="lora-str-label">強度</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <input type="range" min="0" max="1.5" step="0.05" value="0.8" id="lora1str" oninput="document.getElementById('lora1str-num').value=parseFloat(this.value).toFixed(2)" style="flex:1;accent-color:var(--accent)">
+        <input type="number" id="lora1str-num" min="0" max="2" step="0.05" value="0.8" style="width:65px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:14px 14px;font-size:18px;text-align:center" oninput="document.getElementById('lora1str').value=Math.min(1.5,Math.max(0,parseFloat(this.value)||0))">
+      </div>
+    </div>
+  </div>
+  <label>🧩 LoRA 2</label>
+  <div class="lora-block">
+    <select id="lora2"><option value="">なし</option></select>
+    <div class="lora-str-row">
+      <span class="lora-str-label">強度</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <input type="range" min="0" max="1.5" step="0.05" value="0.8" id="lora2str" oninput="document.getElementById('lora2str-num').value=parseFloat(this.value).toFixed(2)" style="flex:1;accent-color:var(--accent)">
+        <input type="number" id="lora2str-num" min="0" max="2" step="0.05" value="0.8" style="width:65px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:14px 14px;font-size:18px;text-align:center" oninput="document.getElementById('lora2str').value=Math.min(1.5,Math.max(0,parseFloat(this.value)||0))">
+      </div>
+    </div>
+  </div>
+  <label>👣 ステップ数</label>
+  <div class="slider-row">
+    <input type="range" id="steps" min="1" max="50" value="20" oninput="document.getElementById('stepsInput').value=this.value">
+    <input type="number" id="stepsInput" min="1" max="150" value="20" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:14px 8px;font-size:18px;text-align:center" oninput="var v=parseInt(this.value);if(!isNaN(v)&&v>=1)document.getElementById('steps').value=Math.min(50,v);">
+  </div>
+  <label>🎲 シード</label>
+  <div class="seed-row">
+    <input type="text" id="seed" value="-1">
+    <button class="btn-icon" onclick="randomSeed()">🎲</button>
+    <button class="btn-icon" onclick="copySeed()" id="copySeedBtn" style="display:none">📋</button>
+  </div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label"><span id="progressLabel">生成中...</span><span id="progressPct">0%</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+  <div class="result-wrap" id="resultWrap" style="display:none">
+    <img class="result-img" id="resultImg" src="" alt="">
+    <div class="result-meta">
+      <div class="result-seed" id="resultSeed"></div>
+      <div class="translated" id="translatedPrompt"></div>
+    </div>
+  </div>
+</div>
+<!-- プレビューモーダル -->
+<div class="preview-modal" id="previewModal">
+  <img id="previewImg" src="" alt="">
+  <button class="preview-close-btn" onclick="closePreview()">✕</button>
+  <div class="preview-overlay-text">
+    <div class="preview-seed" id="previewSeed"></div>
+    <div class="preview-jp" id="previewPrompt"></div>
+    <div class="preview-en" id="previewTranslated"></div>
+  </div>
+</div>
+
+<!-- パラメータタブ -->
+<div class="page" id="page-params">
+  <label>⚖️ CFG値</label>
+  <input type="number" id="cfgInput" min="0.1" max="20" step="0.1" value="1.0">
+
+  <label>💧 Denoise</label>
+  <input type="number" id="denoiseInput" min="0.01" max="1.0" step="0.01" value="1.0">
+
+  <label>🧭 Guidance（FluxGuidance）</label>
+  <input type="number" id="guidanceInput" min="0.1" max="20" step="0.1" value="2.0">
+
+  <label>🎚️ サンプラー</label>
+  <select id="sampler">
+    <option value="dpmpp_2m" selected>dpmpp_2m</option>
+    <option value="euler">euler</option>
+    <option value="euler_ancestral">euler_a</option>
+    <option value="dpmpp_sde">dpmpp_sde</option>
+    <option value="ddim">ddim</option>
+  </select>
+
+  <label>📅 スケジューラー</label>
+  <select id="scheduler">
+    <option value="simple" selected>simple</option>
+    <option value="ddim_uniform">ddim_uniform</option>
+    <option value="normal">normal</option>
+    <option value="karras">karras</option>
+    <option value="exponential">exponential</option>
+  </select>
+
+  <label>🚫 ネガティブプロンプト</label>
+  <textarea id="negPrompt" rows="3">text, watermark, signature, blurry, photo, realistic, gradient, shadow, multiple objects, cluttered background, 3d render</textarea>
+</div>
+<!-- 履歴タブ -->
+<div class="page" id="page-history">
+  <div class="history-grid" id="historyGrid">
+    <div class="empty-state">まだ画像がありません<br>生成すると履歴に追加されます</div>
+  </div>
+</div>
+<!-- 管理タブ -->
+<div class="page" id="page-manage">
+      <label>🔗 ComfyUI URL</label>
+      <div class="url-row">
+        <input type="url" id="serverUrl" placeholder="https://xxxxx-8188.proxy.runpod.net" value="https://eoqut18g43otfm-8188.proxy.runpod.net">
+        <button class="btn-connect" onclick="connect()">接続</button>
+      </div>
+      <label style="margin-top:12px">🤖 モデル</label>
+      <div class="model-switch">
+        <div class="model-btn af1" id="btnF1" onclick="setModel('flux1')">FLUX.1 Dev</div>
+        <div class="model-btn" id="btnF2" onclick="setModel('flux2')">FLUX.2 Klein</div>
+      </div>
+      <label style="margin-top:12px">📓 Jupyter URL</label>
+      <input type="url" id="jupyterUrl" placeholder="https://xxxxx-8888.proxy.runpod.net" value="https://eoqut18g43otfm-8888.proxy.runpod.net">
+      <label style="margin-top:12px">💻 TIER（VRAM）</label>
+      <select id="setupTier">
+        <option value="16GB">16GB（RTX A4000等）</option>
+        <option value="24GB">24GB（RTX 4090等）</option>
+        <option value="32GB">32GB（RTX 3090等）</option>
+        <option value="48GB" selected>48GB（A40/A100等）</option>
+      </select>
+      <div class="exec-box">
+        <label style="margin-top:0">🤖 モデル</label>
+        <select id="setupModel" style="display:none">
+          <option value="flux1" selected>FLUX.1 Dev</option>
+          <option value="flux2">FLUX.2 Klein</option>
+        </select>
+        <div class="model-switch">
+          <div class="model-btn af1" id="setupBtnF1" onclick="setSetupModel('flux1')">FLUX.1 Dev</div>
+          <div class="model-btn" id="setupBtnF2" onclick="setSetupModel('flux2')">FLUX.2 Klein</div>
+        </div>
+        <button class="btn-setup" id="setupBtn" onclick="runSetup()">▶ セットアップ実行</button>
+        <div class="mgmt-log" id="setupLog"></div>
+        <p style="color:var(--muted);font-size:14px;margin-top:16px;line-height:1.6">現在のワークフロー・設定ファイルをzipで保存します。<br>Jupyter URLはセットアップと同じものを使用します。</p>
+        <button class="btn-backup" id="backupBtn" onclick="runBackup()">💾 バックアップ実行</button>
+        <div class="mgmt-log" id="backupLog"></div>
+      </div>
+</div>
+<script>
+
+const SP_ICON = `/no_think
+
+You are a translator for app icon prompt generation using Flux models.
+Translate the Japanese input (an icon subject) into a short English phrase.
+
+# Output Rules
+- Translation only. No additions beyond what is written.
+- Never omit or soften any detail the user specified.
+- Maximum 15 words.
+- Output the subject phrase only, not a full sentence. No labels, no thinking tags.`;
+
+// アプリ起動時の初期化処理
+window.addEventListener('DOMContentLoaded', () => {
+  const ju = localStorage.getItem('jupyter_url');
+  if (ju) { const jel = document.getElementById('jupyterUrl'); if(jel) jel.value = ju; }
+  
+  // 保存されているComfyUIのURLがあれば自動で入力欄に復元
+  const savedUrl = localStorage.getItem('comfyui_url');
+  if (savedUrl) {
+    document.getElementById('serverUrl').value = savedUrl;
+  }
+
+  initMaskCanvas();
+});
+
+// タブメニューの切り替えシステム
+function switchTab(tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const tabs = document.querySelectorAll('.tab');
+  const tabIndex = {'generate':0,'params':1,'history':2,'manage':3}[tabId];
+  if (tabIndex !== undefined) tabs[tabIndex].classList.add('active');
+  document.getElementById('page-' + tabId).classList.add('active');
+}
+
+
+// シード値をランダム（-1）に設定する処理
+function randomSeed() {
+  document.getElementById('seed').value = "-1";
+}
+
+// 生成完了した画像のシード値をクリップボードにコピーする処理
+function copySeed() {
+  const seedVal = document.getElementById('seed').value;
+  if (seedVal && seedVal !== "-1") {
+    navigator.clipboard.writeText(seedVal).then(() => {
+      const btn = document.getElementById('copySeedBtn');
+      const originalText = btn.textContent;
+      btn.textContent = "✅";
+      setTimeout(() => { btn.textContent = originalText; }, 1000);
+    });
+  }
+}
+
+// セットアップ対象モデル切り替え（TIER下の「モデル」）
+function setSetupModel(modelId) {
+  document.getElementById('setupModel').value = modelId;
+  const btnF1 = document.getElementById('setupBtnF1');
+  const btnF2 = document.getElementById('setupBtnF2');
+  if (modelId === 'flux2') {
+    btnF2.classList.add('af2');
+    btnF1.classList.remove('af1');
+  } else {
+    btnF2.classList.remove('af2');
+    btnF1.classList.add('af1');
+  }
+}
+
+// モデル切り替え処理（FLUX.2 Klein / FLUX.1 Dev）
+let currentModel = 'flux1';
+let i2iImageName = null; // アップロード済みi2i画像のファイル名
+
+// 進捗表示用：クライアントID・WebSocket・ノードラベル対応表
+let clientId = null;
+let comfyWs = null;
+const NODE_LABELS = {
+  '1':'モデル読込中', '2':'モデル読込中', '3':'モデル読込中',
+  '18':'モデル読込中', '19':'モデル読込中', '20':'モデル読込中',
+  '5a':'プロンプト翻訳中', '5':'プロンプト翻訳中', '21':'翻訳結果取得',
+  '32':'プロンプト要素を組み立て中', '6':'プロンプト処理中',
+  '7':'プロンプト処理中', '8':'プロンプト処理中', '9':'準備中',
+  '28':'画像読込中', '29':'画像エンコード中',
+  '10':'画像生成中', '11':'画像デコード中',
+  '24':'高解像度化準備中', '25':'高解像度化中', '36':'リサイズ中',
+  '12':'保存中'
+};
+const PROGRESS_NODES = ['10'];
+
+let i2iMode = 'i2i'; // 'i2i' or 'inpaint'
+let i2iDataUrl = null; // 画像のDataURLを保持（モード切替で使う）
+let maskEnabled = false;
+let maskTool = 'paint';
+let maskDrawing = false;
+let maskCtx = null;
+let maskImg = null;
+function setModel(modelId) {
+  currentModel = modelId;
+  const btnF2 = document.getElementById('btnF2');
+  const btnF1 = document.getElementById('btnF1');
+  const badge = document.getElementById('modelBadge');
+  const genBtn = document.getElementById('generateBtn');
+  const pBar = document.getElementById('progressBar');
+  const rSeed = document.getElementById('resultSeed');
+
+  if (modelId === 'flux2') {
+    btnF2.classList.add('af2');
+    btnF1.classList.remove('af1');
+    badge.textContent = 'FLUX.2';
+    badge.classList.remove('flux1');
+    genBtn.classList.remove('f1');
+    pBar.classList.remove('f1');
+    if (rSeed) rSeed.classList.remove('f1');
+  } else {
+    btnF2.classList.remove('af2');
+    btnF1.classList.add('af1');
+    badge.textContent = 'FLUX.1';
+    badge.classList.add('flux1');
+    genBtn.classList.add('f1');
+    pBar.classList.add('f1');
+    if (rSeed) rSeed.classList.add('f1');
+  }
+}
+// 詳細設定ドロップダウンの選択内容を収集してプロンプト化する関数
+
+// ComfyUIサーバーへの接続確認と初期データの読み込み
+async function connect() {
+  const urlInput = document.getElementById('serverUrl').value.trim();
+  if (!urlInput) {
+    alert('サーバーURLを入力してください。');
+    return;
+  }
+  
+  // 末尾のシラッシュを削除して整形
+  const cleanUrl = urlInput.replace(/\/+$/, '');
+  localStorage.setItem('comfyui_url', cleanUrl);
+
+  const statusText = document.getElementById('statusText');
+  const statusDot = document.getElementById('statusDot');
+  
+  localStorage.setItem('jupyter_url', document.getElementById('jupyterUrl').value.trim());
+  statusText.textContent = "接続中...";
+  statusText.style.color = "var(--muted)";
+  statusDot.className = "status-dot";
+
+  try {
+    // 接続テストとしてオブジェクト情報を取得
+    const res = await fetch(`${cleanUrl}/object_info`, { mode: 'cors' });
+    if (!res.ok) throw new Error('サーバー応答エラー');
+    const info = await res.json();
+
+    statusText.textContent = "接続完了";
+    statusText.style.color = "var(--success)";
+    statusDot.className = "status-dot connected";
+
+    // クライアントID生成（初回のみ）
+    if (!clientId) {
+      clientId = 'mobile_' + Math.random().toString(36).slice(2) + Date.now();
+    }
+
+    // WebSocket接続（進捗表示用）
+    if (comfyWs) { try { comfyWs.close(); } catch(e){} }
+    const wsProtocol = cleanUrl.startsWith('https') ? 'wss' : 'ws';
+    const wsHost = cleanUrl.replace(/^https?:\/\//, '');
+    comfyWs = new WebSocket(`${wsProtocol}://${wsHost}/ws?clientId=${clientId}`);
+    comfyWs.onerror = (e) => console.error('WS error', e);
+
+
+    // 利用可能なLoRAリストを自動抽出してドロップダウンを更新
+    let loraList = [];
+    if (info.LoraLoader && info.LoraLoader.input && info.LoraLoader.input.required && info.LoraLoader.input.required.lora_name) {
+      loraList = info.LoraLoader.input.required.lora_name[0];
+    } else if (info.PowerLoraLoader && info.PowerLoraLoader.input && info.PowerLoraLoader.input.required && info.PowerLoraLoader.input.required.lora_1_name) {
+      loraList = info.PowerLoraLoader.input.required.lora_1_name[0];
+    }
+
+    const lora1 = document.getElementById('lora1');
+    const lora2 = document.getElementById('lora2');
+    
+    // ドロップダウンを初期化
+    lora1.innerHTML = '<option value="">なし</option>';
+    lora2.innerHTML = '<option value="">なし</option>';
+
+    if (loraList && loraList.length > 0) {
+      loraList.forEach(name => {
+        const sn = name.split('/').pop().replace('.safetensors','').replace('.ckpt','').replace('.pt','');
+        const dn = sn.length > 28 ? sn.slice(0,26)+'…' : sn;
+        const opt1 = document.createElement('option');
+        opt1.value = name; opt1.textContent = dn;
+        lora1.appendChild(opt1);
+        const opt2 = document.createElement('option');
+        opt2.value = name; opt2.textContent = dn;
+        lora2.appendChild(opt2);
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    statusText.textContent = "接続失敗";
+    statusText.style.color = "var(--danger)";
+    statusDot.className = "status-dot error";
+    alert('ComfyUIへの接続に失敗しました。URLまたはサーバーの状態を確認してください。');
+  }
+}
+// 生成ボタンを押したときのメイン処理
+async function generate() {
+  const urlInput = document.getElementById('serverUrl').value.trim();
+  if (!urlInput) { alert('最初にComfyUIに接続してください。'); return; }
+  const cleanUrl = urlInput.replace(/\/+$/, '');
+  const jpPrompt = document.getElementById('prompt').value.trim();
+  const bLabel = '';
+
+  const inpaintEnabled = i2iMode === 'inpaint' && maskEnabled && i2iImageName;
+
+  const genBtn = document.getElementById('generateBtn');
+  const pWrap = document.getElementById('progressWrap');
+  const pBar = document.getElementById('progressBar');
+  const pPct = document.getElementById('progressPct');
+  const pLabel = document.getElementById('progressLabel');
+
+  genBtn.disabled = true;
+  pWrap.classList.add('show');
+  pBar.style.width = '0%';
+  pPct.textContent = '0%';
+  pLabel.textContent = bLabel + 'キュー送信中...';
+
+  const fullJpPrompt = jpPrompt;
+
+  const seedInput = document.getElementById('seed').value.trim();
+  let finalSeed = parseInt(seedInput);
+  if (isNaN(finalSeed) || finalSeed === -1) finalSeed = Math.floor(Math.random()*2147483647);
+
+  const steps    = parseInt(document.getElementById('stepsInput').value) || parseInt(document.getElementById('steps').value);
+  const cfg      = parseFloat(document.getElementById('cfgInput').value) || 1.0;
+  const denoise  = parseFloat(document.getElementById('denoiseInput').value) || 1.0;
+  const sampler  = document.getElementById('sampler').value;
+  const scheduler= document.getElementById('scheduler').value;
+  const negPrompt= document.getElementById('negPrompt').value;
+  const guidance = parseFloat(document.getElementById('guidanceInput').value) || 2.0;
+  const lora1Name= document.getElementById('lora1').value;
+  const lora1Str = parseFloat(document.getElementById('lora1str-num')?.value) || parseFloat(document.getElementById('lora1str').value) || 1.0;
+  const lora2Name= document.getElementById('lora2').value;
+  const lora2Str = parseFloat(document.getElementById('lora2str-num')?.value) || parseFloat(document.getElementById('lora2str').value) || 1.0;
+  const batchSize = 1; // アイコンは1回1個生成のため固定
+  const f1 = currentModel === 'flux1';
+  const sp = SP_ICON;
+
+  // ワークフロー構築
+  const wf = {};
+  if (f1) {
+    wf['1'] = {class_type:'UNETLoader', inputs:{unet_name:'flux1-dev-fp8.safetensors', weight_dtype:'fp8_e4m3fn'}};
+    wf['2'] = {class_type:'DualCLIPLoader', inputs:{clip_name1:'clip_l.safetensors', clip_name2:'t5xxl_fp8_e4m3fn.safetensors', type:'flux', device:'default'}};
+    wf['3'] = {class_type:'VAELoader', inputs:{vae_name:'ae.safetensors'}};
+  } else {
+    wf['1'] = {class_type:'UNETLoader', inputs:{unet_name:'flux-2-klein-9b-fp8.safetensors', weight_dtype:'fp8_e4m3fn'}};
+    wf['2'] = {class_type:'CLIPLoader', inputs:{clip_name:'qwen_3_8b_fp8mixed.safetensors', type:'flux2', device:'default'}};
+    wf['3'] = {class_type:'VAELoader', inputs:{vae_name:'flux2-vae.safetensors'}};
+  }
+
+  let lastModel='1', lastClip='2', lastClipSlot=0;
+  if (lora1Name) {
+    wf['18'] = {class_type:'LoraLoader', inputs:{model:[lastModel,0], clip:[lastClip,lastClipSlot], lora_name:lora1Name, strength_model:lora1Str, strength_clip:lora1Str}};
+    lastModel='18'; lastClip='18'; lastClipSlot=1;
+  }
+  if (lora2Name) {
+    wf['20'] = {class_type:'LoraLoader', inputs:{model:[lastModel,0], clip:[lastClip,lastClipSlot], lora_name:lora2Name, strength_model:lora2Str, strength_clip:lora2Str}};
+    lastModel='20'; lastClip='20'; lastClipSlot=1;
+  }
+
+  wf['5a'] = {class_type:'OllamaConnectivityV2', inputs:{
+    url:'http://127.0.0.1:11434',
+    model:'jaahas/qwen3.5-uncensored:9b',
+    keep_alive:0,
+    keep_alive_unit:'minutes'
+  }};
+  wf['5']  = {class_type:'OllamaGenerateV2', inputs:{
+    system:sp,
+    prompt:fullJpPrompt,
+    think:false,
+    keep_context:false,
+    format:'text',
+    connectivity:['5a',0]
+  }};
+  wf['6']  = {class_type:'CLIPTextEncode', inputs:{clip:[lastClip,lastClipSlot], text:['5',0]}};
+  wf['8']  = {class_type:'CLIPTextEncode', inputs:{clip:[lastClip,lastClipSlot], text:negPrompt}};
+  wf['7']  = {class_type:'FluxGuidance', inputs:{conditioning:['6',0], guidance}};
+
+  // マスクアップロード（inpaint時）
+  let maskName = null;
+  if (inpaintEnabled) {
+    try {
+      maskName = await uploadMaskToComfy(cleanUrl);
+    } catch (err) {
+      alert('マスクのアップロードに失敗しました: ' + err.message);
+      genBtn.disabled = false;
+      pWrap.classList.remove('show');
+      return;
+    }
+  }
+
+  let posSrc = ['7',0], negSrc = ['8',0], latentSource = ['9',0];
+  if (inpaintEnabled && maskName) {
+    wf['28'] = {class_type:'LoadImage', inputs:{image:i2iImageName, upload:'image'}};
+    wf['39'] = {class_type:'LoadImage', inputs:{image:maskName, upload:'image'}};
+    wf['40'] = {class_type:'InpaintModelConditioning', inputs:{
+      positive:['7',0], negative:['8',0], vae:['3',0], pixels:['28',0], mask:['39',0]
+    }};
+    posSrc = ['40',0]; negSrc = ['40',1]; latentSource = ['40',2];
+  } else if (i2iImageName) {
+    wf['28'] = {class_type:'LoadImage', inputs:{image:i2iImageName, upload:'image'}};
+    wf['29'] = {class_type:'VAEEncode', inputs:{pixels:['28',0], vae:['3',0]}};
+    latentSource = ['29',0];
+  } else {
+    wf['9'] = {class_type:'EmptyLatentImage', inputs:{width:1024, height:1024, batch_size:batchSize}};
+    latentSource = ['9',0];
+  }
+  wf['10'] = {class_type:'KSampler', inputs:{
+    model:[lastModel,0], positive:posSrc, negative:negSrc, latent_image:latentSource,
+    seed:finalSeed, control_after_generate:'randomize',
+    steps, cfg, sampler_name:sampler, scheduler, denoise
+  }};
+  wf['11'] = {class_type:'VAEDecode', inputs:{samples:['10',0], vae:['3',0]}};
+
+  // Upscale（2x）
+  wf['24'] = {class_type:'UpscaleModelLoader', inputs:{model_name:'4x-UltraSharp.pth'}};
+  wf['25'] = {class_type:'ImageUpscaleWithModel', inputs:{upscale_model:['24',0], image:['11',0]}};
+
+  // PNG保存（正方形、背景透過・SVG化は/object_info確認後に追加予定）
+  wf['12'] = {class_type:'SaveImage', inputs:{images:['25',0], filename_prefix:f1?'flux1_dev_icon':'flux2_klein_icon'}};
+
+  wf['21'] = {class_type:'ShowText|pysssss', inputs:{text:['5',0]}};
+
+  try {
+    const qRes = await fetch(`${cleanUrl}/prompt`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      mode:'cors',
+      body:JSON.stringify({prompt:wf, client_id:clientId})
+    });
+    if (!qRes.ok) throw new Error('キュー投入失敗');
+    const qData = await qRes.json();
+    const promptId = qData.prompt_id;
+    pLabel.textContent = bLabel + 'キュー待機中...';
+
+    // 完了処理（画像表示・履歴追加）
+    const finishGeneration = async () => {
+      pBar.style.width = '100%';
+      pPct.textContent = '100%';
+      pLabel.textContent = bLabel + '完了';
+
+      const hRes = await fetch(`${cleanUrl}/history/${promptId}`, {mode:'cors'});
+      const hData = await hRes.json();
+      const outputs = (hData[promptId] && hData[promptId].outputs) || {};
+      let images = [];
+      let translatedText = '';
+
+      for (const nid in outputs) {
+        if (outputs[nid].images) images = outputs[nid].images;
+        if (outputs[nid].text) translatedText = outputs[nid].text[0] || '';
+      }
+
+      if (images.length > 0) {
+        const img = images[0];
+        const imgUrl = `${cleanUrl}/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder||'')}&type=${img.type||'output'}`;
+        document.getElementById('resultImg').src = imgUrl;
+        document.getElementById('resultWrap').classList.add('show');
+        // 生成ボタンまでスクロール
+        document.getElementById('generateBtn').scrollIntoView({behavior:'smooth', block:'center'});
+        document.getElementById('seed').value = -1;
+        document.getElementById('resultSeed').textContent = `SEED: ${finalSeed} [${f1?'FLUX.1':'FLUX.2'}]`;
+        document.getElementById('resultSeed').className = 'result-seed' + (f1?' f1':'');
+        document.getElementById('copySeedBtn').style.display = 'inline-block';
+        document.getElementById('translatedPrompt').textContent = translatedText || '';
+
+        images.forEach(im => {
+          const iUrl = `${cleanUrl}/view?filename=${encodeURIComponent(im.filename)}&subfolder=${encodeURIComponent(im.subfolder||'')}&type=${im.type||'output'}`;
+          addToHistory(iUrl, finalSeed, jpPrompt, translatedText);
+        });
+      }
+
+      genBtn.disabled = false;
+      setTimeout(() => { pWrap.classList.remove('show'); }, 2000);
+    };
+
+    // WebSocket経由でノード単位の進捗を受信
+    let currentProgressNode = null;
+    let finished = false;
+
+    const handleWsMessage = (event) => {
+      let msg;
+      try { msg = JSON.parse(event.data); } catch(e) { return; }
+      if (!msg.data || msg.data.prompt_id !== promptId) return;
+
+      if (msg.type === 'executing') {
+        const nodeId = msg.data.node;
+        if (nodeId === null) {
+          if (!finished) {
+            finished = true;
+            comfyWs.removeEventListener('message', handleWsMessage);
+            finishGeneration();
+          }
+          return;
+        }
+        currentProgressNode = String(nodeId);
+        pLabel.textContent = bLabel + (NODE_LABELS[currentProgressNode] || '処理中...');
+        if (!PROGRESS_NODES.includes(currentProgressNode)) {
+          pBar.style.width = '0%';
+          pPct.textContent = '';
+        }
+      } else if (msg.type === 'progress') {
+        const { value, max } = msg.data;
+        if (max > 0 && PROGRESS_NODES.includes(currentProgressNode)) {
+          const pct = Math.round((value / max) * 100);
+          pBar.style.width = pct + '%';
+          pPct.textContent = pct + '%';
+        }
+      }
+    };
+
+    if (comfyWs && comfyWs.readyState === WebSocket.OPEN) {
+      comfyWs.addEventListener('message', handleWsMessage);
+    } else {
+      // WebSocket未接続時はフォールバック（完了をhistoryポーリングで検知）
+      const pollFallback = async () => {
+        while (!finished) {
+          await new Promise(r => setTimeout(r, 1500));
+          const hRes = await fetch(`${cleanUrl}/history/${promptId}`, {mode:'cors'});
+          if (!hRes.ok) continue;
+          const hData = await hRes.json();
+          if (hData[promptId]) {
+            finished = true;
+            await finishGeneration();
+          }
+        }
+      };
+      pollFallback();
+    }
+  } catch(err) {
+    try {
+      const qCheck = await fetch(`${cleanUrl}/queue`, {mode:'cors'});
+      if (qCheck.ok) {
+        const qd = await qCheck.json();
+        const running = (qd.queue_running||[]).find(i => i[1]===promptId);
+        pLabel.textContent = bLabel + (running ? '生成中...' : 'キュー待機中...');
+        pBar.style.width = running ? '50%' : '10%';
+        pPct.textContent = running ? '50%' : '10%';
+      } else {
+        throw err;
+      }
+    } catch (err2) {
+      console.error(err);
+      alert('エラーが発生しました: ' + err.message);
+    }
+  } finally {
+    genBtn.disabled = false;
+    setTimeout(() => { pWrap.classList.remove('show'); }, 2000);
+  }
+}
+
+// 生成された画像を履歴タブへ追加する関数
+function openPreview(url, seed, jpPrompt, translatedText) {
+  document.getElementById('previewImg').src = url;
+  document.getElementById('previewSeed').textContent = 'SEED: ' + seed;
+  document.getElementById('previewPrompt').textContent = jpPrompt || '';
+  document.getElementById('previewTranslated').textContent = translatedText || '';
+  document.getElementById('previewModal').classList.add('show');
+}
+function closePreview() {
+  document.getElementById('previewModal').classList.remove('show');
+}
+function addToHistory(url, seed, jpPrompt, translatedText) {
+  const grid = document.getElementById('historyGrid');
+  const emptyState = grid.querySelector('.empty-state');
+  if (emptyState) grid.innerHTML = '';
+
+  const item = document.createElement('div');
+  item.className = 'history-item';
+
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = 'Generated';
+  item.onclick = () => {
+    openPreview(url, seed, jpPrompt, translatedText);
+  };
+
+  const overlay = document.createElement('div');
+  overlay.className = 'history-overlay';
+  overlay.textContent = `seed: ${seed}  ${(jpPrompt||'').slice(0,20)}...`;
+
+  item.appendChild(img);
+  item.appendChild(overlay);
+  grid.insertBefore(item, grid.firstChild);
+}
+
+
+// ===== i2i =====
+function toggleI2I() {
+  const body = document.getElementById('i2iBody');
+  body.classList.toggle('show', document.getElementById('i2iToggle').checked);
+  if (!document.getElementById('i2iToggle').checked) clearI2I();
+}
+
+// ===== i2i/inpaintモード切り替え =====
+function setI2IMode(mode) {
+  i2iMode = mode;
+  document.getElementById('btnModeI2I').className = 'i2i-mode-btn' + (mode==='i2i' ? ' active-i2i' : '');
+  document.getElementById('btnModeInpaint').className = 'i2i-mode-btn' + (mode==='inpaint' ? ' active-inpaint' : '');
+  const maskWrap = document.getElementById('maskWrap');
+  const previewWrap = document.getElementById('i2iPreviewWrap');
+  if (!i2iDataUrl) return; // 画像がない場合は何もしない
+  if (mode === 'inpaint') {
+    previewWrap.style.display = 'none';
+    maskWrap.classList.add('show');
+    maskEnabled = true;
+    setupMaskFromDataUrl(i2iDataUrl);
+  } else {
+    maskWrap.classList.remove('show');
+    maskEnabled = false;
+    clearMask();
+    previewWrap.style.display = 'block';
+  }
+}
+
+async function handleI2IUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const area = document.getElementById('i2iUploadArea');
+  area.textContent = '⏳ アップロード中...';
+
+  const serverUrl = document.getElementById('serverUrl').value.trim().replace(/\/+$/, '');
+  if (!serverUrl) {
+    alert('先に管理タブでComfyUIに接続してください');
+    area.textContent = '📁 タップして画像を選択';
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch(`${serverUrl}/upload/image`, {method:'POST', mode:'cors', body:formData});
+    if (!res.ok) throw new Error('アップロード失敗');
+    const data = await res.json();
+    i2iImageName = data.name;
+
+    // プレビュー・マスク用のDataURL読み込み
+    const reader = new FileReader();
+    reader.onload = e => {
+      i2iDataUrl = e.target.result;
+      const preview = document.getElementById('i2iPreview');
+      preview.src = i2iDataUrl;
+      preview.classList.add('show');
+      document.getElementById('maskBgImg').src = i2iDataUrl;
+      if (i2iMode === 'inpaint') {
+        document.getElementById('maskWrap').classList.add('show');
+        maskEnabled = true;
+        setupMaskFromDataUrl(i2iDataUrl);
+      } else {
+        document.getElementById('i2iPreviewWrap').style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+
+    area.textContent = '✅ ' + file.name;
+    area.classList.add('has-image');
+    document.getElementById('i2iClearBtn').classList.add('show');
+  } catch(err) {
+    area.textContent = '❌ ' + err.message;
+    i2iImageName = null;
+  }
+}
+
+function clearI2I() {
+  i2iImageName = null;
+  i2iDataUrl = null;
+  maskEnabled = false;
+  document.getElementById('i2iUploadArea').textContent = '📁 タップして画像を選択';
+  document.getElementById('i2iUploadArea').classList.remove('has-image');
+  document.getElementById('i2iPreview').classList.remove('show');
+  document.getElementById('i2iPreview').src = '';
+  document.getElementById('i2iPreviewWrap').style.display = 'none';
+  document.getElementById('maskBgImg').src = '';
+  document.getElementById('maskWrap').classList.remove('show');
+  document.getElementById('i2iClearBtn').classList.remove('show');
+  document.getElementById('i2iFileInput').value = '';
+  clearMask();
+  setI2IMode('i2i');
+}
+
+// ===== MASK (inpaint) =====
+function initMaskCanvas() {
+  const canvas = document.getElementById('maskCanvas');
+  if (!canvas) return;
+  maskCtx = canvas.getContext('2d');
+  canvas.addEventListener('touchstart', maskTouchStart, {passive:false});
+  canvas.addEventListener('touchmove', maskTouchMove, {passive:false});
+  canvas.addEventListener('touchend', ()=>{ maskDrawing=false; });
+  canvas.addEventListener('mousedown', e=>{ maskDrawing=true; maskDraw(e.offsetX, e.offsetY); });
+  canvas.addEventListener('mousemove', e=>{ if(maskDrawing) maskDraw(e.offsetX, e.offsetY); });
+  canvas.addEventListener('mouseup', ()=>{ maskDrawing=false; });
+}
+function setupMaskOnImage(imgEl) {
+  maskImg = imgEl;
+  const canvas = document.getElementById('maskCanvas');
+  canvas.width = imgEl.naturalWidth || imgEl.width;
+  canvas.height = imgEl.naturalHeight || imgEl.height;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  maskCtx.clearRect(0, 0, canvas.width, canvas.height);
+}
+function setupMaskFromDataUrl(dataUrl) {
+  const img = new Image();
+  img.onload = () => {
+    document.getElementById('maskBgImg').src = dataUrl;
+    setupMaskOnImage(img);
+  };
+  img.src = dataUrl;
+}
+function setMaskTool(tool) {
+  maskTool = tool;
+  document.getElementById('btnPaint').classList.toggle('active', tool==='paint');
+  document.getElementById('btnErase').classList.toggle('active', tool==='erase');
+}
+function clearMask() {
+  if (!maskCtx) return;
+  const canvas = document.getElementById('maskCanvas');
+  maskCtx.clearRect(0, 0, canvas.width, canvas.height);
+}
+function maskTouchStart(e) {
+  e.preventDefault();
+  maskDrawing = true;
+  const t = e.touches[0];
+  const rect = e.target.getBoundingClientRect();
+  const scaleX = e.target.width / rect.width;
+  const scaleY = e.target.height / rect.height;
+  maskDraw((t.clientX - rect.left) * scaleX, (t.clientY - rect.top) * scaleY);
+}
+function maskTouchMove(e) {
+  e.preventDefault();
+  if (!maskDrawing) return;
+  const t = e.touches[0];
+  const rect = e.target.getBoundingClientRect();
+  const scaleX = e.target.width / rect.width;
+  const scaleY = e.target.height / rect.height;
+  maskDraw((t.clientX - rect.left) * scaleX, (t.clientY - rect.top) * scaleY);
+}
+function maskDraw(x, y) {
+  if (!maskCtx) return;
+  const size = parseInt(document.getElementById('brushSize').value);
+  if (maskTool === 'erase') {
+    maskCtx.globalCompositeOperation = 'destination-out';
+    maskCtx.fillStyle = 'rgba(0,0,0,1)';
+  } else {
+    maskCtx.globalCompositeOperation = 'source-over';
+    maskCtx.fillStyle = 'rgba(255,60,100,0.7)';
+  }
+  maskCtx.beginPath();
+  maskCtx.arc(x, y, size/2, 0, Math.PI*2);
+  maskCtx.fill();
+  maskCtx.globalCompositeOperation = 'source-over';
+}
+function getMaskBase64() {
+  // マスクcanvasを白黒2値のマスク画像に変換
+  const src = document.getElementById('maskCanvas');
+  const tmp = document.createElement('canvas');
+  tmp.width = src.width; tmp.height = src.height;
+  const ctx = tmp.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, tmp.width, tmp.height);
+  const data = maskCtx.getImageData(0, 0, src.width, src.height);
+  const out = ctx.getImageData(0, 0, tmp.width, tmp.height);
+  for (let i=0; i<data.data.length; i+=4) {
+    if (data.data[i+3] > 10) { out.data[i]=255; out.data[i+1]=255; out.data[i+2]=255; out.data[i+3]=255; }
+  }
+  ctx.putImageData(out, 0, 0);
+  return tmp.toDataURL('image/png').split(',')[1];
+}
+async function uploadMaskToComfy(cleanUrl) {
+  const base64 = getMaskBase64();
+  const blob = await (await fetch('data:image/png;base64,'+base64)).blob();
+  const file = new File([blob], 'mask.png', {type:'image/png'});
+  const formData = new FormData();
+  formData.append('image', file);
+  const res = await fetch(`${cleanUrl}/upload/image`, {method:'POST', mode:'cors', body:formData});
+  if (!res.ok) throw new Error('マスクアップロード失敗');
+  const d = await res.json();
+  return d.name;
+}
+
+// ===== 管理タブ =====
+function getNotebookName(model) {
+  return model === 'flux1' ? 'setup_flux1_dev.ipynb' : 'setup_flux2_klein.ipynb';
+}
+
+async function runJupyterNotebook(jupyterUrl, notebookPath, logId) {
+  const log = document.getElementById(logId);
+  log.classList.add('show');
+  function addLog(msg) { log.textContent += msg + '\n'; log.scrollTop = log.scrollHeight; }
+
+  try {
+    addLog('⏳ カーネルを起動中...');
+    const kernelRes = await fetch(jupyterUrl + '/api/kernels', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:'python3'})
+    });
+    if (!kernelRes.ok) throw new Error('カーネル起動失敗 (' + kernelRes.status + ')');
+    const kernel = await kernelRes.json();
+    const kernelId = kernel.id;
+    addLog('✅ カーネル起動: ' + kernelId.slice(0,8) + '...');
+
+    addLog('⏳ ノートブック取得中...');
+    const nbRes = await fetch(jupyterUrl + '/api/contents/' + notebookPath);
+    if (!nbRes.ok) throw new Error('ノートブック取得失敗: ' + notebookPath);
+    const nbData = await nbRes.json();
+    const cells = nbData.content.cells.filter(c => c.cell_type === 'code');
+    addLog('✅ ' + cells.length + 'セル検出');
+
+    const wsUrl = jupyterUrl.replace('https://','wss://').replace('http://','ws://');
+    const ws = new WebSocket(wsUrl + '/api/kernels/' + kernelId + '/channels');
+
+    await new Promise((resolve, reject) => {
+      const tout = setTimeout(() => reject(new Error('タイムアウト(5分)')), 300000);
+      ws.onopen = () => {
+        addLog('⏳ セル実行開始...');
+        let idx = 0;
+        function next() {
+          if (idx >= cells.length) {
+            clearTimeout(tout);
+            addLog('✅ 全' + cells.length + 'セル実行完了');
+            ws.close(); resolve(); return;
+          }
+          const src = Array.isArray(cells[idx].source) ? cells[idx].source.join('') : cells[idx].source;
+          addLog('▶ [' + (idx+1) + '/' + cells.length + ']');
+          const mid = 'msg_' + idx + '_' + Date.now();
+          ws.send(JSON.stringify({
+            header:{msg_id:mid,msg_type:'execute_request',username:'',session:kernelId,version:'5.2'},
+            parent_header:{},metadata:{},channel:'shell',
+            content:{code:src,silent:false,store_history:true,user_expressions:{},allow_stdin:false}
+          }));
+          ws.onmessage = (e) => {
+            const m = JSON.parse(e.data);
+            if (m.parent_header.msg_id !== mid) return;
+            if (m.msg_type === 'stream') {
+              const t = (m.content.text||'').trim();
+              if (t) addLog('  ' + t.split('\n').pop());
+            }
+            if (m.msg_type === 'error') addLog('❌ ' + m.content.ename + ': ' + m.content.evalue);
+            if (m.msg_type === 'status' && m.content.execution_state === 'idle') { idx++; setTimeout(next, 300); }
+          };
+        }
+        next();
+      };
+      ws.onerror = () => { clearTimeout(tout); reject(new Error('WebSocket接続失敗')); };
+    });
+
+    await fetch(jupyterUrl + '/api/kernels/' + kernelId, {method:'DELETE'});
+    addLog('✅ カーネル解放完了');
+    return true;
+  } catch(err) {
+    addLog('❌ ' + err.message);
+    return false;
+  }
+}
+
+async function runSetup() {
+  const jupyterUrl = document.getElementById('jupyterUrl').value.trim().replace(/\/+$/,'');
+  if (!jupyterUrl) { alert('Jupyter URLを入力してください'); return; }
+  const tier  = document.getElementById('setupTier').value;
+  const model = document.getElementById('setupModel').value;
+  const nb    = getNotebookName(model);
+  const btn   = document.getElementById('setupBtn');
+  const log   = document.getElementById('setupLog');
+  btn.disabled = true; btn.textContent = '実行中...';
+  log.textContent = 'TIER: ' + tier + ' / ' + (model==='flux1'?'FLUX.1 Dev':'FLUX.2 Klein') + '\nNB: ' + nb + '\n\n';
+  log.classList.add('show');
+
+  try {
+    // GPU_TIERを環境変数として注入
+    const kr = await fetch(jupyterUrl+'/api/kernels',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'python3'})});
+    const k = await kr.json();
+    const wsUrl = jupyterUrl.replace('https://','wss://').replace('http://','ws://');
+    const ws = new WebSocket(wsUrl+'/api/kernels/'+k.id+'/channels');
+    await new Promise(res => {
+      ws.onopen = () => {
+        ws.send(JSON.stringify({
+          header:{msg_id:'inj',msg_type:'execute_request',username:'',session:k.id,version:'5.2'},
+          parent_header:{},metadata:{},channel:'shell',
+          content:{code:'import os; os.environ["GPU_TIER"]="'+tier+'"',silent:false,store_history:false,user_expressions:{},allow_stdin:false}
+        }));
+      };
+      ws.onmessage = (e) => {
+        const m = JSON.parse(e.data);
+        if (m.msg_type==='status' && m.content.execution_state==='idle' && m.parent_header.msg_id==='inj') { ws.close(); res(); }
+      };
+    });
+    await fetch(jupyterUrl+'/api/kernels/'+k.id,{method:'DELETE'});
+    log.textContent += '✅ GPU_TIER="' + tier + '" 注入完了\n\n';
+  } catch(e) { log.textContent += '⚠️ TIER注入スキップ: ' + e.message + '\n'; }
+
+  await runJupyterNotebook(jupyterUrl, nb, 'setupLog');
+  btn.disabled = false; btn.textContent = '▶ セットアップ実行';
+}
+
+
+</script>
+</body>
+</html>

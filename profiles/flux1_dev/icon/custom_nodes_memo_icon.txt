@@ -1,0 +1,24 @@
+# custom_nodes_memo_icon.txt
+# Kick×Kickアイコン生成（flux1_dev_icon_16GB）に必要なカスタムノード一覧
+# 作成日: 2026-07-07
+
+## 新規追加が必要なもの
+- https://github.com/al-swaiti/ComfyUI-OllamaGemini
+  用途: BRIA_RMBG（背景透過）, ConvertRasterToVector（ラスター→SVG変換）, SaveSVG（SVG保存）
+  備考: GeminiAPI等の機能も同梱されるが未使用（Ollama翻訳専用方針のため不採用）
+  導入方法: custom_nodes.txt に上記URLを1行追記 → setup_flux1_dev.ipynb 実行
+
+## 既にインストール済み・そのまま使うもの
+- comfyui-ollama（OllamaConnectivityV2 / OllamaGenerateV2）: プロンプト翻訳
+- rgthree-comfy: Fast Groups Bypasser等（現状未使用、将来の切替用途で利用可）
+- ComfyUI-GGUF: GGUF形式モデルのロード
+- ComfyUI-Impact-Pack: FaceDetailer等（アイコン専用ワークフローでは未使用）
+- UltimateSDUpscale: 高解像度化（現状は標準の2x Upscaleを使用、切替可能）
+- ComfyUI-Custom-Scripts: ShowText|pysssss（翻訳結果表示）
+- ComfyUI_AB_Wildcard: アイコン専用ワークフローでは未使用（通常生成用）
+
+## 未確認・要検証
+- BRIA_RMBG / ConvertRasterToVector / SaveSVG の正確な入力パラメータ名（API形式での呼び出しに必要）
+  → ComfyUI-OllamaGemini導入後、/object_info で確認予定
+  → 確認済みなのは「ワークフローJSON（ノードエディタ形式）」側の widgets_values のみ
+  → comfyui_icon_mobile.html（API形式）側にはまだ組み込めていない

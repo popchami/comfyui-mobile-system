@@ -1,0 +1,1649 @@
+{
+ "id": "41c68fbb-040c-4cdf-8275-519abf41cd23",
+ "revision": 0,
+ "last_node_id": 42,
+ "last_link_id": 67,
+ "nodes": [
+  {
+   "id": 1,
+   "type": "UNETLoader",
+   "pos": [
+    0,
+    0
+   ],
+   "size": [
+    320,
+    82
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "inputs": [
+    {
+     "label": "unet_name",
+     "localized_name": "unet_name",
+     "name": "unet_name",
+     "type": "COMBO",
+     "widget": {
+      "name": "unet_name"
+     },
+     "link": null
+    },
+    {
+     "label": "weight_dtype",
+     "localized_name": "weight_dtype",
+     "name": "weight_dtype",
+     "type": "COMBO",
+     "widget": {
+      "name": "weight_dtype"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "name": "MODEL",
+     "type": "MODEL",
+     "links": [
+      1
+     ],
+     "slot_index": 0,
+     "label": "MODEL",
+     "localized_name": "MODEL"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "UNETLoader"
+   },
+   "title": "Load Diffusion Model【Flux.1 Dev Q4_K_M】",
+   "widgets_values": [
+    "__DIFFUSION_MODEL__",
+    "fp8_e4m3fn"
+   ]
+  },
+  {
+   "id": 2,
+   "type": "DualCLIPLoader",
+   "pos": [
+    0,
+    120
+   ],
+   "size": [
+    320,
+    100
+   ],
+   "flags": {},
+   "order": 1,
+   "mode": 0,
+   "inputs": [
+    {
+     "label": "clip_name",
+     "localized_name": "clip_name",
+     "name": "clip_name",
+     "type": "COMBO",
+     "widget": {
+      "name": "clip_name"
+     },
+     "link": null
+    },
+    {
+     "label": "type",
+     "localized_name": "type",
+     "name": "type",
+     "type": "COMBO",
+     "widget": {
+      "name": "type"
+     },
+     "link": null
+    },
+    {
+     "label": "device",
+     "localized_name": "device",
+     "name": "device",
+     "type": "COMBO",
+     "widget": {
+      "name": "device"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "name": "CLIP",
+     "type": "CLIP",
+     "links": [
+      21
+     ],
+     "slot_index": 0,
+     "label": "CLIP",
+     "localized_name": "CLIP"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "CLIPLoader"
+   },
+   "title": "Load Text Encoder【Qwen3-8B FP8】",
+   "widgets_values": [
+    "__CLIP1_MODEL__",
+    "__CLIP2_MODEL__",
+    "flux",
+    "default"
+   ]
+  },
+  {
+   "id": 3,
+   "type": "VAELoader",
+   "pos": [
+    0,
+    260
+   ],
+   "size": [
+    320,
+    82
+   ],
+   "flags": {},
+   "order": 2,
+   "mode": 0,
+   "inputs": [
+    {
+     "label": "vae_name",
+     "localized_name": "vae_name",
+     "name": "vae_name",
+     "type": "COMBO",
+     "widget": {
+      "name": "vae_name"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "name": "VAE",
+     "type": "VAE",
+     "links": [
+      4,
+      48
+     ],
+     "slot_index": 0,
+     "label": "VAE",
+     "localized_name": "VAE"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VAELoader"
+   },
+   "title": "Load VAE【Flux.1 VAE】",
+   "widgets_values": [
+    "vae/ae.safetensors"
+   ]
+  },
+  {
+   "id": 18,
+   "type": "LoraLoader",
+   "pos": [
+    360,
+    0
+   ],
+   "size": [
+    320,
+    126
+   ],
+   "flags": {},
+   "order": 6,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "link": 1,
+     "label": "model",
+     "localized_name": "model"
+    },
+    {
+     "name": "clip",
+     "type": "CLIP",
+     "link": 21,
+     "label": "clip",
+     "localized_name": "clip"
+    },
+    {
+     "label": "lora_name",
+     "localized_name": "lora_name",
+     "name": "lora_name",
+     "type": "COMBO",
+     "widget": {
+      "name": "lora_name"
+     },
+     "link": null
+    },
+    {
+     "label": "strength_model",
+     "localized_name": "strength_model",
+     "name": "strength_model",
+     "type": "FLOAT",
+     "widget": {
+      "name": "strength_model"
+     },
+     "link": null
+    },
+    {
+     "label": "strength_clip",
+     "localized_name": "strength_clip",
+     "name": "strength_clip",
+     "type": "FLOAT",
+     "widget": {
+      "name": "strength_clip"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "name": "MODEL",
+     "type": "MODEL",
+     "links": [
+      22
+     ],
+     "slot_index": 0,
+     "label": "MODEL",
+     "localized_name": "MODEL"
+    },
+    {
+     "name": "CLIP",
+     "type": "CLIP",
+     "links": [
+      23
+     ],
+     "slot_index": 1,
+     "label": "CLIP",
+     "localized_name": "CLIP"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "LoraLoader"
+   },
+   "title": "LoRA Loader (FP8対応)",
+   "color": "#322",
+   "bgcolor": "#533",
+   "widgets_values": [
+    "Japanese Beauty V0.1.safetensors",
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": 9,
+   "type": "EmptyLatentImage",
+   "pos": [
+    0,
+    480
+   ],
+   "size": [
+    300,
+    110
+   ],
+   "flags": {},
+   "order": 5,
+   "mode": 0,
+   "inputs": [
+    {
+     "label": "width",
+     "localized_name": "width",
+     "name": "width",
+     "type": "INT",
+     "widget": {
+      "name": "width"
+     },
+     "link": null
+    },
+    {
+     "label": "height",
+     "localized_name": "height",
+     "name": "height",
+     "type": "INT",
+     "widget": {
+      "name": "height"
+     },
+     "link": null
+    },
+    {
+     "label": "batch_size",
+     "localized_name": "batch_size",
+     "name": "batch_size",
+     "type": "INT",
+     "widget": {
+      "name": "batch_size"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "name": "LATENT",
+     "type": "LATENT",
+     "links": [
+      10
+     ],
+     "slot_index": 0,
+     "label": "LATENT",
+     "localized_name": "LATENT"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "EmptyLatentImage"
+   },
+   "title": "Empty Latent【1024×1024】",
+   "widgets_values": [
+    1024,
+    1024,
+    1
+   ]
+  },
+  {
+   "id": 6,
+   "type": "CLIPTextEncode",
+   "pos": [
+    960,
+    340
+   ],
+   "size": [
+    400,
+    100
+   ],
+   "flags": {},
+   "order": 7,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "clip",
+     "type": "CLIP",
+     "link": 25,
+     "label": "clip",
+     "localized_name": "clip"
+    },
+    {
+     "label": "text",
+     "localized_name": "text",
+     "name": "text",
+     "type": "STRING",
+     "widget": {
+      "name": "text"
+     },
+     "link": 63
+    }
+   ],
+   "outputs": [
+    {
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "links": [
+      7
+     ],
+     "slot_index": 0,
+     "label": "CONDITIONING",
+     "localized_name": "CONDITIONING"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "CLIPTextEncode"
+   },
+   "title": "Positive Prompt (LLMから自動入力)",
+   "widgets_values": [
+    "← Ollamaから自動入力"
+   ]
+  },
+  {
+   "id": 8,
+   "type": "CLIPTextEncode",
+   "pos": [
+    960,
+    480
+   ],
+   "size": [
+    400,
+    100
+   ],
+   "flags": {},
+   "order": 8,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "clip",
+     "type": "CLIP",
+     "link": 26,
+     "label": "clip",
+     "localized_name": "clip"
+    },
+    {
+     "label": "text",
+     "localized_name": "text",
+     "name": "text",
+     "type": "STRING",
+     "widget": {
+      "name": "text"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "links": [
+      9,
+      52
+     ],
+     "slot_index": 0,
+     "label": "CONDITIONING",
+     "localized_name": "CONDITIONING"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "CLIPTextEncode"
+   },
+   "title": "Negative Prompt",
+   "widgets_values": [
+    "text, watermark, signature, blurry, photo, realistic, gradient, shadow, multiple objects, cluttered background, 3d render"
+   ]
+  },
+  {
+   "id": 7,
+   "type": "FluxGuidance",
+   "pos": [
+    1400,
+    340
+   ],
+   "size": [
+    280,
+    60
+   ],
+   "flags": {},
+   "order": 11,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "conditioning",
+     "type": "CONDITIONING",
+     "link": 7,
+     "label": "conditioning",
+     "localized_name": "conditioning"
+    },
+    {
+     "label": "guidance",
+     "localized_name": "guidance",
+     "name": "guidance",
+     "type": "FLOAT",
+     "widget": {
+      "name": "guidance"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "links": [
+      8,
+      49
+     ],
+     "slot_index": 0,
+     "label": "CONDITIONING",
+     "localized_name": "CONDITIONING"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "FluxGuidance"
+   },
+   "widgets_values": [
+    2.0
+   ]
+  },
+  {
+   "id": 10,
+   "type": "KSampler",
+   "pos": [
+    1720,
+    340
+   ],
+   "size": [
+    320,
+    280
+   ],
+   "flags": {},
+   "order": 12,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "link": 24,
+     "label": "model",
+     "localized_name": "model"
+    },
+    {
+     "name": "positive",
+     "type": "CONDITIONING",
+     "link": 8,
+     "label": "positive",
+     "localized_name": "positive"
+    },
+    {
+     "name": "negative",
+     "type": "CONDITIONING",
+     "link": 9,
+     "label": "negative",
+     "localized_name": "negative"
+    },
+    {
+     "name": "latent_image",
+     "type": "LATENT",
+     "link": 10,
+     "label": "latent_image",
+     "localized_name": "latent_image"
+    },
+    {
+     "label": "seed",
+     "localized_name": "seed",
+     "name": "seed",
+     "type": "INT",
+     "widget": {
+      "name": "seed"
+     },
+     "link": null
+    },
+    {
+     "label": "control_after_generate",
+     "localized_name": "control_after_generate",
+     "name": "control_after_generate",
+     "type": "COMBO",
+     "widget": {
+      "name": "control_after_generate"
+     },
+     "link": null
+    },
+    {
+     "label": "steps",
+     "localized_name": "steps",
+     "name": "steps",
+     "type": "INT",
+     "widget": {
+      "name": "steps"
+     },
+     "link": null
+    },
+    {
+     "label": "cfg",
+     "localized_name": "cfg",
+     "name": "cfg",
+     "type": "FLOAT",
+     "widget": {
+      "name": "cfg"
+     },
+     "link": null
+    },
+    {
+     "label": "sampler_name",
+     "localized_name": "sampler_name",
+     "name": "sampler_name",
+     "type": "COMBO",
+     "widget": {
+      "name": "sampler_name"
+     },
+     "link": null
+    },
+    {
+     "label": "scheduler",
+     "localized_name": "scheduler",
+     "name": "scheduler",
+     "type": "COMBO",
+     "widget": {
+      "name": "scheduler"
+     },
+     "link": null
+    },
+    {
+     "label": "denoise",
+     "localized_name": "denoise",
+     "name": "denoise",
+     "type": "FLOAT",
+     "widget": {
+      "name": "denoise"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "name": "LATENT",
+     "type": "LATENT",
+     "links": [
+      11
+     ],
+     "slot_index": 0,
+     "label": "LATENT",
+     "localized_name": "LATENT"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "KSampler"
+   },
+   "widgets_values": [
+    42,
+    "randomize",
+    20,
+    1.0,
+    "dpmpp_2m",
+    "simple",
+    1.0
+   ]
+  },
+  {
+   "id": 11,
+   "type": "VAEDecode",
+   "pos": [
+    2080,
+    340
+   ],
+   "size": [
+    210,
+    50
+   ],
+   "flags": {},
+   "order": 13,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "samples",
+     "type": "LATENT",
+     "link": 11,
+     "label": "samples",
+     "localized_name": "samples"
+    },
+    {
+     "name": "vae",
+     "type": "VAE",
+     "link": 4,
+     "label": "vae",
+     "localized_name": "vae"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      58
+     ],
+     "slot_index": 0,
+     "label": "IMAGE",
+     "localized_name": "IMAGE"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VAEDecode"
+   }
+  },
+  {
+   "id": 12,
+   "type": "SaveImage",
+   "pos": [
+    2320,
+    340
+   ],
+   "size": [
+    400,
+    300
+   ],
+   "flags": {},
+   "order": 14,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "images",
+     "type": "IMAGE",
+     "link": 65,
+     "label": "images",
+     "localized_name": "images"
+    },
+    {
+     "label": "filename_prefix",
+     "localized_name": "filename_prefix",
+     "name": "filename_prefix",
+     "type": "STRING",
+     "widget": {
+      "name": "filename_prefix"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [],
+   "properties": {
+    "Node name for S&R": "SaveImage"
+   },
+   "widgets_values": [
+    "flux1_dev_icon"
+   ]
+  },
+  {
+   "id": 19,
+   "type": "CheckpointLoaderSimple",
+   "pos": [
+    0,
+    360
+   ],
+   "size": [
+    320,
+    98
+   ],
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "MODEL",
+     "type": "MODEL",
+     "links": [],
+     "slot_index": 0
+    },
+    {
+     "name": "CLIP",
+     "type": "CLIP",
+     "links": [],
+     "slot_index": 1
+    },
+    {
+     "name": "VAE",
+     "type": "VAE",
+     "links": [],
+     "slot_index": 2
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "CheckpointLoaderSimple"
+   },
+   "widgets_values": [
+    "__CHECKPOINT_MODEL__"
+   ],
+   "title": "Checkpoint Loader（マージモデル用）",
+   "color": "#322",
+   "bgcolor": "#533",
+   "flags": {
+    "collapsed": false
+   }
+  },
+  {
+   "id": 20,
+   "type": "LoraLoader",
+   "pos": [
+    700,
+    40
+   ],
+   "size": [
+    320,
+    130
+   ],
+   "inputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "link": 22
+    },
+    {
+     "name": "clip",
+     "type": "CLIP",
+     "link": 23
+    }
+   ],
+   "outputs": [
+    {
+     "name": "MODEL",
+     "type": "MODEL",
+     "links": [
+      24,
+      46
+     ],
+     "slot_index": 0
+    },
+    {
+     "name": "CLIP",
+     "type": "CLIP",
+     "links": [
+      25,
+      26,
+      47
+     ],
+     "slot_index": 1
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "LoraLoader"
+   },
+   "widgets_values": [
+    "FLUX2_KLEIN_UNLOCKED_V1.safetensors",
+    0.0,
+    0.0
+   ],
+   "title": "LoRA Loader 2（Flux.1 LoRA用）",
+   "color": "#322",
+   "bgcolor": "#533"
+  },
+  {
+   "id": 21,
+   "type": "OllamaConnectivityV2",
+   "pos": [
+    360,
+    340
+   ],
+   "size": [
+    400,
+    130
+   ],
+   "flags": {},
+   "order": 3,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "connectivity",
+     "type": "OLLAMA_CONNECTIVITY",
+     "links": [
+      30
+     ],
+     "slot_index": 0,
+     "label": "connectivity"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "OllamaConnectivityV2"
+   },
+   "widgets_values": [
+    "http://127.0.0.1:11434",
+    "__OLLAMA_MODEL__",
+    5
+   ],
+   "title": "Ollama Connectivity V2",
+   "color": "#223",
+   "bgcolor": "#335"
+  },
+  {
+   "id": 22,
+   "type": "OllamaGenerateV2",
+   "pos": [
+    820,
+    340
+   ],
+   "size": [
+    450,
+    400
+   ],
+   "flags": {},
+   "order": 7,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "connectivity",
+     "type": "OLLAMA_CONNECTIVITY",
+     "link": 30,
+     "label": "connectivity"
+    },
+    {
+     "name": "prompt",
+     "type": "STRING",
+     "link": 60,
+     "label": "prompt",
+     "widget": {
+      "name": "prompt"
+     }
+    },
+    {
+     "name": "options",
+     "type": "OLLAMA_OPTIONS",
+     "link": null,
+     "label": "options",
+     "shape": 7
+    },
+    {
+     "name": "context",
+     "type": "OLLAMA_CONTEXT",
+     "link": null,
+     "label": "context",
+     "shape": 7
+    },
+    {
+     "name": "images",
+     "type": "IMAGE",
+     "link": null,
+     "label": "images",
+     "shape": 7
+    },
+    {
+     "name": "meta",
+     "type": "OLLAMA_META",
+     "link": null,
+     "label": "meta",
+     "shape": 7
+    }
+   ],
+   "outputs": [
+    {
+     "name": "result",
+     "type": "STRING",
+     "links": [
+      32,
+      61
+     ],
+     "slot_index": 0,
+     "label": "result"
+    },
+    {
+     "name": "thinking",
+     "type": "STRING",
+     "links": null,
+     "slot_index": 1,
+     "label": "thinking"
+    },
+    {
+     "name": "context",
+     "type": "OLLAMA_CONTEXT",
+     "links": null,
+     "slot_index": 2,
+     "label": "context"
+    },
+    {
+     "name": "meta",
+     "type": "OLLAMA_META",
+     "links": null,
+     "slot_index": 3,
+     "label": "meta"
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "OllamaGenerateV2"
+   },
+   "widgets_values": [
+    "/no_think\nYou are a translator for app icon prompt generation using FLUX.1 Dev.\nTranslate the Japanese input (an icon subject) into a short English phrase.\n\nOutput rules:\n- Translation only. No additions beyond what is written.\n- Never omit or soften any detail the user specified.\n- Maximum 15 words.\n- Output the subject phrase only, not a full sentence.",
+    false,
+    false,
+    "text"
+   ],
+   "title": "Ollama Generate V2 - アイコン内容翻訳",
+   "color": "#223",
+   "bgcolor": "#335"
+  },
+  {
+   "id": 23,
+   "type": "ShowText|pysssss",
+   "pos": [
+    1320,
+    640
+   ],
+   "size": {
+    "0": 400,
+    "1": 100
+   },
+   "flags": {},
+   "order": 15,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "text",
+     "type": "STRING",
+     "link": 32
+    }
+   ],
+   "outputs": [
+    {
+     "name": "TEXT",
+     "type": "STRING",
+     "links": [],
+     "shape": 3
+    }
+   ],
+   "title": "翻訳結果",
+   "properties": {
+    "Node name for S&R": "ShowText|pysssss"
+   },
+   "widgets_values": [
+    ""
+   ]
+  },
+  {
+   "id": 24,
+   "type": "UpscaleModelLoader",
+   "pos": [
+    2080,
+    520
+   ],
+   "size": {
+    "0": 200,
+    "1": 58
+   },
+   "flags": {},
+   "order": 16,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "UPSCALE_MODEL",
+     "type": "UPSCALE_MODEL",
+     "links": [
+      33
+     ],
+     "shape": 3
+    }
+   ],
+   "title": "Upscale Model",
+   "properties": {
+    "Node name for S&R": "UpscaleModelLoader"
+   },
+   "widgets_values": [
+    "4x-UltraSharp.pth"
+   ]
+  },
+  {
+   "id": 25,
+   "type": "ImageUpscaleWithModel",
+   "pos": [
+    2320,
+    520
+   ],
+   "size": {
+    "0": 240,
+    "1": 66
+   },
+   "flags": {},
+   "order": 17,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "upscale_model",
+     "type": "UPSCALE_MODEL",
+     "link": 33
+    },
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 58
+    }
+   ],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      64
+     ],
+     "shape": 3
+    }
+   ],
+   "title": "2x Upscale",
+   "properties": {
+    "Node name for S&R": "ImageUpscaleWithModel"
+   },
+   "widgets_values": []
+  },
+  {
+   "id": 28,
+   "type": "LoadImage",
+   "pos": [
+    2020,
+    540
+   ],
+   "size": {
+    "0": 280,
+    "1": 120
+   },
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      37
+     ],
+     "shape": 3
+    },
+    {
+     "name": "MASK",
+     "type": "MASK",
+     "links": [],
+     "shape": 3
+    }
+   ],
+   "title": "i2i入力画像 (未接続)",
+   "properties": {
+    "Node name for S&R": "LoadImage"
+   },
+   "widgets_values": [
+    "example.png",
+    "image"
+   ]
+  },
+  {
+   "id": 29,
+   "type": "VAEEncode",
+   "pos": [
+    2020,
+    690
+   ],
+   "size": {
+    "0": 280,
+    "1": 80
+   },
+   "flags": {},
+   "order": 1,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "pixels",
+     "type": "IMAGE",
+     "link": 37
+    },
+    {
+     "name": "vae",
+     "type": "VAE",
+     "link": 38
+    }
+   ],
+   "outputs": [
+    {
+     "name": "LATENT",
+     "type": "LATENT",
+     "links": [],
+     "shape": 3
+    }
+   ],
+   "title": "i2i VAEEncode (→KSampler.latent_imageへ接続)",
+   "properties": {
+    "Node name for S&R": "VAEEncode"
+   },
+   "widgets_values": []
+  },
+  {
+   "id": 36,
+   "type": "PrimitiveNode",
+   "pos": [
+    1200,
+    900
+   ],
+   "size": [
+    300,
+    60
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "STRING",
+     "type": "STRING",
+     "links": [
+      60
+     ],
+     "slot_index": 0
+    }
+   ],
+   "title": "アイコン内容 (日本語で入力)",
+   "properties": {},
+   "widgets_values": [
+    ""
+   ]
+  },
+  {
+   "id": 37,
+   "type": "StringConcatenate",
+   "pos": [
+    1400,
+    900
+   ],
+   "size": [
+    300,
+    80
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "string_a",
+     "type": "STRING",
+     "link": 61
+    },
+    {
+     "name": "string_b",
+     "type": "STRING",
+     "link": 62
+    }
+   ],
+   "outputs": [
+    {
+     "name": "STRING",
+     "type": "STRING",
+     "links": [
+      63
+     ],
+     "slot_index": 0
+    }
+   ],
+   "title": "Positive Prompt Concat（Ollama翻訳＋固定スタイル）",
+   "properties": {},
+   "widgets_values": [
+    "",
+    "",
+    ", "
+   ]
+  },
+  {
+   "id": 39,
+   "type": "PrimitiveNode",
+   "pos": [
+    0,
+    0
+   ],
+   "size": [
+    400,
+    80
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "title": "固定スタイルテンプレート (Flat Design)",
+   "properties": {},
+   "outputs": [
+    {
+     "name": "STRING",
+     "type": "STRING",
+     "links": [
+      62
+     ]
+    }
+   ],
+   "widgets_values": [
+    "flat design app icon, single flat color, bold simple shapes, thick clean outline, no gradient, no shadow, centered composition, solid plain background, minimalist vector illustration style, high contrast"
+   ]
+  },
+  {
+   "id": 40,
+   "type": "BRIA_RMBG",
+   "pos": [
+    0,
+    0
+   ],
+   "size": [
+    315,
+    78
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "title": "背景透過 (BRIA RMBG 2.0)",
+   "inputs": [
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 64
+    }
+   ],
+   "outputs": [
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "links": [
+      65,
+      66
+     ]
+    },
+    {
+     "name": "mask",
+     "type": "MASK",
+     "links": null
+    }
+   ],
+   "properties": {
+    "cnr_id": "comfyui-ollamagemini",
+    "Node name for S&R": "BRIA_RMBG"
+   },
+   "widgets_values": [
+    "2.0"
+   ]
+  },
+  {
+   "id": 41,
+   "type": "ConvertRasterToVector",
+   "pos": [
+    0,
+    0
+   ],
+   "size": [
+    315,
+    274
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "title": "ラスター→SVG変換",
+   "inputs": [
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 66
+    }
+   ],
+   "outputs": [
+    {
+     "name": "svg_strings",
+     "shape": 3,
+     "type": "LIST",
+     "links": [
+      67
+     ]
+    }
+   ],
+   "properties": {
+    "cnr_id": "comfyui-ollamagemini",
+    "Node name for S&R": "ConvertRasterToVector"
+   },
+   "widgets_values": [
+    "color",
+    "spline",
+    4,
+    8,
+    80,
+    2,
+    15,
+    45,
+    5,
+    true
+   ]
+  },
+  {
+   "id": 42,
+   "type": "SaveSVG",
+   "pos": [
+    0,
+    0
+   ],
+   "size": [
+    317,
+    198
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "title": "SVG保存",
+   "inputs": [
+    {
+     "name": "svg_strings",
+     "type": "LIST",
+     "link": 67
+    }
+   ],
+   "outputs": [
+    {
+     "name": "preview_image",
+     "type": "IMAGE",
+     "links": null
+    },
+    {
+     "name": "file_path",
+     "type": "STRING",
+     "links": null
+    }
+   ],
+   "properties": {
+    "cnr_id": "comfyui-ollamagemini",
+    "Node name for S&R": "SaveSVG"
+   },
+   "widgets_values": [
+    "flux1_dev_icon",
+    true,
+    512,
+    512,
+    true,
+    ""
+   ]
+  }
+ ],
+ "links": [
+  [
+   1,
+   1,
+   0,
+   18,
+   0,
+   "MODEL"
+  ],
+  [
+   4,
+   3,
+   0,
+   11,
+   1,
+   "VAE"
+  ],
+  [
+   7,
+   6,
+   0,
+   7,
+   0,
+   "CONDITIONING"
+  ],
+  [
+   8,
+   7,
+   0,
+   10,
+   1,
+   "CONDITIONING"
+  ],
+  [
+   9,
+   8,
+   0,
+   10,
+   2,
+   "CONDITIONING"
+  ],
+  [
+   10,
+   9,
+   0,
+   10,
+   3,
+   "LATENT"
+  ],
+  [
+   11,
+   10,
+   0,
+   11,
+   0,
+   "LATENT"
+  ],
+  [
+   21,
+   2,
+   0,
+   18,
+   1,
+   "CLIP"
+  ],
+  [
+   22,
+   18,
+   0,
+   20,
+   0,
+   "MODEL"
+  ],
+  [
+   23,
+   18,
+   1,
+   20,
+   1,
+   "CLIP"
+  ],
+  [
+   24,
+   20,
+   0,
+   10,
+   0,
+   "MODEL"
+  ],
+  [
+   25,
+   20,
+   1,
+   6,
+   0,
+   "CLIP"
+  ],
+  [
+   26,
+   20,
+   1,
+   8,
+   0,
+   "CLIP"
+  ],
+  [
+   30,
+   21,
+   0,
+   22,
+   0,
+   "OLLAMA_CONNECTIVITY"
+  ],
+  [
+   32,
+   22,
+   0,
+   23,
+   0,
+   "STRING"
+  ],
+  [
+   33,
+   24,
+   0,
+   25,
+   0,
+   "UPSCALE_MODEL"
+  ],
+  [
+   37,
+   28,
+   0,
+   29,
+   0,
+   "IMAGE"
+  ],
+  [
+   38,
+   3,
+   0,
+   29,
+   1,
+   "VAE"
+  ],
+  [
+   58,
+   11,
+   0,
+   25,
+   1,
+   "IMAGE"
+  ],
+  [
+   60,
+   36,
+   0,
+   22,
+   1,
+   "STRING"
+  ],
+  [
+   61,
+   22,
+   0,
+   37,
+   0,
+   "STRING"
+  ],
+  [
+   62,
+   39,
+   0,
+   37,
+   1,
+   "STRING"
+  ],
+  [
+   63,
+   37,
+   0,
+   6,
+   1,
+   "STRING"
+  ],
+  [
+   64,
+   25,
+   0,
+   40,
+   0,
+   "IMAGE"
+  ],
+  [
+   65,
+   40,
+   0,
+   12,
+   0,
+   "IMAGE"
+  ],
+  [
+   66,
+   40,
+   0,
+   41,
+   0,
+   "IMAGE"
+  ],
+  [
+   67,
+   41,
+   0,
+   42,
+   0,
+   "LIST"
+  ]
+ ],
+ "groups": [],
+ "config": {},
+ "extra": {},
+ "version": 0.4,
+ "models": [
+  {
+   "name": "flux2-klein-9b-fp8.safetensors",
+   "url": "https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8/resolve/main/flux2-klein-9b-fp8.safetensors",
+   "directory": "unet"
+  },
+  {
+   "name": "qwen_3_8b_fp8mixed.safetensors",
+   "url": "https://huggingface.co/Comfy-Org/flux2-klein-9B/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors",
+   "directory": "text_encoders"
+  },
+  {
+   "name": "flux2-vae.safetensors",
+   "url": "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors",
+   "directory": "vae"
+  }
+ ]
+}
