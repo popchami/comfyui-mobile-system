@@ -1,24 +1,61 @@
 # custom_nodes_memo_icon.txt
-# Kick×Kickアイコン生成（flux1_dev_icon_16GB）に必要なカスタムノード一覧
-# 作成日: 2026-07-07
+# Kick×Kickアイコン生成（flux1_dev/icon）に必要なカスタムノード整理
+# 更新日: 2026-07-08
 
-## 新規追加が必要なもの
-- https://github.com/al-swaiti/ComfyUI-OllamaGemini
-  用途: BRIA_RMBG（背景透過）, ConvertRasterToVector（ラスター→SVG変換）, SaveSVG（SVG保存）
-  備考: GeminiAPI等の機能も同梱されるが未使用（Ollama翻訳専用方針のため不採用）
-  導入方法: custom_nodes.txt に上記URLを1行追記 → setup_flux1_dev.ipynb 実行
+## 結論
+icon構成では ComfyUI-OllamaGemini は使わない。
+そのため、OllamaGemini由来の BRIA_RMBG / ConvertRasterToVector / SaveSVG 前提は撤回する。
 
-## 既にインストール済み・そのまま使うもの
-- comfyui-ollama（OllamaConnectivityV2 / OllamaGenerateV2）: プロンプト翻訳
-- rgthree-comfy: Fast Groups Bypasser等（現状未使用、将来の切替用途で利用可）
-- ComfyUI-GGUF: GGUF形式モデルのロード
-- ComfyUI-Impact-Pack: FaceDetailer等（アイコン専用ワークフローでは未使用）
-- UltimateSDUpscale: 高解像度化（現状は標準の2x Upscaleを使用、切替可能）
-- ComfyUI-Custom-Scripts: ShowText|pysssss（翻訳結果表示）
-- ComfyUI_AB_Wildcard: アイコン専用ワークフローでは未使用（通常生成用）
+現時点の安全な動作対象は PNGアイコン生成 まで。
+SVG化・背景透過は、別途「使用するノード」を確定してから追加する。
 
-## 未確認・要検証
-- BRIA_RMBG / ConvertRasterToVector / SaveSVG の正確な入力パラメータ名（API形式での呼び出しに必要）
-  → ComfyUI-OllamaGemini導入後、/object_info で確認予定
-  → 確認済みなのは「ワークフローJSON（ノードエディタ形式）」側の widgets_values のみ
-  → comfyui_icon_mobile.html（API形式）側にはまだ組み込めていない
+## icon構成で使う前提のノード
+- ComfyUI標準ノード
+  - UNETLoader
+  - DualCLIPLoader
+  - VAELoader
+  - EmptyLatentImage
+  - CLIPTextEncode
+  - FluxGuidance
+  - KSampler
+  - VAEDecode
+  - UpscaleModelLoader
+  - ImageUpscaleWithModel
+  - SaveImage
+  - LoadImage / VAEEncode（i2i用）
+
+- 追加カスタムノード
+  - comfyui-ollama
+    - OllamaConnectivityV2
+    - OllamaGenerateV2
+  - ComfyUI-Custom-Scripts
+    - ShowText|pysssss
+  - ComfyUI-Manager
+    - カスタムノード管理・更新用
+
+## 使わないもの
+- ComfyUI-OllamaGemini
+- BRIA_RMBG
+- ConvertRasterToVector
+- SaveSVG
+
+## 修正理由
+既存workflow JSONには BRIA_RMBG / ConvertRasterToVector / SaveSVG が残っていたが、properties上で cnr_id が comfyui-ollamagemini になっていた。
+ユーザー方針では OllamaGemini は使わないため、この経路は不採用。
+
+## 今後SVG化する場合
+SVG化を復活させる場合は、以下の順番で進めること。
+
+1. 使用するSVG変換ノードを先に決める
+2. RunPod上で /object_info を確認する
+3. API形式の class_type / inputs を確認する
+4. comfyui_icon_mobile.html に追加する
+5. 生成PNG → 背景透過 → SVG保存 の順で実機検証する
+
+## 現在のicon仕様
+- 1024×1024で生成
+- 4x-UltraSharpでアップスケール
+- SaveImageでPNG保存
+- 日本語入力はOllamaで英語化
+- 固定スタイルは「flat design app icon」系
+- 背景透過・SVG保存は未実装扱い
