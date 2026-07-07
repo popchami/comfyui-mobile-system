@@ -1,0 +1,23 @@
+# === 正面 ===
+looking directly at camera, intense direct gaze
+eyes closed, facing directly forward
+# === 上 ===
+looking upward, eyes lifted toward ceiling
+eyes closed, face tilted slightly upward
+# === 下 ===
+looking downward, downcast gaze toward floor
+eyes closed, face tilted slightly downward
+# === 左 ===
+looking to the left, gaze directed sideways
+eyes closed, face turned to the left
+# === 右 ===
+looking to the right, gaze directed sideways
+eyes closed, face turned to the right
+# === 斜め ===
+glancing up to the left, soft sidelong look
+eyes closed, face angled up toward the left
+glancing up to the right, soft sidelong look
+eyes closed, face angled up toward the right
+# === 後頭部 ===
+facing away from camera, back of head visible
+facing away, back of head visible, eyes closed

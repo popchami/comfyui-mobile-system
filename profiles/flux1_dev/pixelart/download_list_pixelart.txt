@@ -1,0 +1,20 @@
+# download_list_pixelart.txt (PixelArt / Flux.1 Dev 24GB専用)
+# 列: 名前[TAB]種別[TAB]URL[TAB]バージョンID(省略=-)[TAB]保存先上書き(省略=-)
+# 種別: hf / civitai / ollama
+
+# === Diffusion Model (Flux.1 Dev FP8) ===
+flux1_dev_fp8	hf	https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors	-	diffusion_models/
+
+# === Text Encoder (CLIP-L + T5XXL) ===
+clip_l	hf	https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors	-	text_encoders/
+t5xxl_fp8	hf	https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors	-	text_encoders/
+
+# === VAE ===
+flux1_vae_ae	hf	https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/ae.safetensors	-	vae/
+
+# === LLM (Ollama) ===
+ollama_qwen35	ollama	jaahas/qwen3.5-uncensored:9b	-	-
+
+# === LoRA: PixelArt ===
+lora_pixelart_koronyx	civitai	https://civitai.com/api/download/models/765098?fileId=680248	765098	loras/
+lora_pixelart_dever	civitai	https://civitai.com/api/download/models/1058316?fileId=963822	1058316	loras/

@@ -1,0 +1,41 @@
+# download_list.txt
+# 列: 名前[TAB]種別[TAB]URL[TAB]バージョンID(省略=-)[TAB]保存先上書き(省略=-)
+# 種別: hf / civitai / ollama
+
+# === Diffusion Model ===
+flux2_klein_fp8	hf	https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8/resolve/main/flux-2-klein-9b-fp8.safetensors	-	diffusion_models/
+
+# === Text Encoder ===
+qwen3_8b_text_enc	hf	https://huggingface.co/Comfy-Org/flux2-klein-9B/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors	-	text_encoders/
+
+# === VAE ===
+flux2_vae	hf	https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors	-	vae/
+
+# === Upscaler ===
+4x_ultrasharp	hf	https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/4x-UltraSharp.pth	-	upscale_models/
+
+# === Face Detection ===
+face_yolov8m	hf	https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8m.pt	-	ultralytics/bbox/
+
+# === Checkpoint（マージモデル）===
+miraclein_nsfw	civitai	https://civitai.com/api/download/models/2759272	2759272	checkpoints/
+
+# === LoRA ===
+lora_nsfw_klein	civitai	https://civitai.com/api/download/models/2609505	2609505	loras/
+lora_japanese_beauty	civitai	https://civitai.com/api/download/models/2776051	2776051	loras/
+
+# === LLM (Ollama) ===
+ollama_qwen35	ollama	jaahas/qwen3.5-uncensored:9b	-	-
+
+# === 追加: Flux.2 LoRA (2788349) ===
+lora_flux2_extra	civitai	https://civitai.com/api/download/models/2788349	2788349	loras/
+
+# === Flux.2 LoRA: Cameltoe ===
+lora_flux2_cameltoe	civitai	https://civitai.com/api/download/models/2952445	2952445	loras/
+
+# === Flux.2 LoRA: Anal series ===
+lora_flux2_anal_1	civitai	https://civitai.red/api/download/models/2842888?fileId=2729074	2729074	loras/
+lora_flux2_anal_2	civitai	https://civitai.red/api/download/models/2835934?fileId=2722009	2722009	loras/
+lora_flux2_anal_3	civitai	https://civitai.red/api/download/models/2821244?fileId=2707208	2707208	loras/
+lora_flux2_anal_4	civitai	https://civitai.red/api/download/models/2689791?fileId=2575575	2575575	loras/
+lora_flux2_anal_5	civitai	https://civitai.red/api/download/models/2939229?fileId=2818341	2818341	loras/

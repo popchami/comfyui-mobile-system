@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>SDXL Chibi Generator</title>
+<style>
+  :root{--bg:#0a0a0f;--surface:#13131a;--border:#2a2a3a;--text:#e8e8f0;--muted:#6b7280;--accent:#f59e0b;--accent2:#34d399;--danger:#f87171;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;min-height:100vh}
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:10px}
+  .header h1{font-size:16px;font-weight:700;color:var(--accent)}
+  .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--accent);color:#000}
+  .tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:99}
+  .tab{flex:1;padding:12px 4px;text-align:center;font-size:14px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab-content{display:none;padding:16px}
+  .tab-content.active{display:block}
+  .section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+  .section-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+  label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+  textarea,input,select{width:100%;background:#0d0d14;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:10px 12px;outline:none}
+  textarea:focus,input:focus,select:focus{border-color:var(--accent)}
+  textarea{resize:vertical;min-height:80px}
+  .btn{width:100%;padding:16px;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}
+  .btn-primary{background:var(--accent);color:#000}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px;font-size:14px;font-weight:600;border-radius:8px;cursor:pointer;width:100%}
+  .progress-wrap{display:none;margin:12px 0}
+  .progress-wrap.show{display:block}
+  .progress-bar-bg{background:var(--border);border-radius:4px;height:6px;overflow:hidden}
+  .progress-bar{background:var(--accent);height:100%;width:0%;transition:width .3s}
+  .progress-info{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px}
+  .result-wrap{display:none;margin-top:12px}
+  .result-wrap.show{display:block}
+  .result-wrap img{width:100%;border-radius:10px;border:1px solid var(--border)}
+  .result-seed{font-size:11px;color:var(--accent);margin-top:6px;text-align:center}
+  .result-prompt{font-size:11px;color:var(--muted);margin-top:6px;background:#0d0d14;border-radius:6px;padding:8px;word-break:break-all}
+  .row{display:flex;gap:8px}
+  .row>*{flex:1}
+  .hist-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .hist-item img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border)}
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;flex-direction:column;align-items:center;justify-content:center}
+  .modal.show{display:flex}
+  .modal img{max-width:100%;max-height:80vh;border-radius:8px}
+  .modal-close{position:absolute;top:16px;right:16px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .modal-info{color:var(--muted);font-size:12px;margin-top:8px;text-align:center;max-width:90vw;word-break:break-all}
+  .cs{font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600}
+  .cs.connected{background:#065f46;color:#34d399}
+  .cs.disconnected{background:#450a0a;color:#f87171}
+  .str-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+  .str-row label{font-size:12px;color:var(--muted);white-space:nowrap;margin:0;width:72px;flex:none}
+  .str-row input[type=range]{flex:1}
+  .str-row input[type=number]{width:56px;flex:none}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border);margin-top:6px}
+  .toggle-row:first-child{border-top:none;margin-top:0}
+  .toggle-row span{font-size:13px;color:var(--text)}
+  .toggle{position:relative;width:44px;height:24px;flex:none}
+  .toggle input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.2s}
+  .slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  input:checked+.slider{background:var(--accent)}
+  input:checked+.slider:before{transform:translateX(20px)}
+  .lora-block{background:#0d0d14;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px}
+  .upload-area{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:8px;transition:.2s}
+  .upload-area:hover{border-color:var(--accent);color:var(--accent)}
+  .upload-preview{width:100%;border-radius:8px;border:1px solid var(--border);margin-bottom:8px;display:none}
+  .copy-btn{font-size:11px;padding:4px 8px;border-radius:4px;background:var(--surface);border:1px solid var(--border);color:var(--muted);cursor:pointer;margin-left:8px}
+  .sub-section{background:#0d0d14;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px}
+  .sub-section-title{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🎨 Chibi</h1>
+  <span class="badge">SDXL</span>
+  <span id="connStatus" class="cs disconnected" style="margin-left:auto">未接続</span>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('generate')">生成</div>
+  <div class="tab" onclick="switchTab('params')">パラメータ</div>
+  <div class="tab" onclick="switchTab('history')">履歴</div>
+  <div class="tab" onclick="switchTab('manage')">管理</div>
+</div>
+
+<!-- 生成タブ -->
+<div id="tab-generate" class="tab-content active">
+
+  <div class="section">
+    <div class="section-title">プロンプト</div>
+    <textarea id="prompt" rows="4" placeholder="例: 赤い帽子をかぶったかわいい女の子、笑顔、白背景"></textarea>
+  </div>
+
+  <!-- IPAdapter（キャラ一貫性） -->
+  <div class="section">
+    <div class="section-title">IPAdapter 参照画像（キャラ一貫性）</div>
+    <div class="upload-area" id="ipaUploadArea" onclick="document.getElementById('ipaFileInput').click()">
+      📎 参照画像を選択（任意）
+    </div>
+    <input type="file" id="ipaFileInput" accept="image/*" style="display:none" onchange="handleUpload('ipa',this)">
+    <img id="ipaPreview" class="upload-preview">
+    <button id="ipaClrBtn" class="btn-secondary" style="display:none;margin-bottom:8px" onclick="clearUpload('ipa')">✕ 参照画像をクリア</button>
+    <div class="str-row" id="ipaStrRow" style="display:none">
+      <label>IPAdapter強度</label>
+      <input type="range" id="ipaStr" min="0" max="1.5" step="0.05" value="1.0" oninput="sync('ipaStr','ipaStrN')">
+      <input type="number" id="ipaStrN" min="0" max="1.5" step="0.05" value="1.0" oninput="sync('ipaStrN','ipaStr')">
+    </div>
+  </div>
+
+  <!-- FaceID -->
+  <div class="section">
+    <div class="section-title">FaceID 顔参照（顔の一貫性）</div>
+    <div class="upload-area" id="faceUploadArea" onclick="document.getElementById('faceFileInput').click()">
+      👤 顔参照画像を選択（任意）
+    </div>
+    <input type="file" id="faceFileInput" accept="image/*" style="display:none" onchange="handleUpload('face',this)">
+    <img id="facePreview" class="upload-preview">
+    <button id="faceClrBtn" class="btn-secondary" style="display:none;margin-bottom:8px" onclick="clearUpload('face')">✕ 顔参照をクリア</button>
+    <div class="str-row" id="faceStrRow" style="display:none">
+      <label>FaceID強度</label>
+      <input type="range" id="faceStr" min="0" max="1.5" step="0.05" value="0.8" oninput="sync('faceStr','faceStrN')">
+      <input type="number" id="faceStrN" min="0" max="1.5" step="0.05" value="0.8" oninput="sync('faceStrN','faceStr')">
+    </div>
+  </div>
+
+  <!-- ControlNet -->
+  <div class="section">
+    <div class="section-title">ControlNet（輪郭・ポーズ固定）</div>
+    <div class="upload-area" id="cnUploadArea" onclick="document.getElementById('cnFileInput').click()">
+      ✏️ 下書き・輪郭画像を選択（任意）
+    </div>
+    <input type="file" id="cnFileInput" accept="image/*" style="display:none" onchange="handleUpload('cn',this)">
+    <img id="cnPreview" class="upload-preview">
+    <button id="cnClrBtn" class="btn-secondary" style="display:none;margin-bottom:8px" onclick="clearUpload('cn')">✕ ControlNet画像をクリア</button>
+    <div class="str-row" id="cnStrRow" style="display:none">
+      <label>ControlNet強度</label>
+      <input type="range" id="cnStr" min="0" max="1.5" step="0.05" value="0.8" oninput="sync('cnStr','cnStrN')">
+      <input type="number" id="cnStrN" min="0" max="1.5" step="0.05" value="0.8" oninput="sync('cnStrN','cnStr')">
+    </div>
+  </div>
+
+  <!-- img2img -->
+  <div class="section">
+    <div class="section-title">入力画像（img2img・任意）</div>
+    <div class="upload-area" id="i2iUploadArea" onclick="document.getElementById('i2iFileInput').click()">
+      📁 下書き画像を選択（任意）
+    </div>
+    <input type="file" id="i2iFileInput" accept="image/*" style="display:none" onchange="handleUpload('i2i',this)">
+    <img id="i2iPreview" class="upload-preview">
+    <button id="i2iClrBtn" class="btn-secondary" style="display:none;margin-bottom:8px" onclick="clearUpload('i2i')">✕ 画像をクリア</button>
+    <div class="str-row" id="i2iStrRow" style="display:none">
+      <label>Denoise</label>
+      <input type="range" id="denoiseI2I" min="0.1" max="1.0" step="0.05" value="0.75" oninput="sync('denoiseI2I','denoiseI2IN')">
+      <input type="number" id="denoiseI2IN" min="0.1" max="1.0" step="0.05" value="0.75" oninput="sync('denoiseI2IN','denoiseI2I')">
+    </div>
+  </div>
+
+  <!-- LoRA -->
+  <div class="section">
+    <div class="section-title">LoRA</div>
+    <div class="lora-block">
+      <label>LoRA 1</label>
+      <select id="lora1">
+        <option value="">なし</option>
+        <option value="lora_chibi_style_xl.safetensors" selected>Chibi Style XL</option>
+      </select>
+      <div class="str-row">
+        <label>強度</label>
+        <input type="range" id="lora1str" min="0" max="1.5" step="0.05" value="1.0" oninput="sync('lora1str','lora1strN')">
+        <input type="number" id="lora1strN" min="0" max="1.5" step="0.05" value="1.0" oninput="sync('lora1strN','lora1str')">
+      </div>
+    </div>
+    <div class="lora-block">
+      <label>LoRA 2</label>
+      <select id="lora2">
+        <option value="" selected>なし</option>
+        <option value="lora_chibi_style_xl.safetensors">Chibi Style XL</option>
+      </select>
+      <div class="str-row">
+        <label>強度</label>
+        <input type="range" id="lora2str" min="0" max="1.5" step="0.05" value="1.0" oninput="sync('lora2str','lora2strN')">
+        <input type="number" id="lora2strN" min="0" max="1.5" step="0.05" value="1.0" oninput="sync('lora2strN','lora2str')">
+      </div>
+    </div>
+  </div>
+
+  <!-- 生成設定 -->
+  <div class="section">
+    <div class="section-title">生成設定</div>
+    <div class="row">
+      <div>
+        <label>解像度</label>
+        <select id="resolution">
+          <option value="1024x1024">1024×1024</option>
+          <option value="832x1216" selected>832×1216（縦長）</option>
+          <option value="768x1344">768×1344（縦長S）</option>
+          <option value="1216x832">1216×832（横長）</option>
+        </select>
+      </div>
+      <div>
+        <label>バッチ数</label>
+        <input type="number" id="batchInput" value="1" min="1" max="4">
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div><label>Steps</label><input type="number" id="stepsInput" value="28" min="1" max="50"></div>
+      <div><label>Seed（-1でランダム）</label><input type="number" id="seed" value="-1"></div>
+    </div>
+    <div class="toggle-row" style="margin-top:10px">
+      <span>🔍 FaceDetailer（顔修正）</span>
+      <label class="toggle"><input type="checkbox" id="faceDetailerToggle"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span>🖼️ 透過PNG（RemBG）</span>
+      <label class="toggle"><input type="checkbox" id="rembgToggle" checked><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="generateBtn" onclick="generate()">🎨 生成</button>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="progress-info">
+      <span id="progressLabel">待機中...</span>
+      <span id="progressPct">0%</span>
+    </div>
+  </div>
+
+  <div class="result-wrap" id="resultWrap">
+    <img id="resultImg" src="" onclick="openModal(this.src,'')">
+    <div class="result-seed" id="resultSeed"></div>
+    <div style="display:flex;align-items:center;margin-top:4px">
+      <span style="font-size:11px;color:var(--muted)">翻訳結果:</span>
+      <button class="copy-btn" onclick="copyTranslated()">コピー</button>
+    </div>
+    <div class="result-prompt" id="translatedPrompt"></div>
+  </div>
+</div>
+
+<!-- パラメータタブ -->
+<div id="tab-params" class="tab-content">
+  <div class="section">
+    <div class="section-title">サンプリング</div>
+    <div class="row">
+      <div><label>CFG</label><input type="number" id="cfgInput" value="5.0" min="1" max="20" step="0.5"></div>
+      <div><label>Denoise（txt2img）</label><input type="number" id="denoiseInput" value="1.0" min="0" max="1" step="0.01"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div>
+        <label>Sampler</label>
+        <select id="sampler">
+          <option value="euler_ancestral" selected>euler_ancestral</option>
+          <option value="euler">euler</option>
+          <option value="dpmpp_2m">dpmpp_2m</option>
+          <option value="dpmpp_sde">dpmpp_sde</option>
+        </select>
+      </div>
+      <div>
+        <label>Scheduler</label>
+        <select id="scheduler">
+          <option value="simple" selected>simple</option>
+          <option value="normal">normal</option>
+          <option value="karras">karras</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">ネガティブプロンプト</div>
+    <textarea id="negPrompt" rows="4">lowres, bad anatomy, bad hands, text, error, missing finger, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry</textarea>
+  </div>
+</div>
+
+<!-- 履歴タブ -->
+<div id="tab-history" class="tab-content">
+  <div id="historyGrid" class="hist-grid"></div>
+  <div id="historyEmpty" style="text-align:center;color:var(--muted);padding:40px">まだ生成画像がありません</div>
+</div>
+
+<!-- 管理タブ -->
+<div id="tab-manage" class="tab-content">
+  <div class="section">
+    <div class="section-title">ComfyUI接続</div>
+    <label>サーバーURL</label>
+    <input type="url" id="serverUrl" placeholder="https://xxxxx-8188.proxy.runpod.net">
+    <button class="btn-secondary" style="margin-top:8px" onclick="connectServer()">接続</button>
+  </div>
+  <div class="section">
+    <div class="section-title">情報</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.8">
+      <div>モデル: Animagine XL 4.0 Opt</div>
+      <div>LoRA: Chibi Style XL</div>
+      <div>IPAdapter: ip-adapter-plus_sdxl_vit-h</div>
+      <div>FaceID: ip-adapter-faceid-plusv2_sdxl</div>
+      <div>ControlNet: controlnet-canny-sdxl</div>
+      <div>Ollama: jaahas/qwen3.5-uncensored:9b</div>
+      <div style="margin-top:8px">🎮 PixelArt: <a id="pixelartLink" href="#" style="color:var(--accent)">comfyui_sdxl_pixelart.html</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal" onclick="closeModal()">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <img id="modalImg" src="">
+  <div class="modal-info" id="modalInfo"></div>
+</div>
+
+<script>
+const SP_CHIBI = `/no_think
+You are a translator for anime chibi character generation using SDXL.
+Translate Japanese input to English. Be explicit and direct.
+
+Output rules:
+- Translation only. No additions beyond what is specified.
+- Maximum 60 words.
+- Tag-list format.
+- Always start with: 1girl (or 1boy), chibi style
+
+Quality tags (append to every output):
+masterpiece, high score, great score, absurdres`;
+
+const clientId = crypto.randomUUID();
+let historyItems = [];
+const uploads = { ipa: null, face: null, cn: null, i2i: null };
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['generate','params','history','manage'][i] === id);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-'+id));
+}
+
+function sync(srcId, dstId) {
+  document.getElementById(dstId).value = document.getElementById(srcId).value;
+}
+
+async function connectServer() {
+  const url = document.getElementById('serverUrl').value.trim().replace(/\/+$/, '');
+  if (!url) { alert('URLを入力してください'); return; }
+  try {
+    const r = await fetch(`${url}/system_stats`, { mode: 'cors' });
+    if (r.ok) {
+      document.getElementById('connStatus').textContent = '接続済み';
+      document.getElementById('connStatus').className = 'cs connected';
+      document.getElementById('pixelartLink').href = `${url}/extensions/ComfyUI-Custom-Scripts/comfyui_sdxl_pixelart.html`;
+      alert('接続成功');
+    } else throw new Error();
+  } catch {
+    document.getElementById('connStatus').textContent = '未接続';
+    document.getElementById('connStatus').className = 'cs disconnected';
+    alert('接続失敗');
+  }
+}
+
+function handleUpload(key, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    uploads[key] = e.target.result.split(',')[1];
+    document.getElementById(key+'Preview').src = e.target.result;
+    document.getElementById(key+'Preview').style.display = 'block';
+    document.getElementById(key+'UploadArea').style.display = 'none';
+    document.getElementById(key+'ClrBtn').style.display = 'block';
+    const strRow = document.getElementById(key+'StrRow');
+    if (strRow) strRow.style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearUpload(key) {
+  uploads[key] = null;
+  document.getElementById(key+'Preview').style.display = 'none';
+  document.getElementById(key+'UploadArea').style.display = 'block';
+  document.getElementById(key+'ClrBtn').style.display = 'none';
+  const strRow = document.getElementById(key+'StrRow');
+  if (strRow) strRow.style.display = 'none';
+  document.getElementById(key+'FileInput').value = '';
+}
+
+async function uploadImage(url, b64, filename) {
+  const blob = await (await fetch(`data:image/png;base64,${b64}`)).blob();
+  const fd = new FormData();
+  fd.append('image', blob, filename);
+  fd.append('overwrite', 'true');
+  const r = await fetch(`${url}/upload/image`, { method: 'POST', body: fd, mode: 'cors' });
+  return (await r.json()).name;
+}
+
+async function generate() {
+  const url = document.getElementById('serverUrl').value.trim().replace(/\/+$/, '');
+  if (!url) { alert('管理タブでComfyUIに接続してください'); return; }
+  const jpPrompt = document.getElementById('prompt').value.trim();
+  if (!jpPrompt) { alert('プロンプトを入力してください'); return; }
+
+  const genBtn = document.getElementById('generateBtn');
+  const pWrap  = document.getElementById('progressWrap');
+  const pBar   = document.getElementById('progressBar');
+  const pPct   = document.getElementById('progressPct');
+  const pLabel = document.getElementById('progressLabel');
+
+  genBtn.disabled = true;
+  pWrap.classList.add('show');
+  pBar.style.width = '0%';
+  pPct.textContent = '0%';
+  pLabel.textContent = '準備中...';
+
+  const seedVal   = parseInt(document.getElementById('seed').value);
+  const finalSeed = (isNaN(seedVal) || seedVal === -1) ? Math.floor(Math.random() * 2147483647) : seedVal;
+  const steps     = parseInt(document.getElementById('stepsInput').value) || 28;
+  const batch     = parseInt(document.getElementById('batchInput').value) || 1;
+  const cfg       = parseFloat(document.getElementById('cfgInput').value) || 5.0;
+  const sampler   = document.getElementById('sampler').value;
+  const scheduler = document.getElementById('scheduler').value;
+  const negPrompt = document.getElementById('negPrompt').value;
+  const lora1     = document.getElementById('lora1').value;
+  const lora1str  = parseFloat(document.getElementById('lora1strN').value) || 1.0;
+  const lora2     = document.getElementById('lora2').value;
+  const lora2str  = parseFloat(document.getElementById('lora2strN').value) || 1.0;
+  const rembgOn   = document.getElementById('rembgToggle').checked;
+  const fdOn      = document.getElementById('faceDetailerToggle').checked;
+  const ipaStr    = parseFloat(document.getElementById('ipaStrN').value) || 1.0;
+  const faceStr   = parseFloat(document.getElementById('faceStrN').value) || 0.8;
+  const cnStr     = parseFloat(document.getElementById('cnStrN').value) || 0.8;
+  const [w, h]    = document.getElementById('resolution').value.split('x').map(Number);
+  const denoise   = uploads.i2i
+    ? parseFloat(document.getElementById('denoiseI2IN').value)
+    : parseFloat(document.getElementById('denoiseInput').value);
+
+  // 画像アップロード
+  const filenames = {};
+  try {
+    pLabel.textContent = '画像アップロード中...';
+    if (uploads.ipa)  filenames.ipa  = await uploadImage(url, uploads.ipa,  'ipa_ref.png');
+    if (uploads.face) filenames.face = await uploadImage(url, uploads.face, 'face_ref.png');
+    if (uploads.cn)   filenames.cn   = await uploadImage(url, uploads.cn,   'cn_input.png');
+    if (uploads.i2i)  filenames.i2i  = await uploadImage(url, uploads.i2i,  'i2i_input.png');
+  } catch(e) {
+    alert('画像アップロード失敗: ' + e.message);
+    genBtn.disabled = false; pWrap.classList.remove('show'); return;
+  }
+
+  pLabel.textContent = 'キュー送信中...';
+
+  // ワークフロー動的構築
+  const wf = {};
+  wf['1'] = { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: 'animagine_xl4_opt.safetensors' }};
+
+  // LoRA チェーン
+  let mSrc = '1', mSlot = 0, cSrc = '1', cSlot = 1;
+  if (lora1) {
+    wf['18'] = { class_type: 'LoraLoader', inputs: { model:[mSrc,mSlot], clip:[cSrc,cSlot], lora_name:lora1, strength_model:lora1str, strength_clip:lora1str }};
+    mSrc='18'; mSlot=0; cSrc='18'; cSlot=1;
+  }
+  if (lora2) {
+    wf['20'] = { class_type: 'LoraLoader', inputs: { model:[mSrc,mSlot], clip:[cSrc,cSlot], lora_name:lora2, strength_model:lora2str, strength_clip:lora2str }};
+    mSrc='20'; mSlot=0; cSrc='20'; cSlot=1;
+  }
+
+  // IPAdapter（スタイル参照）
+  if (uploads.ipa && filenames.ipa) {
+    wf['35'] = { class_type: 'CLIPVisionLoader', inputs: { clip_name: 'clip_vision_sdxl.safetensors' }};
+    wf['36'] = { class_type: 'LoadImage', inputs: { image: filenames.ipa, upload: 'image' }};
+    wf['30'] = { class_type: 'IPAdapterUnifiedLoader', inputs: { model:[mSrc,mSlot], preset:'PLUS (high strength)', provider:'autocast' }};
+    wf['31'] = { class_type: 'IPAdapterAdvanced', inputs: { model:['30',0], ipadapter:['30',1], image:['36',0], clip_vision:['35',0], weight:ipaStr, weight_type:'linear', combine_embeds:'concat', start_at:0.0, end_at:1.0, embeds_scaling:'V only' }};
+    mSrc='31'; mSlot=0;
+  }
+
+  // FaceID
+  if (uploads.face && filenames.face) {
+    if (!wf['35']) wf['35'] = { class_type: 'CLIPVisionLoader', inputs: { clip_name: 'clip_vision_sdxl.safetensors' }};
+    wf['68'] = { class_type: 'LoadImage', inputs: { image: filenames.face, upload: 'image' }};
+    wf['66'] = { class_type: 'IPAdapterUnifiedLoaderFaceID', inputs: { model:[mSrc,mSlot], preset:'FACEID PLUS V2', provider:'autocast' }};
+    wf['67'] = { class_type: 'IPAdapterFaceID', inputs: { model:['66',0], ipadapter:['66',1], image:['68',0], clip_vision:['35',0], weight:faceStr, weight_type:'linear', combine_embeds:'concat', start_at:0.0, end_at:1.0, embeds_scaling:'V only' }};
+    mSrc='67'; mSlot=0;
+  }
+
+  // CLIP Encode
+  wf['21'] = { class_type: 'OllamaConnectivityV2', inputs: { url:'http://127.0.0.1:11434', model:'jaahas/qwen3.5-uncensored:9b', keep_alive:0 }};
+  wf['22'] = { class_type: 'OllamaGenerateV2', inputs: { system:SP_CHIBI, prompt:jpPrompt, think:false, keep_context:false, format:'text', connectivity:['21',0] }};
+  wf['23'] = { class_type: 'ShowText|pysssss', inputs: { text:['22',0] }};
+  wf['6']  = { class_type: 'CLIPTextEncode', inputs: { clip:[cSrc,cSlot], text:['22',0] }};
+  wf['8']  = { class_type: 'CLIPTextEncode', inputs: { clip:[cSrc,cSlot], text:negPrompt }};
+
+  // ControlNet
+  let posSrc='6', posSlt=0, negSrc='8', negSlt=0;
+  if (uploads.cn && filenames.cn) {
+    wf['60'] = { class_type: 'ControlNetLoader', inputs: { control_net_name:'diffusion_pytorch_model.fp16.safetensors' }};
+    wf['63'] = { class_type: 'LoadImage', inputs: { image:filenames.cn, upload:'image' }};
+    wf['61'] = { class_type: 'CannyEdgePreprocessor', inputs: { image:['63',0], low_threshold:100, high_threshold:200, resolution:512 }};
+    wf['62'] = { class_type: 'ControlNetApplyAdvanced', inputs: { positive:['6',0], negative:['8',0], control_net:['60',0], image:['61',0], strength:cnStr, start_percent:0.0, end_percent:1.0 }};
+    posSrc='62'; posSlt=0; negSrc='62'; negSlt=1;
+  }
+
+  // Latent
+  if (uploads.i2i && filenames.i2i) {
+    wf['28'] = { class_type: 'LoadImage', inputs: { image:filenames.i2i, upload:'image' }};
+    wf['29'] = { class_type: 'VAEEncode', inputs: { pixels:['28',0], vae:['1',2] }};
+    wf['10'] = { class_type: 'KSampler', inputs: { model:[mSrc,mSlot], positive:[posSrc,posSlt], negative:[negSrc,negSlt], latent_image:['29',0], seed:finalSeed, control_after_generate:'randomize', steps, cfg, sampler_name:sampler, scheduler, denoise }};
+  } else {
+    wf['9']  = { class_type: 'EmptyLatentImage', inputs: { width:w, height:h, batch_size:batch }};
+    wf['10'] = { class_type: 'KSampler', inputs: { model:[mSrc,mSlot], positive:[posSrc,posSlt], negative:[negSrc,negSlt], latent_image:['9',0], seed:finalSeed, control_after_generate:'randomize', steps, cfg, sampler_name:sampler, scheduler, denoise }};
+  }
+
+  wf['11'] = { class_type: 'VAEDecode', inputs: { samples:['10',0], vae:['1',2] }};
+
+  // FaceDetailer（オプション）
+  let imgSrc = '11', imgSlt = 0;
+  if (fdOn) {
+    wf['65'] = { class_type: 'FaceDetailer', inputs: {
+      image:['11',0], model:[mSrc,mSlot], clip:[cSrc,cSlot], vae:['1',2],
+      positive:[posSrc,posSlt], negative:[negSrc,negSlt],
+      bbox_detector:null, sam_model_opt:null, segm_detector_opt:null, detailer_hook:null,
+      guide_size:512, guide_size_for:true, max_size:1024, seed:finalSeed,
+      steps:20, cfg:5.0, sampler_name:'euler_ancestral', scheduler:'simple',
+      denoise:0.5, feather:5, noise_mask:true, force_inpaint:false,
+      bbox_threshold:0.5, bbox_dilation:10, bbox_crop_factor:3.0,
+      sam_detection_hint:'center-1', sam_dilation:0, sam_cosine_similarity:0.7,
+      sam_bbox_expansion:0, sam_mask_hint_threshold:0.7, sam_mask_hint_use_negative:'False',
+      drop_size:10, wildcard:'', cycle:1
+    }};
+    imgSrc='65'; imgSlt=0;
+  }
+
+  wf['12'] = { class_type: 'SaveImage', inputs: { images:[imgSrc,imgSlt], filename_prefix:'sdxl_chibi' }};
+  if (rembgOn) {
+    wf['50'] = { class_type: 'ImageRemoveBackground', inputs: { image:[imgSrc,imgSlt] }};
+    wf['51'] = { class_type: 'SaveImageWithAlpha', inputs: { image:['50',0], mask:['50',1], filename_prefix:'sdxl_chibi_transparent' }};
+  }
+
+  try {
+    const qRes = await fetch(`${url}/prompt`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, mode:'cors',
+      body: JSON.stringify({ prompt:wf, client_id:clientId })
+    });
+    if (!qRes.ok) throw new Error('キュー投入失敗');
+    const promptId = (await qRes.json()).prompt_id;
+    pLabel.textContent = 'キュー待機中...';
+
+    const finishGeneration = async () => {
+      pBar.style.width = '100%'; pPct.textContent = '100%'; pLabel.textContent = '完了';
+      const hData = await (await fetch(`${url}/history/${promptId}`, { mode:'cors' })).json();
+      const outputs = (hData[promptId] && hData[promptId].outputs) || {};
+      let images = [], translatedText = '';
+      for (const nid in outputs) {
+        if (outputs[nid].images) images = outputs[nid].images;
+        if (outputs[nid].text)   translatedText = outputs[nid].text[0] || '';
+      }
+      if (images.length > 0) {
+        const dispImg = rembgOn ? (images.find(i => i.filename.includes('transparent')) || images[0]) : images[0];
+        const imgUrl = `${url}/view?filename=${encodeURIComponent(dispImg.filename)}&subfolder=${encodeURIComponent(dispImg.subfolder||'')}&type=${dispImg.type||'output'}`;
+        document.getElementById('resultImg').src = imgUrl;
+        document.getElementById('resultWrap').classList.add('show');
+        document.getElementById('resultSeed').textContent = `SEED: ${finalSeed} [SDXL Chibi${fdOn?' / FaceDetailer':''}${rembgOn?' / 透過':''}]`;
+        document.getElementById('translatedPrompt').textContent = translatedText;
+        images.forEach(im => {
+          const iUrl = `${url}/view?filename=${encodeURIComponent(im.filename)}&subfolder=${encodeURIComponent(im.subfolder||'')}&type=${im.type||'output'}`;
+          addToHistory(iUrl, finalSeed);
+        });
+      }
+      genBtn.disabled = false;
+      setTimeout(() => pWrap.classList.remove('show'), 2000);
+    };
+
+    let finished = false;
+    const ws = new WebSocket(`${url.replace(/^http/, 'ws')}/ws?clientId=${clientId}`);
+    ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'progress') {
+        const pct = Math.round(msg.data.value / msg.data.max * 100);
+        pBar.style.width = pct + '%'; pPct.textContent = pct + '%';
+        pLabel.textContent = `Step ${msg.data.value}/${msg.data.max}`;
+      }
+      if (msg.type === 'executing' && msg.data.prompt_id === promptId && msg.data.node === null) {
+        if (!finished) { finished = true; ws.close(); finishGeneration(); }
+      }
+    };
+    ws.onerror = () => { if (!finished) { finished = true; finishGeneration(); } };
+    setTimeout(() => { if (!finished) { finished = true; ws.close(); finishGeneration(); } }, 300000);
+
+  } catch(e) {
+    alert('エラー: ' + e.message);
+    genBtn.disabled = false; pWrap.classList.remove('show');
+  }
+}
+
+function addToHistory(imgUrl, seed) {
+  historyItems.unshift({ imgUrl, seed });
+  renderHistory();
+}
+function renderHistory() {
+  const grid  = document.getElementById('historyGrid');
+  const empty = document.getElementById('historyEmpty');
+  if (!historyItems.length) { empty.style.display='block'; grid.innerHTML=''; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = historyItems.map(item =>
+    `<div class="hist-item" onclick="openModal('${item.imgUrl}','SEED:${item.seed}')"><img src="${item.imgUrl}" loading="lazy"></div>`
+  ).join('');
+}
+function openModal(src, info) {
+  document.getElementById('modalImg').src = src;
+  document.getElementById('modalInfo').textContent = info;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+function copyTranslated() {
+  const t = document.getElementById('translatedPrompt').textContent;
+  if (t) navigator.clipboard.writeText(t).then(() => alert('コピーしました'));
+}
+
+window.addEventListener('load', () => {
+  const host = location.hostname;
+  if (host.includes('runpod')) {
+    const base = host.replace(/(-\d+)?(\.proxy\.runpod\.net)$/, '-8188$2');
+    document.getElementById('serverUrl').value = 'https://' + base;
+  }
+});
+</script>
+</body>
+</html>

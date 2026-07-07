@@ -1,0 +1,2853 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.3, maximum-scale=3.0, user-scalable=yes">
+<title>Flux Studio</title>
+<link rel="manifest" href="data:application/manifest+json,{
+  &quot;name&quot;: &quot;FLUX STUDIO&quot;,
+  &quot;short_name&quot;: &quot;FLUX&quot;,
+  &quot;display&quot;: &quot;standalone&quot;,
+  &quot;orientation&quot;: &quot;portrait&quot;,
+  &quot;background_color&quot;: &quot;#080c10&quot;,
+  &quot;theme_color&quot;: &quot;#080c10&quot;,
+  &quot;start_url&quot;: &quot;.&quot;,
+  &quot;icons&quot;: [{
+    &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23080c10'/%3E%3Ctext x='256' y='320' font-size='280' text-anchor='middle' fill='%2300d4ff' font-family='sans-serif' font-weight='bold'%3EF%3C/text%3E%3C/svg%3E&quot;,
+    &quot;sizes&quot;: &quot;512x512&quot;,
+    &quot;type&quot;: &quot;image/svg+xml&quot;
+  }]
+}">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FLUX STUDIO">
+<meta name="theme-color" content="#080c10">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+:root {
+  --bg:#080c10;--surface:#0f1419;--border:#1e2a36;
+  --accent:#00d4ff;--accent2:#ff6b9d;--flux1:#f59e0b;--flux2:#00d4ff;
+  --text:#e2eaf4;--muted:#4a6278;--success:#22d3a0;--danger:#ff4d6d;
+  --surface2:#141b24;--border2:#243040;--muted2:#6a88a8;--accent3:#7fff7f;
+  --radius:10px;--radius-sm:7px;--warn:#ffb020;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:20px;min-height:100dvh;overflow-x:hidden}
+.header{position:sticky;top:0;z-index:100;background:rgba(8,12,16,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-title{font-weight:700;font-size:17px;letter-spacing:.05em}
+.model-badge{font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 8px;border-radius:4px;background:var(--flux2);color:#000;transition:all .3s}
+.model-badge.flux1{background:var(--flux1)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:all .3s}
+.status-dot.connected{background:var(--success);box-shadow:0 0 8px var(--success)}
+.status-dot.error{background:var(--danger);box-shadow:0 0 8px var(--danger)}
+.tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:99}
+.tab{flex:1;padding:12px 4px;text-align:center;font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;cursor:pointer}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+label{display:block;color:var(--muted);font-size:14px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;margin-top:18px}
+label:first-child{margin-top:0}
+.page{display:none;padding:16px 20px 32px}
+.page.active{display:block}
+.slider-row{display:flex;align-items:center;gap:10px}
+.slider-row input[type=range]{flex:1;padding:0;-webkit-appearance:none;background:var(--border);height:4px;border-radius:2px;border:none}
+.slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer}
+.slider-val{min-width:40px;text-align:right;color:var(--accent);font-weight:600;font-size:14px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px}
+.toggle{position:relative;width:40px;height:22px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:var(--border);border-radius:11px;transition:background .2s;cursor:pointer}
+.toggle input:checked+.toggle-track{background:var(--accent)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none}
+.toggle input:checked~.toggle-thumb{transform:translateX(18px)}
+.wc-row{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.wc-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px}
+.wc-body{display:none;padding:0 12px 12px;border-top:1px solid var(--border)}
+.wc-body.show{display:block}
+.seed-row{display:flex;gap:6px}
+input[type=text],input[type=url],input[type=number],textarea,select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:18px;padding:14px 14px;outline:none;transition:border-color .2s;-webkit-appearance:none;text-align:center}textarea{text-align:left;vertical-align:top}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:none;line-height:1.5}
+select option{background:var(--surface)}optgroup{background:var(--surface);color:var(--muted)}select optgroup{background:var(--surface)}
+.seed-row input[type=text]{flex:1}
+.btn-icon{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 10px;color:var(--muted);font-size:15px;cursor:pointer;transition:all .15s}
+.btn-icon:active{background:var(--border)}
+.lora-block{margin-bottom:10px}.lora-block select{text-align:center}
+.lora-block select{width:100%;font-size:14px;margin-bottom:4px}
+.lora-str-row{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.lora-str-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.lora-strength{width:100%;text-align:center;font-size:14px;padding:9px 12px}
+.url-row{display:flex;gap:6px}
+.model-switch{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.model-btn{width:100%;padding:8px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;transition:all .2s}
+.model-btn.af2{background:rgba(0,212,255,.1);border-color:var(--flux2);color:var(--flux2)}
+.model-btn.af1{background:rgba(245,158,11,.1);border-color:var(--flux1);color:var(--flux1)}
+.url-row input{flex:1}
+.btn-connect{background:var(--accent);border:none;border-radius:8px;color:#000;font-size:14px;font-weight:700;padding:0 14px;cursor:pointer;white-space:nowrap;transition:opacity .2s}
+.btn-connect:active{opacity:.8}
+.btn-generate{width:100%;margin-top:18px;padding:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#fff;font-size:17px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:opacity .2s,transform .1s}
+.btn-generate.f1{background:linear-gradient(135deg,var(--flux1),#ff6b9d)}
+.btn-generate:active{transform:scale(.98);opacity:.9}
+.btn-generate:disabled{opacity:.35;cursor:not-allowed}
+.progress-wrap{display:none;margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.progress-wrap.show{display:block}
+.progress-label{display:flex;justify-content:space-between;margin-bottom:7px;color:var(--muted);font-size:11px}
+.progress-bar-bg{background:var(--border);border-radius:3px;height:4px;overflow:hidden}
+.progress-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s ease;width:0%}
+.progress-bar.f1{background:linear-gradient(90deg,var(--flux1),#ff6b9d)}
+.result-wrap{display:none;margin-top:14px}
+.result-wrap.show{display:block}
+.result-img{width:100%;border-radius:10px;border:1px solid var(--border)}
+.result-meta{margin-top:8px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:11px}
+.result-seed{color:var(--accent);font-weight:600;margin-bottom:4px}
+.result-seed.f1{color:var(--flux1)}
+.translated{color:var(--muted);line-height:1.6;font-family:'JetBrains Mono',monospace;font-size:10px}
+.params-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.params-cell{display:flex;flex-direction:column;gap:5px}
+.params-cell label{margin-top:0}
+.compact-slider{display:flex;align-items:center;gap:6px}
+.compact-slider input[type=range]{flex:1;padding:0;-webkit-appearance:none;background:var(--border);height:4px;border-radius:2px;border:none}
+.compact-slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer}
+.compact-val{min-width:28px;text-align:right;color:var(--accent);font-size:11px;font-weight:600}
+.history-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.history-item{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);cursor:pointer;aspect-ratio:9/16;background:var(--surface)}
+.history-item img{width:100%;height:100%;object-fit:cover}
+.history-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 50%);opacity:0;transition:opacity .2s;display:flex;align-items:flex-end;padding:8px;font-size:10px;color:#fff;line-height:1.4}
+.history-item:active .history-overlay{opacity:1}
+.preview-modal{display:none;position:fixed;inset:0;background:#000;z-index:9999}
+.preview-modal.show{display:block}
+.preview-modal img{width:100%;height:100%;object-fit:contain}
+.preview-close-btn{position:absolute;top:16px;right:16px;width:36px;height:36px;background:rgba(0,0,0,.6);border:none;border-radius:50%;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10000;line-height:1}
+.preview-overlay-text{position:absolute;bottom:0;left:0;right:0;padding:40px 16px 24px;background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 100%);color:rgba(255,255,255,0.55);font-size:11px;line-height:1.5;pointer-events:none}
+.preview-seed{color:rgba(255,255,255,0.4);font-size:10px;margin-bottom:3px}
+.preview-jp{color:rgba(255,255,255,0.55);margin-bottom:2px}
+.preview-en{color:rgba(255,255,255,0.35);font-size:10px}
+.empty-state{text-align:center;color:var(--muted);padding:40px 20px;font-size:12px;line-height:2.2;grid-column:1/-1}
+
+.detail-section{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.detail-toggle{display:flex;align-items:center;justify-content:space-between;padding:14px 14px;cursor:pointer;font-size:14px;font-weight:600;user-select:none;text-align:center}
+.detail-body{display:none;padding:0 12px 14px;border-top:1px solid var(--border)}
+.detail-body.show{display:block}
+.selector-row{margin-top:12px}
+.selector-label{margin-top:0;margin-bottom:6px}
+.selector-select.selected{border-color:var(--accent);color:var(--text)}
+.btn-reset{width:100%;margin-top:18px;padding:10px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-reset:active{background:var(--border)}
+.i2i-wrap{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.i2i-header{display:flex;align-items:center;justify-content:space-between;padding:14px 14px;font-size:14px;font-weight:600}
+.i2i-body{display:none;padding:0 12px 12px;border-top:1px solid var(--border)}
+.i2i-body.show{display:block}
+.i2i-upload-area{margin-top:10px;border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;color:var(--muted);font-size:14px}
+.i2i-upload-area:active{border-color:var(--accent)}
+.i2i-upload-area.has-image{border-color:var(--accent);color:var(--accent)}
+.i2i-preview{width:100%;border-radius:8px;margin-top:10px;display:none;border:1px solid var(--border)}
+.i2i-preview.show{display:block}
+.btn-i2i-clear{width:100%;margin-top:8px;padding:7px;background:transparent;border:1px solid var(--danger);border-radius:8px;color:var(--danger);font-size:11px;font-weight:600;cursor:pointer;display:none}
+.btn-i2i-clear.show{display:block}
+
+/* i2i mode switch / inpaint mask */
+.i2i-mode-switch{display:flex;gap:6px;margin-top:10px}
+.i2i-mode-btn{flex:1;padding:7px;text-align:center;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;font-size:11px;font-weight:600;color:var(--muted);transition:all .2s}
+.i2i-mode-btn.active-i2i{background:rgba(0,212,255,.1);border-color:var(--accent);color:var(--accent)}
+.i2i-mode-btn.active-inpaint{background:rgba(255,107,157,.1);border-color:var(--accent2);color:var(--accent2)}
+.i2i-canvas-wrap{position:relative;border-radius:var(--radius-sm);overflow:hidden;margin-top:10px}
+.i2i-canvas-wrap img{width:100%;display:block;border-radius:var(--radius-sm)}
+.mask-wrap{display:none}
+.mask-wrap.show{display:block}
+#maskCanvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.mask-toolbar{display:flex;gap:6px;margin-top:8px}
+.mask-tool-btn{flex:1;padding:7px 4px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--muted2);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s}
+.mask-tool-btn.active{background:rgba(0,212,255,.1);border-color:var(--accent);color:var(--accent)}
+.mask-size-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.mask-size-row label{font-size:10px;color:var(--muted2);text-transform:uppercase;margin:0;white-space:nowrap}
+
+.mgmt-section{margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.mgmt-section-title{padding:12px 14px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.mgmt-section-body{padding:0 14px 14px}
+.mgmt-section.setup .mgmt-section-title{color:#38bdf8;border-bottom:1px solid rgba(56,189,248,.2);background:rgba(56,189,248,.06)}
+.mgmt-section.backup .mgmt-section-title{color:#f87171;border-bottom:1px solid rgba(248,113,113,.2);background:rgba(248,113,113,.06)}
+.exec-box{margin-top:18px;padding:14px;background:rgba(139,92,246,.10);border:1px solid rgba(139,92,246,.5);border-radius:8px}
+.btn-setup{width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#0ea5e9,#38bdf8);border:none;border-radius:10px;color:#fff;font-size:17px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-backup{width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#dc2626,#f87171);border:none;border-radius:10px;color:#fff;font-size:17px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-setup:active,.btn-backup:active{opacity:.8}
+.btn-setup:disabled,.btn-backup:disabled{opacity:.35;cursor:not-allowed}
+.mgmt-log{margin-top:10px;padding:10px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);min-height:60px;max-height:150px;overflow-y:auto;white-space:pre-wrap;display:none}
+.mgmt-log.show{display:block}
+</style>
+<script>
+function toggleFaceDetailer() {
+  const on = document.getElementById('faceDetailerOn').checked;
+  document.getElementById('faceDetailerParams').style.display = on ? 'block' : 'none';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const cb = document.getElementById('faceDetailerOn');
+  if (cb) cb.addEventListener('change', toggleFaceDetailer);
+});
+</script>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <span class="header-title">FLUX STUDIO</span>
+    <span class="model-badge flux1" id="modelBadge">FLUX.1</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="statusText" style="font-size:10px;color:var(--muted)">未接続</span>
+    <div class="status-dot" id="statusDot"></div>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('generate')">生成</div>
+  <div class="tab" onclick="switchTab('params')">パラメータ</div>
+  <div class="tab" onclick="switchTab('history')">履歴</div>
+  <div class="tab" onclick="switchTab('manage')">管理</div>
+</div>
+<div class="page active" id="page-generate">
+  <label>📝 日本語プロンプト</label>
+  <textarea id="prompt" rows="4" placeholder="日本語でプロンプトを入力..."></textarea>
+  <button class="btn-generate f1" id="generateBtn" onclick="generate()">生成</button>
+  <div class="i2i-wrap">
+    <div class="i2i-header">
+      <span>🖼️ i2i（画像変換）</span>
+      <label class="toggle" style="margin:0">
+        <input type="checkbox" id="i2iToggle" onchange="toggleI2I()">
+        <div class="toggle-track"></div><div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="i2i-body" id="i2iBody">
+      <div class="i2i-mode-switch">
+        <button class="i2i-mode-btn active-i2i" id="btnModeI2I" onclick="setI2IMode('i2i')">🖼️ i2i</button>
+        <button class="i2i-mode-btn" id="btnModeInpaint" onclick="setI2IMode('inpaint')">🎨 Inpaint</button>
+      </div>
+      <div class="i2i-upload-area" id="i2iUploadArea" onclick="document.getElementById('i2iFileInput').click()">
+        📁 タップして画像を選択
+      </div>
+      <input type="file" id="i2iFileInput" accept="image/*" style="display:none" onchange="handleI2IUpload(this)">
+      <div class="i2i-canvas-wrap" id="i2iPreviewWrap" style="display:none">
+        <img class="i2i-preview show" id="i2iPreview" src="" alt="プレビュー">
+      </div>
+      <div class="mask-wrap" id="maskWrap">
+        <div class="i2i-canvas-wrap">
+          <img id="maskBgImg" src="" alt="">
+          <canvas id="maskCanvas"></canvas>
+        </div>
+        <div class="mask-toolbar">
+          <button class="mask-tool-btn active" id="btnPaint" onclick="setMaskTool('paint')">✏️ 塗る</button>
+          <button class="mask-tool-btn" id="btnErase" onclick="setMaskTool('erase')">◻ 消す</button>
+          <button class="mask-tool-btn" onclick="clearMask()">🗑 全消去</button>
+        </div>
+        <div class="mask-size-row">
+          <label>ブラシ</label>
+          <div class="slider-row" style="flex:1">
+            <input type="range" id="brushSize" min="5" max="80" value="20" oninput="document.getElementById('brushVal').textContent=this.value">
+            <span class="slider-val" id="brushVal">20</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-i2i-clear" id="i2iClearBtn" onclick="clearI2I()">✕ 画像をクリア</button>
+    </div>
+  </div>
+  <label>🧩 LoRA 1</label>
+  <div class="lora-block">
+    <select id="lora1" onchange="updateLoraPresetOptions()"><option value="">なし</option></select>
+    <div class="lora-str-row">
+      <span class="lora-str-label">強度</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <input type="range" min="0" max="1.5" step="0.05" value="0.8" id="lora1str" oninput="document.getElementById('lora1str-num').value=parseFloat(this.value).toFixed(2)" style="flex:1;accent-color:var(--accent)">
+        <input type="number" id="lora1str-num" min="0" max="2" step="0.05" value="0.8" style="width:65px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:14px 14px;font-size:18px;text-align:center" oninput="document.getElementById('lora1str').value=Math.min(1.5,Math.max(0,parseFloat(this.value)||0))">
+      </div>
+    </div>
+  </div>
+  <label>🧩 LoRA 2</label>
+  <div class="lora-block">
+    <select id="lora2" onchange="updateLoraPresetOptions()"><option value="">なし</option></select>
+    <div class="lora-str-row">
+      <span class="lora-str-label">強度</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <input type="range" min="0" max="1.5" step="0.05" value="0.8" id="lora2str" oninput="document.getElementById('lora2str-num').value=parseFloat(this.value).toFixed(2)" style="flex:1;accent-color:var(--accent)">
+        <input type="number" id="lora2str-num" min="0" max="2" step="0.05" value="0.8" style="width:65px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:14px 14px;font-size:18px;text-align:center" oninput="document.getElementById('lora2str').value=Math.min(1.5,Math.max(0,parseFloat(this.value)||0))">
+      </div>
+    </div>
+  </div>
+  <label>🎬 シーンプリセット</label>
+  <div class="lora-block">
+    <select id="sel-lora-preset" onchange="updateLoraPresetWarning()"><option value="">なし</option></select>
+    <div id="lora-preset-warning" style="display:none;font-size:12px;color:#ffb86c;margin-top:4px;">
+      ※選択中はposture（体位）ワイルドカードが自動でスキップされます
+    </div>
+  </div>
+    <div class="detail-section">
+    <div class="detail-toggle" style="justify-content:center;gap:16px">
+      <span onclick="toggleDetail()" style="cursor:pointer">🔀 ワイルドカード</span>
+      <span id="detailArrow" onclick="toggleDetail()" style="cursor:pointer">▼</span>
+      <label class="toggle" style="margin:0" onclick="event.stopPropagation()">
+        <input type="checkbox" id="wildcardToggle" checked onchange="onWildcardToggleChange()">
+        <div class="toggle-track"></div><div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="detail-body" id="detailBody">
+<div class="selector-row">
+        <label class="selector-label">🌍 国籍</label>
+        <select id="sel-nationality" class="selector-select" onchange="markSelected(this)">
+          <option value="">（Ollamaに任せる）</option>
+          <optgroup label="── 東アジア ──">
+            <option value="Japanese">日本人</option>
+            <option value="Korean">韓国人</option>
+            <option value="Chinese">中国人</option>
+          </optgroup>
+          <optgroup label="── 東南アジア ──">
+            <option value="Thai">タイ人</option>
+            <option value="Vietnamese">ベトナム人</option>
+            <option value="Indonesian">インドネシア人</option>
+            <option value="Filipino">フィリピン人</option>
+          </optgroup>
+          <optgroup label="── 南アジア・中東 ──">
+            <option value="Indian">インド人</option>
+            <option value="Persian">ペルシャ人</option>
+            <option value="Turkish">トルコ人</option>
+            <option value="Middle Eastern">中東系</option>
+          </optgroup>
+          <optgroup label="── アフリカ ──">
+            <option value="Egyptian">エジプト人</option>
+            <option value="Moroccan">モロッコ人</option>
+            <option value="Nigerian">ナイジェリア人</option>
+            <option value="Ethiopian">エチオピア人</option>
+          </optgroup>
+          <optgroup label="── 南米 ──">
+            <option value="Brazilian">ブラジル人</option>
+            <option value="Colombian">コロンビア人</option>
+            <option value="Mexican">メキシコ人</option>
+            <option value="Argentine">アルゼンチン人</option>
+          </optgroup>
+          <optgroup label="── 欧米 ──">
+            <option value="Scandinavian">スカンジナビア人</option>
+            <option value="German">ドイツ人</option>
+            <option value="French">フランス人</option>
+            <option value="Italian">イタリア人</option>
+            <option value="Spanish">スペイン人</option>
+            <option value="Russian">ロシア人</option>
+            <option value="Polish">ポーランド人</option>
+            <option value="Greek">ギリシャ人</option>
+            <option value="British">イギリス人</option>
+            <option value="Australian">オーストラリア人</option>
+          </optgroup>
+          <optgroup label="── その他・混血 ──">
+            <option value="Polynesian">ポリネシア人</option>
+            <option value="Eurasian, Japanese and Caucasian mixed race heritage, blending striking delicate features">日本・白人ハーフ</option>
+            <option value="Blended Latina and East Asian heritage, exotic facial bone structure">ラテン・東アジア混血</option>
+            <option value="Slavic Eastern European ancestry, sharp high cheekbones and pierce-cold eyes">東欧スラブ系</option>
+            <option value="Celtic heritage, subtle light natural freckles, porcelain skin">ケルト系・そばかす</option>
+          </optgroup>
+        </select>
+      </div>
+<div class="selector-row">
+        <label class="selector-label">🧍 体型</label>
+        <select id="sel-body" class="selector-select" onchange="markSelected(this)">
+          <option value="">（Ollamaに任せる）</option>
+          <optgroup label="── スレンダー系 ──">
+            <option value="petite and slender with delicate frame">小柄・華奢</option>
+            <option value="slim with subtle gentle curves">スリム・ほんのりカーブ</option>
+            <option value="slight and wiry with fine-boned elegance">細身・繊細な骨格</option>
+            <option value="lithe and toned with dancer's physique">しなやか・ダンサー体型</option>
+            <option value="willowy and long-limbed with elegant proportions">長身・手足が長い</option>
+          </optgroup>
+          <optgroup label="── アスリート系 ──">
+            <option value="tall and athletic with lean muscle definition">長身・筋肉質</option>
+            <option value="compact and fit with defined muscle tone">コンパクト・引き締まった</option>
+            <option value="toned lean abs with a subtle defined vertical line down the stomach, incredibly fit">腹筋・超引き締まったボディ</option>
+          </optgroup>
+          <optgroup label="── グラマー系 ──">
+            <option value="curvy hourglass figure with full bust and hips">くびれ・グラマー</option>
+            <option value="statuesque and commanding with full curves">堂々とした・豊満</option>
+            <option value="top-heavy with generous bust and slim lower body">上半身豊満・下半身スリム</option>
+            <option value="pear-shaped with slender waist and full, wide prominent hips">洋ナシ型・細腰・広い腰</option>
+            <option value="thick, highly developed voluminous thighs and heavy wide hips, pear-shaped emphasis">太もも・腰が非常に発達</option>
+          </optgroup>
+          <optgroup label="── その他 ──">
+            <option value="average build with natural gentle curves">平均的・自然なカーブ</option>
+            <option value="broad-shadowed and strong with athletic power">がっしり・力強い</option>
+            <option value="slender waist contrasted sharply against wider skeletal structural hips">細腰と骨格の広い腰のコントラスト</option>
+          </optgroup>
+        </select>
+      </div>
+<div class="selector-row">
+        <label class="selector-label">📏 胸のサイズ</label>
+        <select id="sel-bust" class="selector-select" onchange="markSelected(this)">
+          <option value="">（Ollamaに任せる）</option>
+          <optgroup label="── 小さめ ──">
+            <option value="very small flat chest, nearly non-existent breasts">ほぼ平坦・極小</option>
+            <option value="small modest chest with gentle curves">小さめ・控えめ</option>
+            <option value="perky uplifted small breasts with natural shape">小さいが張りがある</option>
+            <option value="small firm breasts with prominent stiff nipples">小さく・乳首が目立つ</option>
+            <option value="small breasts with wide-set nipples">小さく・乳首が離れ気味</option>
+          </optgroup>
+          <optgroup label="── 普通 ──">
+            <option value="average medium sized chest">普通サイズ</option>
+            <option value="teardrop shaped breasts with natural hang">涙滴型・自然な垂れ</option>
+            <option value="asymmetric breasts, slightly uneven natural shape">左右非対称・自然な形</option>
+          </optgroup>
+          <optgroup label="── 大きめ ──">
+            <option value="full round bust, noticeably large breasts">大きく丸い・目立つ</option>
+            <option value="large natural breasts with slight sag and weight">大きく・自然な垂れ感</option>
+            <option value="heavy breasts with deep natural cleavage">重さのある・深い谷間</option>
+            <option value="very large heavy breasts, extremely busty figure">非常に大きく・超巨乳</option>
+          </optgroup>
+          <optgroup label="── 特殊 ──">
+            <option value="soft breasts with large areola">柔らかく・乳輪が大きい</option>
+            <option value="breasts flushed pink from arousal, nipples erect">興奮で紅潮・乳首が勃起</option>
+            <option value="round full breasts pressed flat when lying back">仰向けで潰れる豊満な胸</option>
+          </optgroup>
+        </select>
+      </div>
+<div class="selector-row">
+        <label class="selector-label">🔻 局部</label>
+        <select id="sel-pussy" class="selector-select" onchange="markSelected(this)">
+          <option value="">（Ollamaに任せる）</option>
+          <option value="tiny pussy">tiny pussy</option>
+          <option value="innie pussy">innie pussy</option>
+          <option value="cameltoe">cameltoe</option>
+          <option value="tiny pussy, cameltoe">tiny pussy + cameltoe</option>
+        </select>
+      </div>
+<div class="selector-row">
+        <label class="selector-label">🤸 ポーズ
+          <button id="btn-nsfw1" onclick="toggleNsfwPosture(1)" style="font-size:14px;padding:6px 10px;border-radius:4px;border:1px solid #888;background:#444;color:#ccc;cursor:pointer;margin-left:4px;">🔞1</button>
+          <button id="btn-nsfw2" onclick="toggleNsfwPosture(2)" style="font-size:14px;padding:6px 10px;border-radius:4px;border:1px solid #888;background:#444;color:#ccc;cursor:pointer;margin-left:2px;">🔞2</button>
+        </label>
+        <select id="sel-posture" style="display:none"></select>
+        <div id="posture-accordion">
+          <div id="posture-toggle-btn" onclick="togglePosturePanel()" style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 14px;cursor:pointer;margin-bottom:0;">
+            <span id="posture-selected-label" style="font-size:18px;color:var(--muted);">（Ollamaに任せる）</span>
+            <span id="posture-toggle-arrow" style="color:var(--muted);font-size:14px;">▼</span>
+          </div>
+          <div id="posture-panel" style="display:none;margin-top:6px;">
+            <div id="posture-categories" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:8px;"></div>
+            <div id="posture-items" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;max-height:260px;overflow-y:auto;"></div>
+          </div>
+        </div>
+      </div>
+<div class="selector-row">
+        <label class="selector-label">🎬 シナリオ</label>
+        <select id="sel-scenario" class="selector-select" onchange="markSelected(this)">
+          <option value="">（Ollamaに任せる）</option>
+          <optgroup label="── 関係性 ──">
+            <option value="secret affair, stolen moment, desperate and urgent">秘密の逢瀬・切迫した緊張感</option>
+            <option value="forbidden relationship, knowing it's wrong but unable to stop">禁断の関係・わかっていても止まれない</option>
+            <option value="strangers drawn together, electric tension from the first touch">初対面・触れた瞬間の電流</option>
+            <option value="reunion after long separation, overwhelming need for each other">長い別れの後の再会・抑えきれない欲求</option>
+            <option value="longtime lovers, deeply familiar with every curve and response">長年の恋人・体の隅々まで知り尽くした</option>
+            <option value="paid encounter, transactional yet unexpectedly intimate">金銭関係・予想外の親密さ</option>
+          </optgroup>
+          <optgroup label="── 感情・心理 ──">
+            <option value="overwhelmed by pleasure, losing all composure">快楽に飲まれて理性が崩れていく</option>
+            <option value="completely surrendered, offering everything without resistance">完全に委ねて・抵抗する気力もなく</option>
+            <option value="conflicted desire, mind saying no while body says yes">拒みたい心と応えてしまう体</option>
+            <option value="addicted to the sensation, craving more with every breath">感覚に溺れて・息をするたびに求めてしまう</option>
+            <option value="body responding despite embarrassment, unable to hide arousal">恥ずかしいのに体が正直に反応してしまう</option>
+            <option value="discovering a new sensation, eyes wide with disbelief">初めての感覚・信じられない表情で</option>
+            <option value="experiencing pleasure for the first time, utterly overwhelmed">初めての快楽・完全に圧倒されて</option>
+            <option value="coming back for more despite knowing better, helplessly returning">ダメとわかっていても戻ってきてしまう</option>
+          </optgroup>
+          <optgroup label="── 焦らし・寸止め ──">
+            <option value="edged repeatedly, trembling and desperate for release">何度も寸止めされて・震えながら懇願</option>
+            <option value="teased to the absolute limit, whimpering and pleading">限界まで焦らされて・泣き声で懇願</option>
+            <option value="denied release again and again, frustration building unbearably">何度も絶頂を拒まれて・我慢の限界</option>
+            <option value="brought to the edge and held there, gasping and shaking">ギリギリで止められたまま・喘ぎながら震える</option>
+          </optgroup>
+          <optgroup label="── 快楽・絶頂 ──">
+            <option value="mid-orgasm, body convulsing and arching uncontrollably">絶頂の瞬間・体が勝手に反り返る</option>
+            <option value="multiple orgasms crashing one after another, unable to recover">連続絶頂・回復する間もなく次が来る</option>
+            <option value="crying from overwhelming pleasure, tears streaming silently">快楽で泣いてしまう・涙が静かに流れる</option>
+            <option value="squirting uncontrollably, face flushed with deep shame">止められない潮吹き・深い羞恥で顔が赤い</option>
+            <option value="body remembering every touch, responding automatically">体が全ての触れ方を覚えていて自然と反応する</option>
+            <option value="uncontrollably wet, dripping with arousal, thighs trembling and slick">止まらない蜜・太ももが震えて濡れている</option>
+            <option value="nipples stiffening from stimulation, breath catching sharply">刺激で乳首が立って・息が詰まる</option>
+          </optgroup>
+          <optgroup label="── アフター ──">
+            <option value="exhausted afterglow, tangled in sheets, too satisfied to move">満足しきった余韻・シーツに絡まって動けない</option>
+            <option value="used and deeply satisfied, body still trembling faintly">使われ尽くした満足感・まだ微かに震えている</option>
+            <option value="leaking and dazed, still shaking from the intensity">溢れ出しながら放心・激しさの余韻で震える</option>
+            <option value="warmth spreading through every limb, heavy and content">全身に広がる温かさ・重くて満ち足りた</option>
+          </optgroup>
+          <optgroup label="── NTR・背徳 ──">
+            <option value="cheating while partner sleeps nearby, guilt dissolving into pleasure">パートナーが近くで眠る中・罪悪感が快楽に溶ける</option>
+            <option value="secret encounter behind closed doors, heart racing with betrayal">密室の密会・裏切りで心臓が高鳴る</option>
+            <option value="stolen intimacy, knowing discovery would ruin everything">盗んだ親密さ・見つかれば全てが終わるとわかって</option>
+          </optgroup>
+          <optgroup label="── 羞恥・露出 ──">
+            <option value="exposed in a vulnerable position, acutely aware of being watched">無防備な体勢で晒されて・見られている感覚</option>
+            <option value="displayed for someone's pleasure, unable to look away">誰かの快楽のために展示されて・目が離せない</option>
+            <option value="forced to maintain eye contact during the most intimate moment">最も深い瞬間に目を逸らせない</option>
+            <option value="deeply embarrassed but unable to conceal the body's honest response">深く恥ずかしいのに体の正直な反応を隠せない</option>
+          </optgroup>
+          <optgroup label="── 軽い強引・支配 ──">
+            <option value="pinned down gently but firmly, resistance melting away">優しくでも確実に押さえられて・抵抗が溶けていく</option>
+            <option value="held in place with quiet authority, gradually giving in">静かな強さで固定されて・少しずつ従っていく</option>
+            <option value="guided into position without words, complying instinctively">言葉なく体を誘導されて・本能的に従ってしまう</option>
+            <option value="pressed against a surface, escape neither wanted nor attempted">壁や床に押し付けられて・逃げたいとも思わない</option>
+          </optgroup>
+          <optgroup label="── 密着・親密 ──">
+            <option value="bodies pressed inseparably close, breathing synchronized">離れられないほど密着して・息が合う</option>
+            <option value="heartbeats syncing through skin contact, breathless and close">肌を通じて心拍が同期して・息が続かないほど近い</option>
+            <option value="fingers interlaced tightly, holding on through every wave of sensation">指を強く絡めて・快感の波を一緒に越えていく</option>
+          </optgroup>
+        </select>
+      </div>
+<div class="selector-row">
+        <label class="selector-label">📷 カメラアングル
+          <button id="btn-nsfw-camera" onclick="toggleNsfwCamera()" style="font-size:14px;padding:6px 10px;border-radius:4px;border:1px solid #888;background:#444;color:#ccc;cursor:pointer;margin-left:4px;">🔞</button>
+        </label>
+        <select id="sel-camera" class="selector-select" onchange="markSelected(this)">
+          <!-- JS初期化で動的生成 -->
+        </select>
+      </div>
+<div class="selector-row">
+        <label class="selector-label">💇 髪型</label>
+        <select id="sel-hair" class="selector-select" onchange="markSelected(this)">
+          <!-- JS初期化で動的生成 -->
+        </select>
+      </div>
+<div class="selector-row">
+        <label class="selector-label">👁️ 視線</label>
+        <select id="sel-eye-contact" class="selector-select" onchange="markSelected(this)">
+          <!-- JS初期化で動的生成 -->
+        </select>
+      </div>
+<div class="selector-row">
+        <label class="selector-label">🎲 世界観 (World Setting)</label>
+        <select id="wcSelect" class="selector-select" onchange="markWcSelected(this)">
+          <option value="">（Ollamaに任せる）</option>
+          <option value="random">ランダム（毎回変わる）</option>
+          <optgroup label="🏯 歴史・時代">
+            <option value="0">日本神話</option>
+            <option value="1">江戸時代</option>
+            <option value="2">明治時代</option>
+            <option value="3">昭和ノスタルジア</option>
+            <option value="4">平安朝廷</option>
+            <option value="5">戦国時代</option>
+            <option value="6">中国封建時代</option>
+            <option value="7">秦朝の宮殿</option>
+            <option value="8">イスラム黄金時代</option>
+            <option value="9">古代エジプト</option>
+            <option value="10">アステカの儀式</option>
+            <option value="11">インカ帝国</option>
+            <option value="12">ローマ円形闘技場</option>
+            <option value="13">中世騎士道</option>
+            <option value="14">ルネサンスイタリア</option>
+            <option value="15">バイキング時代</option>
+            <option value="16">ヴィクトリア朝ロンドン</option>
+            <option value="17">フランス革命</option>
+            <option value="18">アメリカン・フロンティア</option>
+            <option value="19">ワイルドウェスト</option>
+            <option value="20">先史時代</option>
+          </optgroup>
+          <optgroup label="⛩️ 和・アジア文化">
+            <option value="21">神社</option>
+            <option value="22">仏教寺院</option>
+            <option value="23">禅の庭</option>
+            <option value="24">茶室</option>
+            <option value="25">旅館の廊下</option>
+            <option value="26">漁港</option>
+            <option value="27">水上夜市</option>
+            <option value="28">寿司カウンター</option>
+          </optgroup>
+          <optgroup label="🧙 ファンタジー・神話・オカルト">
+            <option value="29">西洋ファンタジー・天上界</option>
+            <option value="30">アニメ・異世界</option>
+            <option value="31">RPGの世界</option>
+            <option value="32">不思議の国</option>
+            <option value="33">ぜんまい仕掛けのドールハウス</option>
+            <option value="34">水晶の洞窟</option>
+            <option value="35">生物発光の森</option>
+            <option value="36">ミクロの世界</option>
+            <option value="37">錬金術ラボ</option>
+            <option value="38">魔法の薬屋</option>
+            <option value="39">フォークホラー</option>
+            <option value="40">ゴシック・オカルト</option>
+            <option value="41">バイユースワンプ</option>
+            <option value="42">植物薬局</option>
+            <option value="43">鏡・ガラスの世界</option>
+          </optgroup>
+          <optgroup label="🚀 SF・未来・テクノロジー">
+            <option value="44">SF・サイバーパンク</option>
+            <option value="45">宇宙オペラ</option>
+            <option value="46">スチームパンク</option>
+            <option value="47">メカ格納庫</option>
+            <option value="48">ポストアポカリプス</option>
+            <option value="49">グリッチ現実</option>
+            <option value="50">VR・メタバース</option>
+            <option value="51">無重力宇宙ステーション</option>
+            <option value="52">潜水艦制御室</option>
+            <option value="53">ハッカーの地下室</option>
+            <option value="54">ソーラーパンク</option>
+            <option value="55">バーチャルプロダクション</option>
+            <option value="56">天文台</option>
+          </optgroup>
+          <optgroup label="🦸 アクション・アドベンチャー">
+            <option value="57">スーパーヒーロー・特撮</option>
+            <option value="58">スパイ・諜報</option>
+            <option value="59">武道場</option>
+            <option value="60">地下格闘クラブ</option>
+            <option value="61">海賊船</option>
+            <option value="62">考古学・遺跡探索</option>
+            <option value="63">部族・ジャングル</option>
+            <option value="64">水中・海洋</option>
+            <option value="65">砂漠の荒野</option>
+            <option value="66">北極・雪原</option>
+            <option value="67">火山・溶岩</option>
+            <option value="68">嵐の追跡</option>
+            <option value="69">刑務所</option>
+            <option value="70">射撃場</option>
+          </optgroup>
+          <optgroup label="💼 職業・制服">
+            <option value="71">オフィス・ビジネス</option>
+            <option value="72">メイド・サービス</option>
+            <option value="73">警察・尋問</option>
+            <option value="74">医療・病院</option>
+            <option value="75">教室・教育</option>
+            <option value="76">幼稚園・保育園</option>
+            <option value="77">工場・産業</option>
+            <option value="78">自動車修理工場</option>
+            <option value="79">宗教・教会</option>
+            <option value="80">消防・救急</option>
+            <option value="81">航空</option>
+            <option value="82">厨房・シェフ</option>
+            <option value="83">美容室・ヘアサロン</option>
+            <option value="84">建設現場</option>
+            <option value="85">カーディーラー</option>
+            <option value="86">モバイルテックショップ</option>
+          </optgroup>
+          <optgroup label="🎭 芸術・エンタメ・ステージ">
+            <option value="87">K-POP・ステージ</option>
+            <option value="88">バレエ・フィギュアスケート</option>
+            <option value="89">コンサートホール</option>
+            <option value="90">サーカス・カーニバル</option>
+            <option value="91">ハイファッション</option>
+            <option value="92">ハイファッションスタジオ</option>
+            <option value="93">グラビア撮影</option>
+            <option value="94">アートスタジオ</option>
+            <option value="95">レトロ音楽バー</option>
+            <option value="96">音楽・放送スタジオ</option>
+            <option value="97">映画撮影所</option>
+            <option value="98">子ども向けテレビ番組</option>
+            <option value="99">ドライブインシアター</option>
+            <option value="100">テーマパーク</option>
+            <option value="101">空中シルクテント</option>
+          </optgroup>
+          <optgroup label="🏋️ スポーツ・アクティビティ">
+            <option value="102">現代ジム・フィットネス</option>
+            <option value="103">スイミングプール</option>
+            <option value="104">競技スポーツ</option>
+            <option value="105">乗馬</option>
+            <option value="106">チアリーディング</option>
+            <option value="107">新体操アリーナ</option>
+            <option value="108">フェンシング</option>
+            <option value="109">室内クライミング</option>
+            <option value="110">アイススケートリンク</option>
+            <option value="111">野球場</option>
+            <option value="112">サッカー場</option>
+            <option value="113">モータースポーツサーキット</option>
+            <option value="114">サーファーズビーチ小屋</option>
+            <option value="115">熱気球</option>
+          </optgroup>
+          <optgroup label="🌿 自然・アウトドア">
+            <option value="116">花畑</option>
+            <option value="117">農場・牧場</option>
+            <option value="118">屋上庭園</option>
+            <option value="119">ヴィクトリア朝温室</option>
+            <option value="120">バイカーギャング</option>
+            <option value="121">水上コテージ</option>
+            <option value="122">氷のホテル</option>
+            <option value="123">灯台</option>
+            <option value="124">雲の神殿</option>
+            <option value="125">砂漠のオアシステント</option>
+            <option value="126">ペントハウスバルコニー</option>
+            <option value="127">屋上ヘリポート</option>
+            <option value="128">豪華ヨット</option>
+          </optgroup>
+          <optgroup label="✨ ラグジュアリー・高級">
+            <option value="129">現代グラマラス</option>
+            <option value="130">高級社交場・カジノ</option>
+            <option value="131">豪華列車</option>
+            <option value="132">VIP空港ラウンジ</option>
+            <option value="133">邸宅図書館</option>
+            <option value="134">古書店</option>
+            <option value="135">ゲーマー・配信者</option>
+            <option value="136">レトロアーケード</option>
+            <option value="137">ボードゲームカフェ</option>
+            <option value="138">脱出ゲーム</option>
+            <option value="139">占い部屋</option>
+            <option value="140">ペットショップ</option>
+          </optgroup>
+          <optgroup label="🏙️ 現代・日常・都市">
+            <option value="141">郊外の一軒家</option>
+            <option value="142">コンビニ</option>
+            <option value="143">通勤電車</option>
+            <option value="144">都市型集合住宅</option>
+            <option value="145">深夜コインランドリー</option>
+            <option value="146">廃地下鉄駅</option>
+            <option value="147">廃遊園地</option>
+            <option value="148">廃病院</option>
+            <option value="149">フリーマーケット</option>
+            <option value="150">レコードショップ</option>
+            <option value="151">タトゥーパーラー</option>
+            <option value="152">アロマスパ・マッサージ</option>
+            <option value="153">家庭教師</option>
+            <option value="154">レトロローラーリンク</option>
+            <option value="155">無限の廊下</option>
+            <option value="156">ノワール探偵</option>
+            <option value="157">天候ドラマ</option>
+            <option value="158">キャンディ工場</option>
+          </optgroup>
+          <optgroup label="🔞 大人・アダルト">
+            <option value="159">露出美学</option>
+            <option value="160">緊縛アート</option>
+            <option value="161">翌朝</option>
+            <option value="162">スライム・モンスター遭遇</option>
+            <option value="163">催眠の雰囲気</option>
+            <option value="164">目隠し美学</option>
+            <option value="165">ランジェリーブティック</option>
+            <option value="166">巨人・マクロ</option>
+            <option value="167">心理スリラー</option>
+            <option value="168">サンタのワークショップ</option>
+          </optgroup>
+        </select>
+      </div>
+      <button onclick="resetSelectors()" class="btn-reset">🔄 全てリセット</button>
+    </div>
+  </div>
+  <label>🔢 バッチ枚数</label>
+  <input type="number" id="batchInput" min="1" max="8" value="1" style="width:100%;text-align:center">
+  <label>👣 ステップ数</label>
+  <div class="slider-row">
+    <input type="range" id="steps" min="1" max="50" value="20" oninput="document.getElementById('stepsInput').value=this.value">
+    <input type="number" id="stepsInput" min="1" max="150" value="20" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:14px 8px;font-size:18px;text-align:center" oninput="var v=parseInt(this.value);if(!isNaN(v)&&v>=1)document.getElementById('steps').value=Math.min(50,v);">
+  </div>
+  <label>🎲 シード</label>
+  <div class="seed-row">
+    <input type="text" id="seed" value="-1">
+    <button class="btn-icon" onclick="randomSeed()">🎲</button>
+    <button class="btn-icon" onclick="copySeed()" id="copySeedBtn" style="display:none">📋</button>
+  </div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label"><span id="progressLabel">生成中...</span><span id="progressPct">0%</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+  <div class="result-wrap" id="resultWrap" style="display:none">
+    <img class="result-img" id="resultImg" src="" alt="">
+    <div class="result-meta">
+      <div class="result-seed" id="resultSeed"></div>
+      <div class="translated" id="translatedPrompt"></div>
+    </div>
+  </div>
+</div>
+<!-- プレビューモーダル -->
+<div class="preview-modal" id="previewModal">
+  <img id="previewImg" src="" alt="">
+  <button class="preview-close-btn" onclick="closePreview()">✕</button>
+  <div class="preview-overlay-text">
+    <div class="preview-seed" id="previewSeed"></div>
+    <div class="preview-jp" id="previewPrompt"></div>
+    <div class="preview-en" id="previewTranslated"></div>
+  </div>
+</div>
+
+<!-- パラメータタブ -->
+<div class="page" id="page-params">
+  <label>⚖️ CFG値</label>
+  <input type="number" id="cfgInput" min="0.1" max="20" step="0.1" value="1.0">
+
+  <label>💧 Denoise</label>
+  <input type="number" id="denoiseInput" min="0.01" max="1.0" step="0.01" value="1.0">
+
+  <label>🧭 Guidance（FluxGuidance）</label>
+  <input type="number" id="guidanceInput" min="0.1" max="20" step="0.1" value="2.0">
+
+  <label>🎚️ サンプラー</label>
+  <select id="sampler">
+    <option value="dpmpp_2m" selected>dpmpp_2m</option>
+    <option value="euler">euler</option>
+    <option value="euler_ancestral">euler_a</option>
+    <option value="dpmpp_sde">dpmpp_sde</option>
+    <option value="ddim">ddim</option>
+  </select>
+
+  <label>📅 スケジューラー</label>
+  <select id="scheduler">
+    <option value="simple" selected>simple</option>
+    <option value="ddim_uniform">ddim_uniform</option>
+    <option value="normal">normal</option>
+    <option value="karras">karras</option>
+    <option value="exponential">exponential</option>
+  </select>
+
+  <label>🚫 ネガティブプロンプト</label>
+  <textarea id="negPrompt" rows="3">deformed hands, extra fingers, extra limbs, floating limbs, bad anatomy, bad teeth, open mouth</textarea>
+
+  <div class="toggle-row" style="margin-top:16px">
+    <span style="font-size:14px;font-weight:600">🎭 FaceDetailer（32/48GB）</span>
+    <label class="toggle"><input type="checkbox" id="faceDetailerOn" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+  </div>
+  <div id="faceDetailerParams" style="margin-top:10px">
+    <label>👤 FD Denoise <span style="font-size:14px;color:var(--muted)">(推奨: 0.42)</span></label>
+    <input type="number" id="fdDenoise" min="0.01" max="1.0" step="0.01" value="0.42">
+    <label>👤 FD Max Size <span style="font-size:14px;color:var(--muted)">(推奨: 768)</span></label>
+    <input type="number" id="fdMaxSize" min="256" max="1024" step="64" value="768">
+    <label>👤 FD Seed <span style="font-size:14px;color:var(--muted)">(0以上を指定)</span></label>
+    <input type="number" id="fdSeed" min="0" max="999999999" step="1" value="0">
+  </div>
+</div>
+<!-- 履歴タブ -->
+<div class="page" id="page-history">
+  <div class="history-grid" id="historyGrid">
+    <div class="empty-state">まだ画像がありません<br>生成すると履歴に追加されます</div>
+  </div>
+</div>
+<!-- 管理タブ -->
+<div class="page" id="page-manage">
+      <label>🔗 ComfyUI URL</label>
+      <div class="url-row">
+        <input type="url" id="serverUrl" placeholder="https://xxxxx-8188.proxy.runpod.net" value="https://eoqut18g43otfm-8188.proxy.runpod.net">
+        <button class="btn-connect" onclick="connect()">接続</button>
+      </div>
+      <label style="margin-top:12px">🤖 モデル</label>
+      <div class="model-switch">
+        <div class="model-btn af1" id="btnF1" onclick="setModel('flux1')">FLUX.1 Dev</div>
+        <div class="model-btn" id="btnF2" onclick="setModel('flux2')">FLUX.2 Klein</div>
+      </div>
+      <label style="margin-top:12px">📓 Jupyter URL</label>
+      <input type="url" id="jupyterUrl" placeholder="https://xxxxx-8888.proxy.runpod.net" value="https://eoqut18g43otfm-8888.proxy.runpod.net">
+      <label style="margin-top:12px">💻 TIER（VRAM）</label>
+      <select id="setupTier">
+        <option value="16GB">16GB（RTX A4000等）</option>
+        <option value="24GB">24GB（RTX 4090等）</option>
+        <option value="32GB">32GB（RTX 3090等）</option>
+        <option value="48GB" selected>48GB（A40/A100等）</option>
+      </select>
+      <div class="exec-box">
+        <label style="margin-top:0">🤖 モデル</label>
+        <select id="setupModel" style="display:none">
+          <option value="flux1" selected>FLUX.1 Dev</option>
+          <option value="flux2">FLUX.2 Klein</option>
+        </select>
+        <div class="model-switch">
+          <div class="model-btn af1" id="setupBtnF1" onclick="setSetupModel('flux1')">FLUX.1 Dev</div>
+          <div class="model-btn" id="setupBtnF2" onclick="setSetupModel('flux2')">FLUX.2 Klein</div>
+        </div>
+        <button class="btn-setup" id="setupBtn" onclick="runSetup()">▶ セットアップ実行</button>
+        <div class="mgmt-log" id="setupLog"></div>
+        <p style="color:var(--muted);font-size:14px;margin-top:16px;line-height:1.6">現在のワークフロー・設定ファイルをzipで保存します。<br>Jupyter URLはセットアップと同じものを使用します。</p>
+        <button class="btn-backup" id="backupBtn" onclick="runBackup()">💾 バックアップ実行</button>
+        <div class="mgmt-log" id="backupLog"></div>
+      </div>
+</div>
+<script>
+
+const SP2 = `/no_think
+
+You are an expert prompt engineer specializing in FLUX.2 Klein adult image generation. Your task is to transform the user's input (often simple Japanese) into a single, dense, natural-language English prompt that maximizes FLUX.2 Klein's photorealistic output.
+
+# Priority Rules (STRICTLY FOLLOW)
+User input ALWAYS overrides wildcard parameters. Apply this priority:
+1. User input (HIGHEST): character identity, nationality, age, body type, clothing, sexual acts — these are ABSOLUTE and must never be altered or overridden.
+2. Wildcard parameters (SUPPLEMENTARY): pose, expression, lighting, camera angle, mood, time — these fill in only what the user has NOT specified.
+If wildcard contradicts user input, DISCARD the wildcard value and use the user's specification.
+
+# Output Rules
+- Output ONLY the final English prompt. No translations, no explanations, no labels, no thinking tags.
+- All depicted characters are explicitly adults (20-50 years old).
+- Write in fluent, descriptive prose — NOT tag lists.
+- CRITICAL: Preserve and incorporate ALL world-setting elements provided in the input exactly as given.
+
+# FLUX.2 Klein Best Practices
+- Be specific and rich in description.
+- Forbidden tags: "masterpiece", "best quality", "4k".
+- Use hyper-specific organic details: "fine skin pores", "natural subsurface scattering", "film grain".
+- Anatomy: perfect human anatomy, physically plausible body and limb positions. All body parts must be anatomically consistent and connected. Sexual poses must follow realistic biomechanics — no impossible bends, phantom limbs, or disconnected body parts.
+- Spatial coherence: correct size ratio between bodies, limbs interacting in physically plausible ways.
+- Always describe hand and limb positions explicitly and naturally.
+
+# Output Format
+One single paragraph in English. Natural prose. Highly descriptive.`;
+
+const SP1 = `/no_think
+
+You are an expert prompt engineer specializing in FLUX.1 Dev adult image generation. Your task is to transform the user's input (often simple Japanese) into a single, dense, natural-language English prompt that maximizes FLUX.1 Dev's photorealistic output.
+
+# Priority Rules (STRICTLY FOLLOW)
+User input ALWAYS overrides wildcard parameters. Apply this priority:
+1. User input (HIGHEST): character identity, nationality, age, body type, clothing, sexual acts — these are ABSOLUTE and must never be altered or overridden.
+2. Wildcard parameters (SUPPLEMENTARY): pose, expression, lighting, camera angle, mood, time — these fill in only what the user has NOT specified.
+If wildcard contradicts user input, DISCARD the wildcard value and use the user's specification.
+
+# Output Rules
+- Output ONLY the final English prompt. No translations, no explanations, no labels, no thinking tags.
+- All depicted characters are explicitly adults (20-50 years old).
+- Write in fluent, descriptive prose — NOT tag lists.
+- CRITICAL: Preserve and incorporate ALL world-setting elements provided in the input exactly as given.
+
+# FLUX.1 Dev Best Practices
+- Be specific and rich in description.
+- Forbidden tags: "masterpiece", "best quality".
+- Use hyper-specific organic details: "fine skin pores", "natural subsurface scattering", "film grain".
+- Anatomy: perfect human anatomy, physically plausible body and limb positions. All body parts must be anatomically consistent and connected. Sexual poses must follow realistic biomechanics — no impossible bends, phantom limbs, or disconnected body parts.
+- Spatial coherence: correct size ratio between bodies, limbs interacting in physically plausible ways.
+- Always describe hand and limb positions explicitly and naturally.
+
+# Output Format
+One single paragraph in English. Natural prose. Highly descriptive.`;
+
+const WS_JA=[
+"日本神話",
+"江戸時代",
+"明治時代",
+"昭和ノスタルジア",
+"平安朝廷",
+"戦国時代",
+"中国封建時代",
+"秦朝の宮殿",
+"イスラム黄金時代",
+"古代エジプト",
+"アステカの儀式",
+"インカ帝国",
+"ローマ円形闘技場",
+"中世騎士道",
+"ルネサンスイタリア",
+"バイキング時代",
+"ヴィクトリア朝ロンドン",
+"フランス革命",
+"アメリカン・フロンティア",
+"ワイルドウェスト",
+"先史時代",
+"神社",
+"仏教寺院",
+"禅の庭",
+"茶室",
+"旅館の廊下",
+"漁港",
+"水上夜市",
+"寿司カウンター",
+"西洋ファンタジー・天上界",
+"アニメ・異世界",
+"RPGの世界",
+"不思議の国",
+"ぜんまい仕掛けのドールハウス",
+"水晶の洞窟",
+"生物発光の森",
+"ミクロの世界",
+"錬金術ラボ",
+"魔法の薬屋",
+"フォークホラー",
+"ゴシック・オカルト",
+"バイユースワンプ",
+"植物薬局",
+"鏡・ガラスの世界",
+"SF・サイバーパンク",
+"宇宙オペラ",
+"スチームパンク",
+"メカ格納庫",
+"ポストアポカリプス",
+"グリッチ現実",
+"VR・メタバース",
+"無重力宇宙ステーション",
+"潜水艦制御室",
+"ハッカーの地下室",
+"ソーラーパンク",
+"バーチャルプロダクション",
+"天文台",
+"スーパーヒーロー・特撮",
+"スパイ・諜報",
+"武道場",
+"地下格闘クラブ",
+"海賊船",
+"考古学・遺跡探索",
+"部族・ジャングル",
+"水中・海洋",
+"砂漠の荒野",
+"北極・雪原",
+"火山・溶岩",
+"嵐の追跡",
+"刑務所",
+"射撃場",
+"オフィス・ビジネス",
+"メイド・サービス",
+"警察・尋問",
+"医療・病院",
+"教室・教育",
+"幼稚園・保育園",
+"工場・産業",
+"自動車修理工場",
+"宗教・教会",
+"消防・救急",
+"航空",
+"厨房・シェフ",
+"美容室・ヘアサロン",
+"建設現場",
+"カーディーラー",
+"モバイルテックショップ",
+"K-POP・ステージ",
+"バレエ・フィギュアスケート",
+"コンサートホール",
+"サーカス・カーニバル",
+"ハイファッション",
+"ハイファッションスタジオ",
+"グラビア撮影",
+"アートスタジオ",
+"レトロ音楽バー",
+"音楽・放送スタジオ",
+"映画撮影所",
+"子ども向けテレビ番組",
+"ドライブインシアター",
+"テーマパーク",
+"空中シルクテント",
+"現代ジム・フィットネス",
+"スイミングプール",
+"競技スポーツ",
+"乗馬",
+"チアリーディング",
+"新体操アリーナ",
+"フェンシング",
+"室内クライミング",
+"アイススケートリンク",
+"野球場",
+"サッカー場",
+"モータースポーツサーキット",
+"サーファーズビーチ小屋",
+"熱気球",
+"花畑",
+"農場・牧場",
+"屋上庭園",
+"ヴィクトリア朝温室",
+"バイカーギャング",
+"水上コテージ",
+"氷のホテル",
+"灯台",
+"雲の神殿",
+"砂漠のオアシステント",
+"ペントハウスバルコニー",
+"屋上ヘリポート",
+"豪華ヨット",
+"現代グラマラス",
+"高級社交場・カジノ",
+"豪華列車",
+"VIP空港ラウンジ",
+"邸宅図書館",
+"古書店",
+"ゲーマー・配信者",
+"レトロアーケード",
+"ボードゲームカフェ",
+"脱出ゲーム",
+"占い部屋",
+"ペットショップ",
+"郊外の一軒家",
+"コンビニ",
+"通勤電車",
+"都市型集合住宅",
+"深夜コインランドリー",
+"廃地下鉄駅",
+"廃遊園地",
+"廃病院",
+"フリーマーケット",
+"レコードショップ",
+"タトゥーパーラー",
+"アロマスパ・マッサージ",
+"家庭教師",
+"レトロローラーリンク",
+"無限の廊下",
+"ノワール探偵",
+"天候ドラマ",
+"キャンディ工場",
+"露出美学",
+"緊縛アート",
+"翌朝",
+"スライム・モンスター遭遇",
+"催眠の雰囲気",
+"目隠し美学",
+"ランジェリーブティック",
+"巨人・マクロ",
+"心理スリラー",
+"サンタのワークショップ"
+];
+const WS=[
+"Japanese Myth — Species: Yokai, Kunoichi, Kitsune, Yuki-onna. Setting: Old Shinto shrine, bamboo forest, moonlit pond. Props: Paper lanterns, fox masks, shimenawa ropes.",
+"Edo Period — Species: Oiran courtesan, Geisha, Samurai's daughter. Setting: Yoshiwara district, traditional teahouse, Edo castle interior. Props: Silk kimono, oil-paper umbrella, ornate hairpins.",
+"Meiji Era — Species: Bunmei-kaika lady, Westernized aristocrat. Setting: Brick warehouse, gas-lit Ginza street, Western-style mansion. Props: Hakama with boots, bonnet hat, lace parasol.",
+"Showa Nostalgia — Species: Showa-era Woman. Setting: 1970s Japanese living room, retro coffee shop. Props: Floral house dress, kotatsu.",
+"Heian Court — Species: Heian Noblewoman, Court Poet. Setting: Imperial palace chamber, garden pavilion. Props: Twelve-layered junihitoe robes, calligraphy brush.",
+"Sengoku Period — Species: Onna-bugeisha, Daimyo's Wife. Setting: Mountain castle keep, war camp. Props: Naginata, lacquered armor.",
+"Feudal China — Species: Imperial Concubine, Wuxia Heroine. Setting: Imperial palace chamber, lantern-lit courtyard. Props: Silk qipao, jade ornaments.",
+"Qin Dynasty Palace — Species: Imperial Concubine, Terracotta Sentinel. Setting: Vast stone palace, terracotta army hall. Props: Embroidered hanfu robes, jade scepter.",
+"Islamic Golden Age — Species: Court Scholar, Persian Princess. Setting: Tiled mosque courtyard, spice bazaar. Props: Astrolabe, silk hijab.",
+"Ancient Egypt — Species: Pharaoh's Daughter, High Priestess. Setting: Temple of Karnak, pyramid interior. Props: Gold collar, kohl eyeliner.",
+"Aztec Ceremony — Species: Aztec Priestess. Setting: Stepped pyramid, ceremonial temple. Props: Feathered headdress, obsidian jewelry.",
+"Inca Empire — Species: Sun Priestess, Quechua Noble. Setting: Machu Picchu terraces, sun temple. Props: Woven textiles, gold sun disc.",
+"Roman Colosseum — Species: Gladiatrix, Patrician Spectator. Setting: Colosseum arena floor, marble villa. Props: Bronze armor, gladius sword.",
+"Medieval Chivalry — Species: Knight, Noblewoman. Setting: Stone castle hall, jousting tournament field. Props: Chainmail, heraldic surcoat.",
+"Renaissance Italy — Species: Courtesan, Artist's Muse. Setting: Florence villa, candlelit studio. Props: Brocade gown, fresh canvas.",
+"Viking Age — Species: Shieldmaiden, Volva Seer. Setting: Longhouse hearth, snowy fjord shore. Props: Round shield, runestone.",
+"Victorian London — Species: Aristocratic Lady, Suffragette. Setting: Foggy gas-lit cobblestone street, Mayfair townhouse. Props: Corset, parasol.",
+"French Revolution — Species: Revolutionary Citizen, Aristocrat in Hiding. Setting: Cobblestone Paris street, prison cell. Props: Tricolor cockade, period gown.",
+"American Frontier — Species: Pioneer Woman, Frontier Settler. Setting: Wagon train, frontier town main street. Props: Bonnet, rifle.",
+"Wild West — Species: Cowgirl, Outlaw. Setting: Dusty saloon, wooden barn. Props: Denim shorts, leather boots, revolver.",
+"Prehistoric — Species: Cavewoman, Tribal Huntress. Setting: Cave dwelling, mammoth plains. Props: Fur garment, stone tools.",
+"Shinto Shrine — Species: Shrine Maiden, Priest. Setting: Traditional shrine grounds, torii gate. Props: Omikuji, wooden ema.",
+"Buddhist Temple — Species: Monk, Pilgrim. Setting: Zen temple garden, wooden pagoda. Props: Incense, prayer beads.",
+"Zen Garden — Species: Shrine Maiden, Tea Ceremony Master. Setting: Raked sand garden, koi pond. Props: Bamboo rake, stone lantern.",
+"Tea Ceremony Room — Species: Tea Master, Practitioner. Setting: Tatami-floored chashitsu, garden-view veranda. Props: Bamboo whisk, matcha bowl.",
+"Traditional Ryokan Corridor — Species: Ryokan Hostess, Secret Lover. Setting: Long polished wooden hallway, sliding paper shoji doors. Props: Yukata robe, wooden geta sandals.",
+"Fishing Port — Species: Fisherwoman, Dockside Vendor. Setting: Morning fishing harbor, weathered pier. Props: Rubber boots, fish basket.",
+"Floating Night Market — Species: Boat Vendor, Night Market Shopper. Setting: Canal filled with wooden boats, glowing paper lanterns. Props: Street food skewers, paddle, colorful boat canopy.",
+"Sushi Counter — Species: Itamae Chef, Sushi Diner. Setting: Polished Hinoki wood counter, traditional sushi restaurant. Props: Sharp Yanagiba knife, fresh seafood, bamboo sushi mat.",
+"Western Fantasy & Celestial — Species: Elf, Dark Elf, Succubus, Fairy, Angel, Demon, Vampire. Setting: Ancient ruins, magical forest, heavenly sanctuary, gothic castle. Props: Magic aura, ethereal wings, horns, halos.",
+"Anime & Isekai — Species: Magical Girl, Isekai Heroine, Monster Girl. Setting: Magic academy, floating island, summoning circle. Props: Glowing grimoire, magic wand.",
+"RPG World — Species: RPG Heroine, JRPG Protagonist. Setting: Fantasy dungeon, boss arena. Props: Oversized weapon, health potion, glowing crystal.",
+"Wonderland — Species: Alice-like Adventurer, Mad Tea Hostess. Setting: Whimsical garden, mismatched tea party. Props: Oversized teacup, checkerboard floor.",
+"Clockwork Dollhouse — Species: Porcelain Doll, Mechanical Marionette. Setting: Oversized dollhouse interior. Props: Hinged joints visible, wind-up mechanism.",
+"Crystal Caverns — Species: Cave Explorer, Crystal Sorceress. Setting: Glowing geode cavern, crystalline ballroom. Props: Glowing gemstones, prismatic light reflections.",
+"Bioluminescent Forest — Species: Forest Spirit, Glow Pixie. Setting: Glowing mushroom grove, luminescent stream. Props: Glowing vines, fireflies.",
+"Microscopic World — Species: Shrunken Adventurer, Insect-Sized Pilot. Setting: Giant cell interior, microscopic forest. Props: Towering pollen grains, refracted light spectrum.",
+"Alchemy Lab — Species: Alchemist, Potion Brewer. Setting: Stone-walled laboratory, bubbling cauldron. Props: Glass beakers, glowing potions.",
+"Magic Potion Shop — Species: Potion Master, Fantasy Traveler. Setting: Cluttered apothecary shelves, bubbling glowing liquids. Props: Corked vials, glowing elixirs, mortar and pestle.",
+"Folk Horror — Species: Village Maiden, Cult Priestess. Setting: Remote village, stone circle. Props: Straw effigy, ritual mask.",
+"Gothic & Occult — Species: Gothic Witch, Vampire Queen, Ghost. Setting: Haunted mansion, candlelit ritual chamber, ancient catacombs. Props: Pentagram, velvet coffin, skulls.",
+"Bayou Swamp — Species: Voodoo Priestess, Swamp Witch. Setting: Misty cypress swamp, alligator-filled bog. Props: Hanging moss, voodoo charms.",
+"Botanical Apothecary — Species: Herbalist, Witch-doctor. Setting: Wooden apothecary shop, mortar workshop. Props: Glass jars of herbs, brass scales.",
+"Mirror & Glass World — Species: Reflection Witch, Glass Dancer. Setting: Hall of infinite mirrors, glass labyrinth. Props: Multi-faceted reflections, crystalline surfaces.",
+"Sci-Fi & Cyberpunk — Species: Android, Replicant, Net Runner. Setting: Neon-lit lab, cyberpunk alley, glowing sci-fi sleeping pods, cyber-doll assembly line. Props: Glowing circuits, latex plugsuit, cybernetic visor.",
+"Space Opera — Species: Space Marine, Alien Queen, Astronaut. Setting: Zero-G chamber, Mars colony dome, asteroid mining rig. Props: Sci-fi blaster, space suit, zero-G handles.",
+"Steampunk — Species: Aristocrat, Clockwork Automaton, Aeronaut. Setting: Clockwork laboratory, brass-fitted zeppelin bridge. Props: Corset, brass goggles, moving copper gears.",
+"Mecha & Hangar — Species: Mecha Pilot, Elite Engineer. Setting: Mecha hangar, armored cockpit. Props: Tight plugsuit, metal control panels.",
+"Post-Apocalyptic — Species: Wasteland Survivor, Scavenger. Setting: Ruined city, abandoned factory. Props: Torn rags, goggles, dirt smudges.",
+"Glitch Reality — Species: Reality Glitcher. Setting: Pixelated dimension, datamoshed environment. Props: RGB color bleeding, error messages.",
+"VR / Metaverse Room — Species: VR Gamer, Metaverse Explorer. Setting: Minimalist dark room, glowing boundary lines, cyberpunk aesthetic. Props: VR headset, haptic feedback gloves, motion controllers.",
+"Zero-Gravity Space Station — Species: Astronaut, Zero-G Researcher. Setting: Floating airlock, zero-gravity observatory. Props: Floating water droplets, weightless hair, space suit.",
+"Submarine Control Room — Species: Submarine Commander, Sonar Operator. Setting: Claustrophobic steel corridor, red tactical lighting. Props: Periscope, glowing sonar screen, heavy steel hatches.",
+"Hacker's Basement — Species: Underground Hacker, Cyber Mercenary. Setting: Messy basement, multiple glowing monitors with cascading code. Props: Mechanical keyboard, messy cables, hooded sweatshirt.",
+"Solarpunk — Species: Eco-engineer, Solar Activist. Setting: Green rooftop city, vine-wrapped tower. Props: Solar panel patterns, glowing biotech.",
+"Virtual Production — Species: Motion-capture Actress, VFX Artist. Setting: LED volume stage, green-screen studio. Props: Mocap suit with markers, camera rig.",
+"Astronomical Observatory — Species: Astronomer, Stargazer. Setting: Open observatory dome, star-filled night sky view. Props: Massive telescope, star charts, glowing monitors.",
+"Superhero & Tokusatsu — Species: Superheroine, Sentai Fighter, Villainess. Setting: City rooftop at night, destroyed metropolis. Props: Spandex suit, cape, transformation belt.",
+"Espionage — Species: Female Spy, Femme Fatale. Setting: Embassy ballroom, encrypted server room. Props: Silenced pistol, briefcase of secrets.",
+"Martial Arts Dojo — Species: Martial Artist, Kung Fu Fighter. Setting: Traditional dojo, bamboo forest. Props: Wooden dummy, silk robes, katana.",
+"Underground Fight Club — Species: Female Brawler, Cage Fighter. Setting: Dim warehouse ring, basement gym. Props: Bandaged hands, blood-stained tank top.",
+"Pirate Ship — Species: Pirate Captain, Buccaneer. Setting: Galleon deck, tropical island shore. Props: Tricorn hat, cutlass.",
+"Archaeology — Species: Archaeologist, Tomb Raider. Setting: Ancient tomb, jungle ruin. Props: Leather satchel, fedora, dusty manuscript.",
+"Tribal & Jungle — Species: Amazonian Warrior, Jungle Native. Setting: Tropical rainforest, ancient jungle temple. Props: Tribal tattoos, bone jewelry, spear.",
+"Aquatic & Marine — Species: Mermaid, Marine Biologist. Setting: Giant glass tunnel, luminescent deep-sea palace, glowing coral reef. Props: Wetsuit, bioluminescent coral strands.",
+"Desert Wasteland — Species: Nomad, Desert Wanderer. Setting: Endless dunes, oasis ruins. Props: Cloth wrappings, sun-bleached gear.",
+"Arctic & Snow — Species: Ice Witch, Snow Goddess. Setting: Ice cave palace, frozen tundra, ice bed. Props: Fur-trimmed cloak, breath mist, crystal ice formations.",
+"Volcano & Magma — Species: Fire Sorceress, Lava Goddess. Setting: Volcanic crater, lava-lit cave. Props: Glowing molten ground, ember sparks.",
+"Storm Chasing — Species: Storm Chaser, Meteorologist. Setting: Tornado horizon, lightning-lit plains. Props: Wind-whipped jacket, soaked clothing.",
+"Prison — Species: Female Inmate, Prison Guard. Setting: Cell block, exercise yard. Props: Striped uniform, barred door.",
+"Gun Firing Range — Species: Marksman, Tactical Instructor. Setting: Indoor shooting lane, acoustic foam walls. Props: Handgun, ear protection, safety glasses, spent brass casings.",
+"Office & Business — Species: Office Lady, Female Executive, Secretary. Setting: Corporate office, boardroom, late-night cubicle. Props: Glasses, tight pencil skirt, briefcase.",
+"Maid & Service — Species: Maid, Butler-girl. Setting: Luxury mansion, traditional maid cafe. Props: Frilly apron, feather duster, lace headpiece.",
+"Police & Interrogation — Species: Female Police Officer, Detective. Setting: Interrogation room, police station. Props: Handcuffs, badge, tactical uniform.",
+"Medical & Hospital — Species: Nurse, Surgeon, Cybernetic Doctor. Setting: Hospital ward, sterile operating theater, neon-lit augmentation lab. Props: Stethoscope, surgical mask, glowing fluid tubes.",
+"Classroom & Education — Species: University Student, Professor. Setting: University lecture hall, library archives. Props: Textbooks, blazer, study notes.",
+"Kindergarten & Nursery — Species: Nursery Teacher, Caretaker. Setting: Kindergarten playroom, nap time room. Props: Apron, plush toys, colorful play mats.",
+"Industrial Factory — Species: Factory Worker, Machine Operator. Setting: Assembly line, industrial plant. Props: Overalls, hard hat, oil smudges.",
+"Auto Garage — Species: Mechanic, Grease Monkey. Setting: Auto repair shop, garage. Props: Oil-stained jumpsuit, heavy tools, exposed engine.",
+"Religious & Church — Species: Nun, Sister, Priestess. Setting: Grand church, confessional booth. Props: Habit, rosary, candles, stained glass.",
+"Fire & Rescue — Species: Firefighter, Paramedic. Setting: Burning building, fire station. Props: Bunker gear, helmet, soot smudges.",
+"Aviation — Species: Flight Attendant, Female Pilot. Setting: Airplane cabin, cockpit. Props: Pilot uniform, headset.",
+"Kitchen & Chef — Species: Female Chef, Barista. Setting: Restaurant kitchen, indie coffee shop, neon fast-food counter. Props: White chef coat, espresso machine, milkshake.",
+"Barber Shop — Species: Hair Stylist, Salon Customer. Setting: Chic salon interior, large illuminated mirrors, styling chairs. Props: Scissors, hair dryer, draped cape, hairspray mist.",
+"Construction Site — Species: Site Supervisor, Heavy Machinery Operator. Setting: Unfinished concrete skyscraper skeleton, scaffolding. Props: Hard hat, neon safety vest.",
+"Car Dealership — Species: Luxury Showroom Consultant. Setting: Gleaming polished floor showroom, spotlights on pristine vehicles. Props: High-end sports car, sleek business attire.",
+"Mobile Tech Shop — Species: Tech Support Specialist, Retail Consultant. Setting: Brightly-lit electronics shop, repair counter. Props: Tech polo shirt, display devices.",
+"K-Pop & Stage — Species: K-Pop Idol, Backup Dancer. Setting: Concert stage, dance studio. Props: Glittery costume, fog machine.",
+"Ballet & Figure Skating — Species: Ballerina, Figure Skater. Setting: Grand theater stage, ice rink. Props: Tutu, pointe shoes, ribbon.",
+"Symphony Hall — Species: Solo Violinist, Conductor. Setting: Grand symphony hall, orchestra pit. Props: Black gown, violin.",
+"Circus & Carnival — Species: Acrobat, Magician, Ringmaster. Setting: Big top tent, carnival stage. Props: Trapeze, fishnet tights, glitter.",
+"Haute Couture — Species: Runway Model, Fashion Designer. Setting: Paris fashion runway, photoshoot backstage. Props: Avant-garde gown, designer heels.",
+"High-Fashion Photo Studio — Species: Top Model, Fashion Photographer. Setting: Minimalist studio with white cyclorama wall, strobe lights. Props: High-end camera rig, softboxes.",
+"Gravure Shoot — Species: Gravure Model, Photographer. Setting: White cyclorama studio, beach photoshoot. Props: Reflector, camera, swimsuit.",
+"Art Studio — Species: Artist, Muse. Setting: Loft studio, paint-splattered floor. Props: Easel, oil paints, smock.",
+"Retro Music Bar — Species: Lounge Singer, Bartender. Setting: 1960s lounge, dim speakeasy. Props: Vintage microphone, satin gown.",
+"Music & Broadcasting Studio — Species: Karaoke Singer, TV Host, Radio DJ. Setting: Neon-lit karaoke booth, TV studio set, soundproof recording booth. Props: Microphone, teleprompter, headphones.",
+"Movie Backlot — Species: Film Director, Hollywood Actor. Setting: Artificial city street facade, massive lighting rigs. Props: Clapperboard, director's chair, boom mic.",
+"Children's TV Show — Species: Vibrant Show Host, Costumed Performer. Setting: Brightly colored set with oversized props. Props: Colorful foam shapes, puppet props.",
+"Drive-in Theater — Species: Retro Moviegoer, Teenage Couple. Setting: Vintage car interior, giant glowing outdoor screen at night. Props: Popcorn bucket, dashboard glow, leather seats.",
+"Theme Park — Species: Theme Park Mascot, Ride Operator. Setting: Roller coaster background, ferris wheel night view. Props: Balloon, cotton candy.",
+"Aerial Silk Tent — Species: Aerialist, Circus Gymnast. Setting: High ceiling big top, dramatic spotlight. Props: Hanging red silks, chalked hands.",
+"Modern Gym & Fitness — Species: Athlete, Yoga Instructor. Setting: Modern gym, locker room, zen yoga studio. Props: Yoga pants, dumbbells, towel, water bottle.",
+"Swimming Pool — Species: Swimmer, Lifeguard, Onsen Traveler. Setting: Indoor pool, rooftop infinity pool, mountain hot spring. Props: Swimsuit, goggles, wet hair, bamboo water ladle.",
+"Competitive Sports — Species: Track Athlete, Olympic Medallist. Setting: Olympic stadium, podium, warm-up track. Props: Sports jersey, spike shoes, national flag.",
+"Equestrian — Species: Show Jumper, Polo Player. Setting: Riding arena, countryside paddock. Props: Riding boots, leather saddle.",
+"Cheerleading Squad — Species: Cheerleader, Squad Captain. Setting: Football field sidelines, basketball court halftime area. Props: Colorful pompoms, pleated cheer skirt.",
+"Rhythmic Gymnastics Arena — Species: Rhythmic Gymnast. Setting: Polished gymnastics floor mat, indoor sports arena. Props: Shiny leotard, gymnastic ribbon.",
+"Fencing Piste — Species: Fencer, Duelist. Setting: Long narrow piste, bright stadium lighting. Props: White uniform, wire-mesh mask, foil sword.",
+"Indoor Rock Climbing — Species: Climber, Athletic Instructor. Setting: Tall indoor wall covered in colorful resin holds, crash mats. Props: Climbing chalk bag, tight sportswear, athletic tape.",
+"Ice Skating Rink — Species: Winter Skater, Holiday Couple. Setting: Outdoor frozen rink at night, twinkling string lights. Props: Scarf, ice skates, visible cold breath.",
+"Baseball Stadium — Species: Baseball Player, Cheerleader. Setting: Major league stadium, dugout. Props: Baseball bat, glove.",
+"Soccer Match — Species: Soccer Player, Fan. Setting: Professional football pitch, crowded stadium. Props: Football ball, jersey.",
+"Motor Racing Circuit — Species: Race Queen, Pit Crew. Setting: Racetrack starting grid, pit lane. Props: Umbrella, checkered flag.",
+"Surfer's Beach Shack — Species: Pro Surfer, Beach Bum. Setting: Weathered wooden shack on the sand, salty ocean breeze, sunset. Props: Surfboard wax, colorful surfboards, boardshorts.",
+"Hot Air Balloon — Species: Balloon Aeronaut, Sky Tourist. Setting: Woven wicker basket high above a scenic valley, roaring burner flame. Props: Leather goggles, map, ropes.",
+"Flower Field — Species: Florist, Flower Forager. Setting: Blooming sunflower field, lavender hills. Props: Woven basket, straw hat.",
+"Farm & Ranch — Species: Farmer's Daughter, Ranch Hand. Setting: Wheat field at sunset, wooden barn. Props: Denim overalls, straw hat.",
+"Rooftop Garden — Species: Urban Gardener. Setting: Lush city rooftop, herb planters. Props: Watering can, terracotta pots.",
+"Victorian Greenhouse — Species: Botanist, Aristocratic Gardener. Setting: Wrought-iron Victorian greenhouse, exotic plant conservatory. Props: Tropical orchids, watering can.",
+"Biker Gang — Species: Biker Queen, Gang Leader, Bosozoku Rider. Setting: Garage clubhouse, midnight gas station. Props: Leather jacket, custom motorcycle, gang colors.",
+"Tropical Overwater Bungalow — Species: Resort Vacationer, Island Host. Setting: Wooden deck suspended over turquoise water, tropical breeze. Props: Coconut drink, sheer cover-up, sun hat.",
+"Ice Hotel — Species: Nordic Traveler, Ice Sculptor. Setting: Freezing room carved entirely of clear blue ice, glowing thermal lights. Props: Thick fur blankets, ice glasses, parka.",
+"Lighthouse Interior — Species: Lighthouse Keeper, Storm Watcher. Setting: Winding spiral iron staircase, massive fresnel lens room. Props: Raincoat, brass lantern, ocean view through curved glass.",
+"Cloud Temple — Species: Sky Monk, Cloud Priestess. Setting: Floating shrine in clouds, dawn sanctum. Props: Flowing celestial robes, drifting cloud strands.",
+"Desert Oasis Tent — Species: Caravan Hostess. Setting: Silk-draped tent, palm-shaded oasis. Props: Sheer harem pants, hookah.",
+"Penthouse Balcony — Species: City Heiress. Setting: Glass-railing balcony, city skyline view. Props: Champagne flute, infinity pool.",
+"Rooftop Helipad — Species: Wealthy Executive, Secret Agent. Setting: Concrete helipad on a skyscraper's edge, glittering skyline. Props: Sleek helicopter, leather briefcase.",
+"Luxury Yacht — Species: Yacht Owner, Sailor. Setting: Mediterranean yacht deck, marina. Props: White bikini, champagne flute.",
+"Modern Glamour — Species: Human. Setting: Luxury love hotel, penthouse bedroom. Props: Smartphone, satin sheets, wine glass.",
+"High Society & Casino — Species: Casino Dealer, Club Hostess, Nightlife Enthusiast. Setting: VIP casino lounge, neon-lit street, private stage. Props: Fishnets, roulette table, champagne.",
+"Luxury Locomotive — Species: Train Heiress, Dining Car Attendant. Setting: Orient Express-style cabin, velvet dining car. Props: Brass fittings, crystal wine glass.",
+"VIP Airport Lounge — Species: First-Class Traveler. Setting: Plush leather sofas, large glass window overlooking tarmac. Props: Boarding pass, luxury luggage.",
+"Private Mansion Library — Species: Wealthy Scholar, Elegant Guest. Setting: Towering mahogany bookshelves, leather armchair. Props: Leather-bound books, crystal decanter.",
+"Antique Book Store — Species: Bookshop Owner. Setting: Cramped used bookshop, towering bookshelves. Props: Leather-bound tomes, brass desk lamp.",
+"Gamer & Streamer — Species: Gamer Girl, Streamer, Cosplayer. Setting: RGB-lit gaming room, streaming studio. Props: Gaming chair, headset, controller, energy drink.",
+"Retro Arcade — Species: 80s Gamer, Arcade Hustler. Setting: 1980s neon arcade, CRT-lit gaming hall. Props: Cabinet joystick, glowing CRT screens.",
+"Board Game Cafe — Species: Game Master, Casual Player. Setting: Cozy wooden tables, shelves packed with colorful boxes. Props: Dice, meeple figures, card decks.",
+"Escape Room — Species: Puzzle Solver, Trapped Victim. Setting: Locked mysterious chamber, walls covered in cryptic symbols. Props: Padlocks, hidden keys, hourglass.",
+"Fortune Telling Room — Species: Tarot Reader, Astrologist. Setting: Dimly lit velvet tent, table with lace cloth. Props: Crystal ball, tarot cards.",
+"Pet Shop — Species: Pet Shop Clerk, Groomer. Setting: Modern brightly lit pet boutique, grooming station. Props: Soft plush toys, pet treats.",
+"Suburban Home — Species: Housewife, Adult Daughter. Setting: Modern kitchen, family living room. Props: Apron, coffee mug.",
+"Convenience Store — Species: Konbini Worker, Late-night Shopper. Setting: Bright 24-hour convenience store. Props: Uniform vest, plastic bento.",
+"Commuter Train — Species: Rush-hour Commuter. Setting: Packed train, late-night last train. Props: Hand strap, fogged window.",
+"Urban Multi-tenant Building — Species: Office Worker, Urban Explorer. Setting: Dim concrete stairwell, crowded building hallway. Props: Glowing vending machine, fluorescent lights.",
+"Midnight Laundromat — Species: Insomniac Patron. Setting: Empty all-night laundromat, rows of washers. Props: Spinning dryers, vending machine glow.",
+"Abandoned Subway Station — Species: Urban Explorer, Street Artist. Setting: Grimy underground tracks, rusted subway car. Props: Flashlight beam, spray paint cans.",
+"Abandoned Amusement Park — Species: Urban Explorer. Setting: Rusted carousel, overgrown roller coaster. Props: Flickering carnival lights, peeling paint.",
+"Abandoned Hospital — Species: Paranormal Investigator, Urban Explorer. Setting: Decaying hospital corridor, flickering broken fluorescent light. Props: Rusted wheelchair, dusty medical files, flashlight.",
+"Street Flea Market — Species: Antique Dealer, Bargain Hunter. Setting: Crowded outdoor street market, eclectic stalls in morning light. Props: Vintage trinkets, old brass lamps, woven rugs.",
+"Vintage Record Store — Species: Vinyl Collector, Indie Record Clerk. Setting: Narrow aisles of record bins, band posters covering the walls. Props: Vinyl record sleeve, turntable, large headphones.",
+"Tattoo Parlor — Species: Tattoo Artist, Edgy Client. Setting: Underground ink parlor, vintage flash art on walls. Props: Buzzing tattoo gun, ink cups, sterile gloves.",
+"Aroma Spa & Massage — Species: Spa Therapist, Spa Client. Setting: Luxury spa room, candle-lit massage suite. Props: Massage oil bottle, hot stones.",
+"Private Tutor — Species: University-level Tutor, Academic Instructor. Setting: Home study, library study booth. Props: Textbooks, reading glasses.",
+"Retro Roller Rink — Species: Roller Derby Girl, 80s Skater. Setting: Neon-lit wooden skating floor, disco ball. Props: Quad roller skates, knee pads, high socks.",
+"Infinite Corridor — Species: Dimensional Traveler. Setting: Endless symmetrical hallway, liminal space. Props: Buzzing fluorescent lights, no doors or exits.",
+"Noir Detective — Species: Femme Fatale, Hard-boiled Detective. Setting: Smoke-filled office, rainy 1940s city street. Props: Trench coat, fedora, revolver.",
+"Weather-Driven Drama — Species: Storm-caught Wanderer. Setting: Sudden downpour street, wind-blown cliff. Props: Soaked dress, broken umbrella.",
+"Candy Factory — Species: Confectionery Worker. Setting: Pastel candy factory, chocolate river. Props: Striped apron, candy molds.",
+"Exhibitionism Aesthetic — Species: Bold Performer. Setting: Private balcony at night, isolated cabin. Props: Loose silk robe, dim ambient light.",
+"Shibari Art — Species: Rope Practitioner, Aesthetic Model. Setting: Traditional Japanese rope studio, minimalist room. Props: Decorative knot patterns, hemp rope.",
+"The Morning After — Species: Adult Couple Awakening, Solo Sleeper. Setting: Sun-streaked bedroom, rumpled sheets. Props: Tangled sheets, crumpled pillows.",
+"Slime & Monster Encounter — Species: Adventurer in Distress, Monster Tamer. Setting: Slime-pit dungeon, magical cave. Props: Glistening slime drips, dropped sword.",
+"Hypnotic Atmosphere — Species: Mesmerized Subject, Hypnotist Performer. Setting: Stage with pendulum, dim parlor. Props: Swinging watch, spiral pattern.",
+"Blindfold Aesthetic — Species: Sensory Explorer. Setting: Quiet softly-lit room, sensory deprivation chamber. Props: Silk blindfold, soft fabric textures.",
+"Lingerie & Adult Boutique — Species: Boutique Owner, Sophisticated Shopper. Setting: Upscale lingerie shop, velvet fitting room. Props: Lace garments, full-length mirror.",
+"Giantess & Macro — Species: Giant Goddess, Towering Figure. Setting: City viewed from above. Props: Tiny vehicles for scale, miniature scenery.",
+"Psychological Thriller — Species: Yandere, Captive. Setting: Windowless locked room, interrogation cell. Props: Aesthetic ropes, intense gaze.",
+"Santa Claus's Workshop — Species: Santa Claus, Elf Toymaker. Setting: Snowy North Pole workshop, toy assembly line. Props: Santa suit, gift boxes."
+];
+// アプリ起動時にWorld Settingのセレクトボックスを自動生成する処理
+window.addEventListener('DOMContentLoaded', () => {
+  // wcSelectはHTML内にoptgroupで静的生成済み
+  const ju = localStorage.getItem('jupyter_url');
+  if (ju) { const jel = document.getElementById('jupyterUrl'); if(jel) jel.value = ju; }
+  
+  // 保存されているComfyUIのURLがあれば自動で入力欄に復元
+  const savedUrl = localStorage.getItem('comfyui_url');
+  if (savedUrl) {
+    document.getElementById('serverUrl').value = savedUrl;
+  }
+
+  initMaskCanvas();
+});
+
+// タブメニューの切り替えシステム
+function switchTab(tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const tabs = document.querySelectorAll('.tab');
+  const tabIndex = {'generate':0,'params':1,'history':2,'manage':3}[tabId];
+  if (tabIndex !== undefined) tabs[tabIndex].classList.add('active');
+  document.getElementById('page-' + tabId).classList.add('active');
+}
+
+// 詳細設定パネル（アコーディオン）の開閉システム
+function onWildcardToggleChange() {
+  if (!document.getElementById('wildcardToggle').checked) {
+    document.getElementById('detailBody').classList.remove('show');
+    document.getElementById('detailArrow').textContent = '▼';
+  }
+}
+
+function toggleDetail() {
+  if (!document.getElementById('wildcardToggle').checked) return; // OFF時は開閉不可
+  const body = document.getElementById('detailBody');
+  const arrow = document.getElementById('detailArrow');
+  body.classList.toggle('show');
+  if (body.classList.contains('show')) {
+    arrow.textContent = '▲';
+  } else {
+    arrow.textContent = '▼';
+  }
+}
+// ドロップダウンが選択されている場合に枠線をアクティブカラーにする処理
+function markSelected(selectElem) {
+  if (selectElem.value !== "") {
+    selectElem.classList.add('selected');
+  } else {
+    selectElem.classList.remove('selected');
+  }
+}
+
+// 詳細設定のドロップダウンを一括リセットする処理
+function resetSelectors() {
+  document.querySelectorAll('.selector-select').forEach(sel => {
+    sel.value = "";
+    sel.classList.remove('selected');
+  });
+  document.getElementById('wcSelect').value = "";
+}
+
+function markWcSelected(sel) {
+  markSelected(sel);
+}
+
+// World Settingの開閉切り替え
+function toggleWC() {
+  const body = document.getElementById('wcBody');
+  const toggle = document.getElementById('wcToggle');
+  if (toggle.checked) {
+    body.classList.add('show');
+  } else {
+    body.classList.remove('show');
+  }
+}
+
+// バッチ枚数（1〜4）の切り替え処理
+let currentBatch = 1;
+function setBatch(num, elem) {
+  currentBatch = num;
+  const parent = elem.parentElement;
+  parent.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  elem.classList.add('active');
+}
+function setBatchInput(val) {
+  const n = parseInt(val);
+  if (!isNaN(n) && n >= 1) currentBatch = n;
+}
+
+// シード値をランダム（-1）に設定する処理
+function randomSeed() {
+  document.getElementById('seed').value = "-1";
+}
+
+// 生成完了した画像のシード値をクリップボードにコピーする処理
+function copySeed() {
+  const seedVal = document.getElementById('seed').value;
+  if (seedVal && seedVal !== "-1") {
+    navigator.clipboard.writeText(seedVal).then(() => {
+      const btn = document.getElementById('copySeedBtn');
+      const originalText = btn.textContent;
+      btn.textContent = "✅";
+      setTimeout(() => { btn.textContent = originalText; }, 1000);
+    });
+  }
+}
+
+// セットアップ対象モデル切り替え（TIER下の「モデル」）
+function setSetupModel(modelId) {
+  document.getElementById('setupModel').value = modelId;
+  const btnF1 = document.getElementById('setupBtnF1');
+  const btnF2 = document.getElementById('setupBtnF2');
+  if (modelId === 'flux2') {
+    btnF2.classList.add('af2');
+    btnF1.classList.remove('af1');
+  } else {
+    btnF2.classList.remove('af2');
+    btnF1.classList.add('af1');
+  }
+}
+
+// モデル切り替え処理（FLUX.2 Klein / FLUX.1 Dev）
+let currentModel = 'flux1';
+let i2iImageName = null; // アップロード済みi2i画像のファイル名
+
+// 進捗表示用：クライアントID・WebSocket・ノードラベル対応表
+let clientId = null;
+let comfyWs = null;
+const NODE_LABELS = {
+  '1':'モデル読込中', '2':'モデル読込中', '3':'モデル読込中',
+  '18':'モデル読込中', '19':'モデル読込中', '20':'モデル読込中',
+  '5a':'プロンプト翻訳中', '5':'プロンプト翻訳中', '21':'翻訳結果取得',
+  '32':'プロンプト要素を組み立て中', '6':'プロンプト処理中',
+  '7':'プロンプト処理中', '8':'プロンプト処理中', '9':'準備中',
+  '28':'画像読込中', '29':'画像エンコード中',
+  '10':'画像生成中', '11':'画像デコード中',
+  '34':'顔検出準備中', '35':'顔のディテール補正中',
+  '24':'高解像度化準備中', '25':'高解像度化中', '36':'リサイズ中',
+  '12':'保存中'
+};
+const PROGRESS_NODES = ['10','35'];
+
+// LoRAプリセット定義（lora_presets_template.txt を convert_lora_presets.py で変換した内容に置き換える）
+// 形式: { 'LoRAファイル名': [ {id: 'versionID_番号', text: '本文'}, ... ], ... }
+const LORA_PRESET_DATA = {
+  "FK_bbcanalcowgirl_epoch_20.safetensors": [
+    {id: "2835934_1", text: "image shows one girl and one man. the girls is sitting on the mans lap. her ass is turned to the viewer. the face is only partially visible, because she is turned with the back to the viewer.  she is looking back at the camera. the penis of the man is penetrating her anus. focus of the image is the anal sex scene. the penis and testicles and legs of the man are visible. his the view of his upper body is mostly blocked by the girls back.   the photograph depicts an explicit sexual scene between a hwite woman and a black man. she is positioned on top of the man, facing away from the camera, with her buttocks prominently displayed. the man, is lying on a couch. his erect, large penis is visibly penetrating her anus from behind."},
+  ],
+  "FK_adrianoanal.safetensors": [
+    {id: "2821244_1", text: "one woman and one man. the woman is on all fours, her ass turned to the man. the large penis of the man is visibly penetrating the womans anus. the womans face is partially visible from the side glancing back at the viewer. the image shows doggystyle anal sex from a standing male pov.  the photograph depicts a close-up, explicit scene of a sexual act. a woman is positioned on all fours, facing away from the camera.  a man's large erect penis is visible, penetrating her anus. the man's lower abdomen and thighs are partially visible at the bottom of the frame. the woman is looking over her shoulder towards the camera. the photograph is highly explicit and focuses on the sexual act between the two individuals\",\"Her panties are pulled to the side, exposing her anus.\",\"she has an shiny oiled ass.\",\"Keep her outfit."},
+  ],
+  "full_nelson_anal_v1_f2k9b_000003100.safetensors": [
+    {id: "2689791_1", text: "Full nelson position, the woman is lying on top of a naked man, he hooks his arms under the woman's knees, brings his hands together behind the woman's neck, penetrating the woman's anus with his erect penis. Her legs are held up, she is gripping her buttocks with both hands, looking at the camera."},
+  ],
+  "FK_analonside.safetensors": [
+    {id: "2939229_1", text: "image shows one girl and one man. the girl is lying on her side with her legs closed. she is exposing her vagina and anus. the man penetrates her anus with his large penis. focus is on the penetration of her anus and her thighs and ass., a photograph of a sexual scene. a woman lies on a white bed, a nude man with an erect penis is positioned to the left, his penis entering her anus. the woman's right hand is on her right thigh, and her left hand is on the bed. the man has a giant penis. he is black. the man s upper body is out of frame and his face not visible.\",\"image shows one girl and one man. the girl is lying on her side with her legs closed."},
+    {id: "2939229_2", text: "she is exposing her vagina and anus. the man penetrates her anus with his large penis. focus is on the penetration of her anus and her thighs and ass., A photograph of a sexual scene. A woman is lying on a white bed with her legs spread and bent at the knees. She has small breasts and is looking directly at the camera with a slightly open mouth. A nude Black man with dark skin and a muscular build is standing in front of her, penetrating her anus with his erect, uncircumcised penis.  the man s upper body is out of frame and his face not visible.\",\"image shows one girl and one man. the girl is lying on her side and has one leg lifted up."},
+    {id: "2939229_3", text: "her vagina and anus is visible. she is exposing her vagina and anus. the man penetrates her anus with his large penis. focus is on the penetration of her anus and her thighs and ass., a photograph of a sexual scene. a woman lies on a white bed, a nude man with an erect penis is positioned to the left, his penis entering her anus. the woman's right hand is on her right thigh, and her left hand is on the bed. the man has a giant penis. he is black. the man s upper body is out of frame and his face not visible. close-up shot."},
+  ],
+};
+
+// LoRA1/LoRA2の選択に応じて、シーンプリセットの選択肢を更新
+function updateLoraPresetOptions() {
+  const lora1 = document.getElementById('lora1').value;
+  const lora2 = document.getElementById('lora2').value;
+  const sel = document.getElementById('sel-lora-preset');
+  sel.innerHTML = '<option value="">なし</option>';
+
+  [lora1, lora2].forEach(loraName => {
+    if (!loraName || !LORA_PRESET_DATA[loraName]) return;
+    LORA_PRESET_DATA[loraName].forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.text;
+      opt.textContent = p.id;
+      sel.appendChild(opt);
+    });
+  });
+  updateLoraPresetWarning();
+}
+
+// シーンプリセット選択時、posture自動スキップの警告表示を更新
+function updateLoraPresetWarning() {
+  const val = document.getElementById('sel-lora-preset').value;
+  document.getElementById('lora-preset-warning').style.display = val ? 'block' : 'none';
+}
+
+let i2iMode = 'i2i'; // 'i2i' or 'inpaint'
+let i2iDataUrl = null; // 画像のDataURLを保持（モード切替で使う）
+let maskEnabled = false;
+let maskTool = 'paint';
+let maskDrawing = false;
+let maskCtx = null;
+let maskImg = null;
+function setModel(modelId) {
+  currentModel = modelId;
+  const btnF2 = document.getElementById('btnF2');
+  const btnF1 = document.getElementById('btnF1');
+  const badge = document.getElementById('modelBadge');
+  const genBtn = document.getElementById('generateBtn');
+  const pBar = document.getElementById('progressBar');
+  const rSeed = document.getElementById('resultSeed');
+
+  if (modelId === 'flux2') {
+    btnF2.classList.add('af2');
+    btnF1.classList.remove('af1');
+    badge.textContent = 'FLUX.2';
+    badge.classList.remove('flux1');
+    genBtn.classList.remove('f1');
+    pBar.classList.remove('f1');
+    if (rSeed) rSeed.classList.remove('f1');
+  } else {
+    btnF2.classList.remove('af2');
+    btnF1.classList.add('af1');
+    badge.textContent = 'FLUX.1';
+    badge.classList.add('flux1');
+    genBtn.classList.add('f1');
+    pBar.classList.add('f1');
+    if (rSeed) rSeed.classList.add('f1');
+  }
+}
+// 詳細設定ドロップダウンの選択内容を収集してプロンプト化する関数
+
+// 直接埋め込み：国籍・体型・バストをOllamaを通さずCLIPに渡す
+function buildDirectEmbed() {
+  let parts = [];
+
+  const nationality = document.getElementById('sel-nationality').value;
+  if (nationality) parts.push(`${nationality} woman`);
+
+  const body = document.getElementById('sel-body').value;
+  if (body) parts.push(body);
+
+  const bust = document.getElementById('sel-bust').value;
+  if (bust) parts.push(bust);
+
+  const pussy = document.getElementById('sel-pussy').value;
+  if (pussy) parts.push(pussy);
+
+  // 選択中のLoRAシーンプリセット本文を追加
+  const loraPreset = document.getElementById('sel-lora-preset')?.value;
+  if (loraPreset) parts.push(loraPreset);
+
+  return parts.length > 0 ? parts.join(', ') : '';
+}
+function buildDetailPrompt() {
+  // Ollamaに渡す：シナリオ・ポーズ
+  let details = [];
+
+  const expression = document.getElementById('sel-scenario').value;
+  if (expression) details.push(expression);
+
+  const posture = document.getElementById('sel-posture').value;
+  const loraPresetSelected = document.getElementById('sel-lora-preset')?.value;
+  if (posture && !loraPresetSelected) details.push(posture);
+  // ↑ LoRAプリセット選択中はposture（体位）wildcardをスキップ（体位重複防止）
+
+  const camera = document.getElementById('sel-camera').value;
+  if (camera) details.push(camera);
+
+  const hair = document.getElementById('sel-hair').value;
+  if (hair) details.push(hair);
+
+  const eyeContact = document.getElementById('sel-eye-contact').value;
+  if (eyeContact) details.push(eyeContact);
+
+  // 各要素をコンマ区切りで結合して返す
+  return details.length > 0 ? details.join(', ') : '';
+}
+// ComfyUIサーバーへの接続確認と初期データの読み込み
+async function connect() {
+  const urlInput = document.getElementById('serverUrl').value.trim();
+  if (!urlInput) {
+    alert('サーバーURLを入力してください。');
+    return;
+  }
+  
+  // 末尾のシラッシュを削除して整形
+  const cleanUrl = urlInput.replace(/\/+$/, '');
+  localStorage.setItem('comfyui_url', cleanUrl);
+
+  const statusText = document.getElementById('statusText');
+  const statusDot = document.getElementById('statusDot');
+  
+  localStorage.setItem('jupyter_url', document.getElementById('jupyterUrl').value.trim());
+  statusText.textContent = "接続中...";
+  statusText.style.color = "var(--muted)";
+  statusDot.className = "status-dot";
+
+  try {
+    // 接続テストとしてオブジェクト情報を取得
+    const res = await fetch(`${cleanUrl}/object_info`, { mode: 'cors' });
+    if (!res.ok) throw new Error('サーバー応答エラー');
+    const info = await res.json();
+
+    statusText.textContent = "接続完了";
+    statusText.style.color = "var(--success)";
+    statusDot.className = "status-dot connected";
+
+    // クライアントID生成（初回のみ）
+    if (!clientId) {
+      clientId = 'mobile_' + Math.random().toString(36).slice(2) + Date.now();
+    }
+
+    // WebSocket接続（進捗表示用）
+    if (comfyWs) { try { comfyWs.close(); } catch(e){} }
+    const wsProtocol = cleanUrl.startsWith('https') ? 'wss' : 'ws';
+    const wsHost = cleanUrl.replace(/^https?:\/\//, '');
+    comfyWs = new WebSocket(`${wsProtocol}://${wsHost}/ws?clientId=${clientId}`);
+    comfyWs.onerror = (e) => console.error('WS error', e);
+
+
+    // 利用可能なLoRAリストを自動抽出してドロップダウンを更新
+    let loraList = [];
+    if (info.LoraLoader && info.LoraLoader.input && info.LoraLoader.input.required && info.LoraLoader.input.required.lora_name) {
+      loraList = info.LoraLoader.input.required.lora_name[0];
+    } else if (info.PowerLoraLoader && info.PowerLoraLoader.input && info.PowerLoraLoader.input.required && info.PowerLoraLoader.input.required.lora_1_name) {
+      loraList = info.PowerLoraLoader.input.required.lora_1_name[0];
+    }
+
+    const lora1 = document.getElementById('lora1');
+    const lora2 = document.getElementById('lora2');
+    
+    // ドロップダウンを初期化
+    lora1.innerHTML = '<option value="">なし</option>';
+    lora2.innerHTML = '<option value="">なし</option>';
+
+    if (loraList && loraList.length > 0) {
+      loraList.forEach(name => {
+        const sn = name.split('/').pop().replace('.safetensors','').replace('.ckpt','').replace('.pt','');
+        const dn = sn.length > 28 ? sn.slice(0,26)+'…' : sn;
+        const opt1 = document.createElement('option');
+        opt1.value = name; opt1.textContent = dn;
+        lora1.appendChild(opt1);
+        const opt2 = document.createElement('option');
+        opt2.value = name; opt2.textContent = dn;
+        lora2.appendChild(opt2);
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    statusText.textContent = "接続失敗";
+    statusText.style.color = "var(--danger)";
+    statusDot.className = "status-dot error";
+    alert('ComfyUIへの接続に失敗しました。URLまたはサーバーの状態を確認してください。');
+  }
+}
+// 生成ボタンを押したときのメイン処理
+async function generate() {
+  const urlInput = document.getElementById('serverUrl').value.trim();
+  if (!urlInput) { alert('最初にComfyUIに接続してください。'); return; }
+  const cleanUrl = urlInput.replace(/\/+$/, '');
+  const jpPrompt = document.getElementById('prompt').value.trim();
+
+  const inpaintEnabled = i2iMode === 'inpaint' && maskEnabled && i2iImageName;
+
+  const genBtn = document.getElementById('generateBtn');
+  const pWrap = document.getElementById('progressWrap');
+  const pBar = document.getElementById('progressBar');
+  const pPct = document.getElementById('progressPct');
+  const pLabel = document.getElementById('progressLabel');
+
+  genBtn.disabled = true;
+  pWrap.classList.add('show');
+  pBar.style.width = '0%';
+  pPct.textContent = '0%';
+  pLabel.textContent = 'キュー送信中...';
+
+  // ワイルドカード機能の有効/無効
+  const wildcardEnabled = document.getElementById('wildcardToggle').checked;
+
+  // World Setting
+  let wcText = '';
+  if (wildcardEnabled && document.getElementById('wcSelect').value !== '') {
+    const wcVal = document.getElementById('wcSelect').value;
+    const idx = wcVal === 'random' ? Math.floor(Math.random()*WS.length) : parseInt(wcVal);
+    wcText = WS[idx] || '';
+  }
+
+  // 詳細設定
+  const detailText = wildcardEnabled ? buildDetailPrompt() : '';
+
+  // Ollamaへ渡すプロンプト組み立て
+  let extras = [];
+  if (wcText) extras.push('World Setting: ' + wcText);
+  if (detailText) extras.push(detailText);
+  const fullJpPrompt = extras.length > 0 ? jpPrompt + '\n\n' + extras.join('\n') : jpPrompt;
+
+  const seedInput = document.getElementById('seed').value.trim();
+  let finalSeed = parseInt(seedInput);
+  if (isNaN(finalSeed) || finalSeed === -1) finalSeed = Math.floor(Math.random()*2147483647);
+
+  const steps    = parseInt(document.getElementById('stepsInput').value) || parseInt(document.getElementById('steps').value);
+  const cfg      = parseFloat(document.getElementById('cfgInput').value) || 1.0;
+  const denoise  = parseFloat(document.getElementById('denoiseInput').value) || 1.0;
+  const sampler  = document.getElementById('sampler').value;
+  const scheduler= document.getElementById('scheduler').value;
+  const negPrompt= document.getElementById('negPrompt').value;
+  const guidance = parseFloat(document.getElementById('guidanceInput').value) || 2.0;
+  const lora1Name= document.getElementById('lora1').value;
+  const lora1Str = parseFloat(document.getElementById('lora1str-num')?.value) || parseFloat(document.getElementById('lora1str').value) || 1.0;
+  const lora2Name= document.getElementById('lora2').value;
+  const lora2Str = parseFloat(document.getElementById('lora2str-num')?.value) || parseFloat(document.getElementById('lora2str').value) || 1.0;
+  const batchSize = parseInt(document.getElementById("batchInput").value) || currentBatch;
+  const f1 = currentModel === 'flux1';
+  const sp = f1 ? SP1 : SP2;
+
+  // ワークフロー構築
+  const wf = {};
+  const directEmbed = wildcardEnabled ? buildDirectEmbed() : '';
+  if (f1) {
+    wf['1'] = {class_type:'UNETLoader', inputs:{unet_name:'flux1-dev.safetensors', weight_dtype:'bf16'}};
+    wf['2'] = {class_type:'DualCLIPLoader', inputs:{clip_name1:'clip_l.safetensors', clip_name2:'t5xxl_fp8_e4m3fn.safetensors', type:'flux', device:'default'}};
+    wf['3'] = {class_type:'VAELoader', inputs:{vae_name:'ae.safetensors'}};
+  } else {
+    wf['1'] = {class_type:'UNETLoader', inputs:{unet_name:'flux-2-klein-9b-fp8.safetensors', weight_dtype:'fp8_e4m3fn'}};
+    wf['2'] = {class_type:'CLIPLoader', inputs:{clip_name:'qwen_3_8b_fp8mixed.safetensors', type:'flux2', device:'default'}};
+    wf['3'] = {class_type:'VAELoader', inputs:{vae_name:'flux2-vae.safetensors'}};
+  }
+
+  let lastModel='1', lastClip='2', lastClipSlot=0;
+  if (lora1Name) {
+    wf['18'] = {class_type:'LoraLoader', inputs:{model:[lastModel,0], clip:[lastClip,lastClipSlot], lora_name:lora1Name, strength_model:lora1Str, strength_clip:lora1Str}};
+    lastModel='18'; lastClip='18'; lastClipSlot=1;
+  }
+  if (lora2Name) {
+    wf['20'] = {class_type:'LoraLoader', inputs:{model:[lastModel,0], clip:[lastClip,lastClipSlot], lora_name:lora2Name, strength_model:lora2Str, strength_clip:lora2Str}};
+    lastModel='20'; lastClip='20'; lastClipSlot=1;
+  }
+
+  wf['5a'] = {class_type:'OllamaConnectivityV2', inputs:{
+    url:'http://127.0.0.1:11434',
+    model:'jaahas/qwen3.5-uncensored:9b',
+    keep_alive:0,
+    keep_alive_unit:'minutes'
+  }};
+  wf['5']  = {class_type:'OllamaGenerateV2', inputs:{
+    system:sp,
+    prompt:fullJpPrompt,
+    think:false,
+    keep_context:false,
+    format:'text',
+    connectivity:['5a',0]
+  }};
+  // 直接埋め込み（国籍・体型・バスト・局部）をOllama出力の後にCLIPへ結合
+  if (directEmbed) {
+    wf['32'] = {class_type:'StringConcatenate', inputs:{string_a:['5',0], string_b:directEmbed, delimiter:', '}};
+    wf['6']  = {class_type:'CLIPTextEncode', inputs:{clip:[lastClip,lastClipSlot], text:['32',0]}};
+  } else {
+    wf['6']  = {class_type:'CLIPTextEncode', inputs:{clip:[lastClip,lastClipSlot], text:['5',0]}};
+  }
+  wf['8']  = {class_type:'CLIPTextEncode', inputs:{clip:[lastClip,lastClipSlot], text:negPrompt}};
+  wf['7']  = {class_type:'FluxGuidance', inputs:{conditioning:['6',0], guidance}};
+
+  // マスクアップロード（inpaint時）
+  let maskName = null;
+  if (inpaintEnabled) {
+    try {
+      maskName = await uploadMaskToComfy(cleanUrl);
+    } catch (err) {
+      alert('マスクのアップロードに失敗しました: ' + err.message);
+      genBtn.disabled = false;
+      pWrap.classList.remove('show');
+      return;
+    }
+  }
+
+  let posSrc = ['7',0], negSrc = ['8',0], latentSource = ['9',0];
+  if (inpaintEnabled && maskName) {
+    wf['28'] = {class_type:'LoadImage', inputs:{image:i2iImageName, upload:'image'}};
+    wf['39'] = {class_type:'LoadImage', inputs:{image:maskName, upload:'image'}};
+    wf['40'] = {class_type:'InpaintModelConditioning', inputs:{
+      positive:['7',0], negative:['8',0], vae:['3',0], pixels:['28',0], mask:['39',0]
+    }};
+    posSrc = ['40',0]; negSrc = ['40',1]; latentSource = ['40',2];
+  } else if (i2iImageName) {
+    wf['28'] = {class_type:'LoadImage', inputs:{image:i2iImageName, upload:'image'}};
+    wf['29'] = {class_type:'VAEEncode', inputs:{pixels:['28',0], vae:['3',0]}};
+    latentSource = ['29',0];
+  } else {
+    wf['9'] = {class_type:'EmptyLatentImage', inputs:{width:768, height:1344, batch_size:batchSize}};
+    latentSource = ['9',0];
+  }
+  wf['10'] = {class_type:'KSampler', inputs:{
+    model:[lastModel,0], positive:posSrc, negative:negSrc, latent_image:latentSource,
+    seed:finalSeed, control_after_generate:'randomize',
+    steps, cfg, sampler_name:sampler, scheduler, denoise
+  }};
+  wf['11'] = {class_type:'VAEDecode', inputs:{samples:['10',0], vae:['3',0]}};
+
+  // FaceDetailer（32/48GBかつONの場合）
+  const fdOn = document.getElementById('faceDetailerOn') && document.getElementById('faceDetailerOn').checked;
+  const fdDenoise = parseFloat(document.getElementById('fdDenoise')?.value) || 0.42;
+  const fdMaxSize = parseInt(document.getElementById('fdMaxSize')?.value) || 768;
+  const fdSeed = parseInt(document.getElementById('fdSeed')?.value) ?? 0;
+  const tier = document.getElementById('setupTier')?.value || '48GB';
+  const hasFaceDetailer = fdOn && (tier === '32GB' || tier === '48GB');
+
+  let imgSource = '11';
+  if (hasFaceDetailer) {
+    wf['34'] = {class_type:'UltralyticsDetectorProvider', inputs:{model_name:'bbox/face_yolov8m.pt'}};
+    wf['35'] = {class_type:'FaceDetailer', inputs:{
+      image:['11',0], model:[lastModel,0], clip:[lastClip,lastClipSlot],
+      vae:['3',0], positive:posSrc, negative:negSrc,
+      bbox_detector:['34',0],
+      guide_size:fdMaxSize, guide_size_for:true, max_size:fdMaxSize,
+      seed:fdSeed, steps:20, cfg:7.0, sampler_name:'euler', scheduler:'normal',
+      denoise:fdDenoise, feather:5, noise_mask:true, force_inpaint:true,
+      bbox_threshold:0.5, bbox_dilation:10, bbox_crop_factor:3.0,
+      sam_detection_hint:'center-1', sam_dilation:0, sam_threshold:0.93,
+      sam_bbox_expansion:0, sam_mask_hint_threshold:0.7,
+      sam_mask_hint_use_negative:'False', drop_size:10,
+      wildcard:'', cycle:1, inpaint_model:false, noise_mask_feather:20
+    }};
+    imgSource = '35';
+  }
+
+  // Upscale
+  wf['24'] = {class_type:'UpscaleModelLoader', inputs:{model_name:'4x-UltraSharp.pth'}};
+  wf['25'] = {class_type:'ImageUpscaleWithModel', inputs:{upscale_model:['24',0], image:[imgSource,0]}};
+
+  // ImageScale（長辺1920にリサイズ）
+  wf['36'] = {class_type:'ImageScale', inputs:{image:['25',0], upscale_method:'lanczos', width:1080, height:1920, crop:'disabled'}};
+
+  wf['12'] = {class_type:'SaveImage', inputs:{images:['36',0], filename_prefix:f1?'flux1_mobile':'flux2_mobile'}};
+  wf['21'] = {class_type:'ShowText|pysssss', inputs:{text:['5',0]}};
+
+  try {
+    const qRes = await fetch(`${cleanUrl}/prompt`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      mode:'cors',
+      body:JSON.stringify({prompt:wf, client_id:clientId})
+    });
+    if (!qRes.ok) throw new Error('キュー投入失敗');
+    const qData = await qRes.json();
+    const promptId = qData.prompt_id;
+    pLabel.textContent = 'キュー待機中...';
+
+    // 完了処理（画像表示・履歴追加）
+    const finishGeneration = async () => {
+      pBar.style.width = '100%';
+      pPct.textContent = '100%';
+      pLabel.textContent = '完了';
+
+      const hRes = await fetch(`${cleanUrl}/history/${promptId}`, {mode:'cors'});
+      const hData = await hRes.json();
+      const outputs = (hData[promptId] && hData[promptId].outputs) || {};
+      let images = [];
+      let translatedText = '';
+
+      for (const nid in outputs) {
+        if (outputs[nid].images) images = outputs[nid].images;
+        if (outputs[nid].text) translatedText = outputs[nid].text[0] || '';
+      }
+
+      if (images.length > 0) {
+        const img = images[0];
+        const imgUrl = `${cleanUrl}/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder||'')}&type=${img.type||'output'}`;
+        document.getElementById('resultImg').src = imgUrl;
+        document.getElementById('resultWrap').classList.add('show');
+        // 生成ボタンまでスクロール
+        document.getElementById('generateBtn').scrollIntoView({behavior:'smooth', block:'center'});
+        document.getElementById('seed').value = -1;
+        document.getElementById('resultSeed').textContent = `SEED: ${finalSeed} [${f1?'FLUX.1':'FLUX.2'}]`;
+        document.getElementById('resultSeed').className = 'result-seed' + (f1?' f1':'');
+        document.getElementById('copySeedBtn').style.display = 'inline-block';
+        document.getElementById('translatedPrompt').textContent = translatedText || '';
+
+        images.forEach(im => {
+          const iUrl = `${cleanUrl}/view?filename=${encodeURIComponent(im.filename)}&subfolder=${encodeURIComponent(im.subfolder||'')}&type=${im.type||'output'}`;
+          addToHistory(iUrl, finalSeed, jpPrompt, translatedText);
+        });
+      }
+
+      genBtn.disabled = false;
+      setTimeout(() => { pWrap.classList.remove('show'); }, 2000);
+    };
+
+    // WebSocket経由でノード単位の進捗を受信
+    let currentProgressNode = null;
+    let finished = false;
+
+    const handleWsMessage = (event) => {
+      let msg;
+      try { msg = JSON.parse(event.data); } catch(e) { return; }
+      if (!msg.data || msg.data.prompt_id !== promptId) return;
+
+      if (msg.type === 'executing') {
+        const nodeId = msg.data.node;
+        if (nodeId === null) {
+          if (!finished) {
+            finished = true;
+            comfyWs.removeEventListener('message', handleWsMessage);
+            finishGeneration();
+          }
+          return;
+        }
+        currentProgressNode = String(nodeId);
+        pLabel.textContent = NODE_LABELS[currentProgressNode] || '処理中...';
+        if (!PROGRESS_NODES.includes(currentProgressNode)) {
+          pBar.style.width = '0%';
+          pPct.textContent = '';
+        }
+      } else if (msg.type === 'progress') {
+        const { value, max } = msg.data;
+        if (max > 0 && PROGRESS_NODES.includes(currentProgressNode)) {
+          const pct = Math.round((value / max) * 100);
+          pBar.style.width = pct + '%';
+          pPct.textContent = pct + '%';
+        }
+      }
+    };
+
+    if (comfyWs && comfyWs.readyState === WebSocket.OPEN) {
+      comfyWs.addEventListener('message', handleWsMessage);
+    } else {
+      // WebSocket未接続時はフォールバック（完了をhistoryポーリングで検知）
+      const pollFallback = async () => {
+        while (!finished) {
+          await new Promise(r => setTimeout(r, 1500));
+          const hRes = await fetch(`${cleanUrl}/history/${promptId}`, {mode:'cors'});
+          if (!hRes.ok) continue;
+          const hData = await hRes.json();
+          if (hData[promptId]) {
+            finished = true;
+            await finishGeneration();
+          }
+        }
+      };
+      pollFallback();
+    }
+  } catch(err) {
+        const qCheck = await fetch(`${cleanUrl}/queue`, {mode:'cors'});
+        if (qCheck.ok) {
+          const qd = await qCheck.json();
+          const running = (qd.queue_running||[]).find(i => i[1]===promptId);
+          pLabel.textContent = running ? '生成中...' : 'キュー待機中...';
+          pBar.style.width = running ? '50%' : '10%';
+          pPct.textContent = running ? '50%' : '10%';
+        }
+      }
+    }
+  } catch(err) {
+    console.error(err);
+    alert('エラーが発生しました: ' + err.message);
+  } finally {
+    genBtn.disabled = false;
+    setTimeout(() => { pWrap.classList.remove('show'); }, 2000);
+  }
+}
+
+// 生成された画像を履歴タブへ追加する関数
+function openPreview(url, seed, jpPrompt, translatedText) {
+  document.getElementById('previewImg').src = url;
+  document.getElementById('previewSeed').textContent = 'SEED: ' + seed;
+  document.getElementById('previewPrompt').textContent = jpPrompt || '';
+  document.getElementById('previewTranslated').textContent = translatedText || '';
+  document.getElementById('previewModal').classList.add('show');
+}
+function closePreview() {
+  document.getElementById('previewModal').classList.remove('show');
+}
+function addToHistory(url, seed, jpPrompt, translatedText) {
+  const grid = document.getElementById('historyGrid');
+  const emptyState = grid.querySelector('.empty-state');
+  if (emptyState) grid.innerHTML = '';
+
+  const item = document.createElement('div');
+  item.className = 'history-item';
+
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = 'Generated';
+  item.onclick = () => {
+    openPreview(url, seed, jpPrompt, translatedText);
+  };
+
+  const overlay = document.createElement('div');
+  overlay.className = 'history-overlay';
+  overlay.textContent = `seed: ${seed}  ${(jpPrompt||'').slice(0,20)}...`;
+
+  item.appendChild(img);
+  item.appendChild(overlay);
+  grid.insertBefore(item, grid.firstChild);
+}
+
+
+// ===== i2i =====
+function toggleI2I() {
+  const body = document.getElementById('i2iBody');
+  body.classList.toggle('show', document.getElementById('i2iToggle').checked);
+  if (!document.getElementById('i2iToggle').checked) clearI2I();
+}
+
+// ===== i2i/inpaintモード切り替え =====
+function setI2IMode(mode) {
+  i2iMode = mode;
+  document.getElementById('btnModeI2I').className = 'i2i-mode-btn' + (mode==='i2i' ? ' active-i2i' : '');
+  document.getElementById('btnModeInpaint').className = 'i2i-mode-btn' + (mode==='inpaint' ? ' active-inpaint' : '');
+  const maskWrap = document.getElementById('maskWrap');
+  const previewWrap = document.getElementById('i2iPreviewWrap');
+  if (!i2iDataUrl) return; // 画像がない場合は何もしない
+  if (mode === 'inpaint') {
+    previewWrap.style.display = 'none';
+    maskWrap.classList.add('show');
+    maskEnabled = true;
+    setupMaskFromDataUrl(i2iDataUrl);
+  } else {
+    maskWrap.classList.remove('show');
+    maskEnabled = false;
+    clearMask();
+    previewWrap.style.display = 'block';
+  }
+}
+
+async function handleI2IUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const area = document.getElementById('i2iUploadArea');
+  area.textContent = '⏳ アップロード中...';
+
+  const serverUrl = document.getElementById('serverUrl').value.trim().replace(/\/+$/, '');
+  if (!serverUrl) {
+    alert('先に管理タブでComfyUIに接続してください');
+    area.textContent = '📁 タップして画像を選択';
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch(`${serverUrl}/upload/image`, {method:'POST', mode:'cors', body:formData});
+    if (!res.ok) throw new Error('アップロード失敗');
+    const data = await res.json();
+    i2iImageName = data.name;
+
+    // プレビュー・マスク用のDataURL読み込み
+    const reader = new FileReader();
+    reader.onload = e => {
+      i2iDataUrl = e.target.result;
+      const preview = document.getElementById('i2iPreview');
+      preview.src = i2iDataUrl;
+      preview.classList.add('show');
+      document.getElementById('maskBgImg').src = i2iDataUrl;
+      if (i2iMode === 'inpaint') {
+        document.getElementById('maskWrap').classList.add('show');
+        maskEnabled = true;
+        setupMaskFromDataUrl(i2iDataUrl);
+      } else {
+        document.getElementById('i2iPreviewWrap').style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+
+    area.textContent = '✅ ' + file.name;
+    area.classList.add('has-image');
+    document.getElementById('i2iClearBtn').classList.add('show');
+  } catch(err) {
+    area.textContent = '❌ ' + err.message;
+    i2iImageName = null;
+  }
+}
+
+function clearI2I() {
+  i2iImageName = null;
+  i2iDataUrl = null;
+  maskEnabled = false;
+  document.getElementById('i2iUploadArea').textContent = '📁 タップして画像を選択';
+  document.getElementById('i2iUploadArea').classList.remove('has-image');
+  document.getElementById('i2iPreview').classList.remove('show');
+  document.getElementById('i2iPreview').src = '';
+  document.getElementById('i2iPreviewWrap').style.display = 'none';
+  document.getElementById('maskBgImg').src = '';
+  document.getElementById('maskWrap').classList.remove('show');
+  document.getElementById('i2iClearBtn').classList.remove('show');
+  document.getElementById('i2iFileInput').value = '';
+  clearMask();
+  setI2IMode('i2i');
+}
+
+// ===== MASK (inpaint) =====
+function initMaskCanvas() {
+  const canvas = document.getElementById('maskCanvas');
+  if (!canvas) return;
+  maskCtx = canvas.getContext('2d');
+  canvas.addEventListener('touchstart', maskTouchStart, {passive:false});
+  canvas.addEventListener('touchmove', maskTouchMove, {passive:false});
+  canvas.addEventListener('touchend', ()=>{ maskDrawing=false; });
+  canvas.addEventListener('mousedown', e=>{ maskDrawing=true; maskDraw(e.offsetX, e.offsetY); });
+  canvas.addEventListener('mousemove', e=>{ if(maskDrawing) maskDraw(e.offsetX, e.offsetY); });
+  canvas.addEventListener('mouseup', ()=>{ maskDrawing=false; });
+}
+function setupMaskOnImage(imgEl) {
+  maskImg = imgEl;
+  const canvas = document.getElementById('maskCanvas');
+  canvas.width = imgEl.naturalWidth || imgEl.width;
+  canvas.height = imgEl.naturalHeight || imgEl.height;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  maskCtx.clearRect(0, 0, canvas.width, canvas.height);
+}
+function setupMaskFromDataUrl(dataUrl) {
+  const img = new Image();
+  img.onload = () => {
+    document.getElementById('maskBgImg').src = dataUrl;
+    setupMaskOnImage(img);
+  };
+  img.src = dataUrl;
+}
+function setMaskTool(tool) {
+  maskTool = tool;
+  document.getElementById('btnPaint').classList.toggle('active', tool==='paint');
+  document.getElementById('btnErase').classList.toggle('active', tool==='erase');
+}
+function clearMask() {
+  if (!maskCtx) return;
+  const canvas = document.getElementById('maskCanvas');
+  maskCtx.clearRect(0, 0, canvas.width, canvas.height);
+}
+function maskTouchStart(e) {
+  e.preventDefault();
+  maskDrawing = true;
+  const t = e.touches[0];
+  const rect = e.target.getBoundingClientRect();
+  const scaleX = e.target.width / rect.width;
+  const scaleY = e.target.height / rect.height;
+  maskDraw((t.clientX - rect.left) * scaleX, (t.clientY - rect.top) * scaleY);
+}
+function maskTouchMove(e) {
+  e.preventDefault();
+  if (!maskDrawing) return;
+  const t = e.touches[0];
+  const rect = e.target.getBoundingClientRect();
+  const scaleX = e.target.width / rect.width;
+  const scaleY = e.target.height / rect.height;
+  maskDraw((t.clientX - rect.left) * scaleX, (t.clientY - rect.top) * scaleY);
+}
+function maskDraw(x, y) {
+  if (!maskCtx) return;
+  const size = parseInt(document.getElementById('brushSize').value);
+  if (maskTool === 'erase') {
+    maskCtx.globalCompositeOperation = 'destination-out';
+    maskCtx.fillStyle = 'rgba(0,0,0,1)';
+  } else {
+    maskCtx.globalCompositeOperation = 'source-over';
+    maskCtx.fillStyle = 'rgba(255,60,100,0.7)';
+  }
+  maskCtx.beginPath();
+  maskCtx.arc(x, y, size/2, 0, Math.PI*2);
+  maskCtx.fill();
+  maskCtx.globalCompositeOperation = 'source-over';
+}
+function getMaskBase64() {
+  // マスクcanvasを白黒2値のマスク画像に変換
+  const src = document.getElementById('maskCanvas');
+  const tmp = document.createElement('canvas');
+  tmp.width = src.width; tmp.height = src.height;
+  const ctx = tmp.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, tmp.width, tmp.height);
+  const data = maskCtx.getImageData(0, 0, src.width, src.height);
+  const out = ctx.getImageData(0, 0, tmp.width, tmp.height);
+  for (let i=0; i<data.data.length; i+=4) {
+    if (data.data[i+3] > 10) { out.data[i]=255; out.data[i+1]=255; out.data[i+2]=255; out.data[i+3]=255; }
+  }
+  ctx.putImageData(out, 0, 0);
+  return tmp.toDataURL('image/png').split(',')[1];
+}
+async function uploadMaskToComfy(cleanUrl) {
+  const base64 = getMaskBase64();
+  const blob = await (await fetch('data:image/png;base64,'+base64)).blob();
+  const file = new File([blob], 'mask.png', {type:'image/png'});
+  const formData = new FormData();
+  formData.append('image', file);
+  const res = await fetch(`${cleanUrl}/upload/image`, {method:'POST', mode:'cors', body:formData});
+  if (!res.ok) throw new Error('マスクアップロード失敗');
+  const d = await res.json();
+  return d.name;
+}
+
+// ===== 管理タブ =====
+function getNotebookName(model) {
+  return model === 'flux1' ? 'setup_flux1_dev.ipynb' : 'setup_flux2_klein.ipynb';
+}
+
+async function runJupyterNotebook(jupyterUrl, notebookPath, logId) {
+  const log = document.getElementById(logId);
+  log.classList.add('show');
+  function addLog(msg) { log.textContent += msg + '\n'; log.scrollTop = log.scrollHeight; }
+
+  try {
+    addLog('⏳ カーネルを起動中...');
+    const kernelRes = await fetch(jupyterUrl + '/api/kernels', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:'python3'})
+    });
+    if (!kernelRes.ok) throw new Error('カーネル起動失敗 (' + kernelRes.status + ')');
+    const kernel = await kernelRes.json();
+    const kernelId = kernel.id;
+    addLog('✅ カーネル起動: ' + kernelId.slice(0,8) + '...');
+
+    addLog('⏳ ノートブック取得中...');
+    const nbRes = await fetch(jupyterUrl + '/api/contents/' + notebookPath);
+    if (!nbRes.ok) throw new Error('ノートブック取得失敗: ' + notebookPath);
+    const nbData = await nbRes.json();
+    const cells = nbData.content.cells.filter(c => c.cell_type === 'code');
+    addLog('✅ ' + cells.length + 'セル検出');
+
+    const wsUrl = jupyterUrl.replace('https://','wss://').replace('http://','ws://');
+    const ws = new WebSocket(wsUrl + '/api/kernels/' + kernelId + '/channels');
+
+    await new Promise((resolve, reject) => {
+      const tout = setTimeout(() => reject(new Error('タイムアウト(5分)')), 300000);
+      ws.onopen = () => {
+        addLog('⏳ セル実行開始...');
+        let idx = 0;
+        function next() {
+          if (idx >= cells.length) {
+            clearTimeout(tout);
+            addLog('✅ 全' + cells.length + 'セル実行完了');
+            ws.close(); resolve(); return;
+          }
+          const src = Array.isArray(cells[idx].source) ? cells[idx].source.join('') : cells[idx].source;
+          addLog('▶ [' + (idx+1) + '/' + cells.length + ']');
+          const mid = 'msg_' + idx + '_' + Date.now();
+          ws.send(JSON.stringify({
+            header:{msg_id:mid,msg_type:'execute_request',username:'',session:kernelId,version:'5.2'},
+            parent_header:{},metadata:{},channel:'shell',
+            content:{code:src,silent:false,store_history:true,user_expressions:{},allow_stdin:false}
+          }));
+          ws.onmessage = (e) => {
+            const m = JSON.parse(e.data);
+            if (m.parent_header.msg_id !== mid) return;
+            if (m.msg_type === 'stream') {
+              const t = (m.content.text||'').trim();
+              if (t) addLog('  ' + t.split('\n').pop());
+            }
+            if (m.msg_type === 'error') addLog('❌ ' + m.content.ename + ': ' + m.content.evalue);
+            if (m.msg_type === 'status' && m.content.execution_state === 'idle') { idx++; setTimeout(next, 300); }
+          };
+        }
+        next();
+      };
+      ws.onerror = () => { clearTimeout(tout); reject(new Error('WebSocket接続失敗')); };
+    });
+
+    await fetch(jupyterUrl + '/api/kernels/' + kernelId, {method:'DELETE'});
+    addLog('✅ カーネル解放完了');
+    return true;
+  } catch(err) {
+    addLog('❌ ' + err.message);
+    return false;
+  }
+}
+
+async function runSetup() {
+  const jupyterUrl = document.getElementById('jupyterUrl').value.trim().replace(/\/+$/,'');
+  if (!jupyterUrl) { alert('Jupyter URLを入力してください'); return; }
+  const tier  = document.getElementById('setupTier').value;
+  const model = document.getElementById('setupModel').value;
+  const nb    = getNotebookName(model);
+  const btn   = document.getElementById('setupBtn');
+  const log   = document.getElementById('setupLog');
+  btn.disabled = true; btn.textContent = '実行中...';
+  log.textContent = 'TIER: ' + tier + ' / ' + (model==='flux1'?'FLUX.1 Dev':'FLUX.2 Klein') + '\nNB: ' + nb + '\n\n';
+  log.classList.add('show');
+
+  try {
+    // GPU_TIERを環境変数として注入
+    const kr = await fetch(jupyterUrl+'/api/kernels',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'python3'})});
+    const k = await kr.json();
+    const wsUrl = jupyterUrl.replace('https://','wss://').replace('http://','ws://');
+    const ws = new WebSocket(wsUrl+'/api/kernels/'+k.id+'/channels');
+    await new Promise(res => {
+      ws.onopen = () => {
+        ws.send(JSON.stringify({
+          header:{msg_id:'inj',msg_type:'execute_request',username:'',session:k.id,version:'5.2'},
+          parent_header:{},metadata:{},channel:'shell',
+          content:{code:'import os; os.environ["GPU_TIER"]="'+tier+'"',silent:false,store_history:false,user_expressions:{},allow_stdin:false}
+        }));
+      };
+      ws.onmessage = (e) => {
+        const m = JSON.parse(e.data);
+        if (m.msg_type==='status' && m.content.execution_state==='idle' && m.parent_header.msg_id==='inj') { ws.close(); res(); }
+      };
+    });
+    await fetch(jupyterUrl+'/api/kernels/'+k.id,{method:'DELETE'});
+    log.textContent += '✅ GPU_TIER="' + tier + '" 注入完了\n\n';
+  } catch(e) { log.textContent += '⚠️ TIER注入スキップ: ' + e.message + '\n'; }
+
+  await runJupyterNotebook(jupyterUrl, nb, 'setupLog');
+  btn.disabled = false; btn.textContent = '▶ セットアップ実行';
+}
+
+// === NSFWポーズトグル ===
+const POSTURE_NORMAL = [
+  ['', '（Ollamaに任せる）'],
+  ['standing tall with confident upright posture', '背筋を伸ばして立つ'],
+  ['leaning against wall with casual ease', '壁にもたれる'],
+  ['sitting with legs crossed elegantly', '脚を組んで座る'],
+  ['lying on side with relaxed natural pose', '横向きに寝そべる'],
+  ['kneeling with graceful composure', '優雅な跪き'],
+  ['seated with back gently arched', '背中をアーチさせて座る'],
+  ['reclining with one arm stretched above head', '片腕を頭上に伸ばし横たわる'],
+  ['perched on edge of surface with weight forward', '座面の端に前のめりで腰かける'],
+  ['curled into intimate compact position', '体を丸めて体育座り'],
+  ['stretching upward with arms raised overhead', '両腕を上げ背伸び'],
+  ['bent forward with hands on knees', '両手を膝につき前かがみ'],
+  ['standing with one hip canted to side', '片腰を突き出す'],
+  ['seated cross-legged with straight spine', 'あぐら・背筋を伸ばす'],
+  ['draped over furniture with limbs extended', '家具にだらりと寄りかかる'],
+  ['crouched low with weight perfectly balanced', '低くしゃがんでバランス'],
+  ['standing with arms folded across chest', '腕を組んで立つ'],
+  ['leaning forward with hands braced on surface', '手をついて前傾'],
+  ['sprawled with relaxed loose limbs', '大の字・脱力ポーズ'],
+  ['twisting at waist to look back over shoulder', '腰をひねって振り返る'],
+  ['standing at elegant three-quarter turn', '斜め45度（優美な立ち姿）'],
+  ['sitting on floor with knees drawn up', '床に座って膝を抱える'],
+  ['arms raised stretching with eyes closed', '目を閉じ両腕を上げ伸び'],
+  ['leaning head back with neck exposed', '首を後ろに倒し喉元を晒す'],
+  ['reaching forward toward camera', 'カメラへ片腕を伸ばす'],
+];
+
+// NSFW1：ハード系（挿入・アナル・複数人・射精・拘束）
+const POSTURE_NSFW1 = [
+  { group: null, items: [['', '（Ollamaに任せる）']] },
+  { group: '挿入系', items: [
+    ['missionary position, man on top, woman lying on back with legs spread, face-to-face intimate eye contact, deep penetration', '正常位'],
+    ['deep missionary, legs pushed back toward chest, maximum depth penetration, breathless expression', '正常位・深く'],
+    ['missionary with legs wrapped around partner\'s waist, pulling him deeper, nails digging into his back', '正常位・脚絡め'],
+    ['doggy style, woman on all fours, man behind, hands gripping her hips firmly, arched back', '後背位'],
+    ['aggressive doggy style, face pressed into pillow, ass raised high, hands gripping sheets', '後背位・激しく'],
+    ['cowgirl position, woman on top straddling man, hands on his chest, hips rolling forward', '騎乗位'],
+    ['bouncing cowgirl, woman riding vigorously, breasts bouncing, head thrown back in ecstasy', '騎乗位・激しく'],
+    ['slow grinding cowgirl, woman leaning forward on man\'s chest, circular hip motion, intense eye contact', '騎乗位・グラインド'],
+    ['reverse cowgirl, woman facing away straddling man, leaning forward slightly, hands on thighs', '逆騎乗位'],
+    ['spooning sex, both lying on side, man entering from behind, arm wrapped around her waist', 'スプーン体位'],
+    ['prone bone, woman lying flat face down, man on top from behind, arms pinned beside her', 'うつ伏せ後背位'],
+    ['standing sex from behind, woman bent forward hands on wall, man gripping her waist', '立位後背位'],
+    ['standing from behind against window, pressing her against glass, hands splayed on pane', '立位・窓押し付け'],
+    ['legs on shoulders missionary, woman lying back with legs raised high on man\'s shoulders', '肩掛け正常位'],
+    ['lotus position, woman sitting in man\'s lap facing him, arms around his neck, deeply connected', '蓮華座体位'],
+    ['seated lap sex, woman straddling man seated on chair, riding slowly, faces close', '椅子騎乗位'],
+    ['edge of bed, woman lying with hips at edge, man standing between her legs thrusting', 'ベッドふち立位'],
+    ['pile driver position, woman\'s legs folded back over her head, extreme depth', 'パイルドライバー'],
+    ['side-lying sex, facing each other, one leg raised, intimate slow penetration', '横向き対面'],
+    ['standing lifted sex, woman\'s legs wrapped around man\'s waist, held up against wall', '壁立位・抱き上げ'],
+  ]},
+  { group: 'アナル', items: [
+    ['anal doggy style, woman on all fours, man penetrating anally from behind, cheeks spread wide, back arched deeply', '後背位'],
+    ['anal prone bone, woman flat on stomach, man on top entering from behind anally, full body weight pressing down', 'うつ伏せ'],
+    ['anal missionary, woman on back with legs raised and spread, receiving anal penetration face-to-face, eye contact', '正常位'],
+    ['anal cowgirl, woman on top guiding anal penetration, hands on man\'s chest, slowly lowering herself down', '騎乗位'],
+    ['anal reverse cowgirl, facing away, slowly taking anal penetration, leaning forward hands on thighs', '逆騎乗位'],
+    ['anal spooning, lying on side, man entering anally from behind, arm around waist, intimate slow pace', 'スプーン'],
+    ['anal standing from behind, woman bent over hands on wall, man penetrating anally, gripping her hips', '立位後背位'],
+    ['anal legs on shoulders, legs raised high over shoulders, deep anal penetration from above', '肩掛け'],
+    ['anal pile driver, legs folded over head, extreme angle anal penetration, total exposure', 'パイルドライバー'],
+    ['anal edge of bed, hips at edge, man standing and penetrating anally, legs held apart', 'ベッドふち'],
+    ['first anal, hesitant expression, slow careful penetration from behind, biting lip in mix of pain and pleasure', '初アナル'],
+    ['deep anal penetration, ass cheeks spread with both hands, looking back with strained blissful expression', '深挿入'],
+    ['anal creampie aftermath, lying face down, semen dripping from anus, satisfied exhausted expression', '中出し後'],
+    ['anal fingering preparation, on all fours, partner inserting fingers into anus slowly, gasping expression', '指準備'],
+    ['double anal penetration, two men simultaneously penetrating anally, overwhelmed expression', 'ダブルアナル'],
+    ['anal while eating out, face down ass up receiving anal while partner performs oral simultaneously', '＋クンニ同時'],
+    ['anal with vibrator, receiving anal penetration while vibrator stimulates clitoris, overwhelming pleasure', '＋バイブ同時'],
+    ['anal standing lift, legs wrapped around partner from behind, suspended anal sex against wall', '壁立位抱き上げ'],
+    ['anal on side bent knee, lying on side with top knee drawn to chest, anal entry from behind', '横向き膝抱え'],
+    ['rough anal doggy, face pushed into mattress, hips gripped hard, aggressive anal thrusting from behind', '激しい後背位'],
+    ['anal creampie, man pulling out slowly, semen leaking from stretched anus, satisfied exhausted expression', '中出し'],
+    ['anal gape, cheeks spread wide showing stretched and gaping anus after session', '開き'],
+    ['plug insertion, on all fours, partner slowly inserting anal plug, focused expression of sensation', 'プラグ挿入'],
+  ]},
+  { group: '拘束', items: [
+    ['wrists pinned above head on bed, legs spread, looking up submissively', '手首拘束・仰向け'],
+    ['bent over furniture with hands restrained behind back, exposed and waiting', '後手拘束・前屈'],
+    ['on knees with hands tied behind back, looking up with pleading expression', '後手縛り・膝立ち'],
+    ['pushed against wall, arms held above head by partner, body pressed close', '壁押さえ付け'],
+    ['hogtied on bed, wrists and ankles bound together, helpless arched position', '海老縛り'],
+    ['spread eagle restraint, all four limbs tied to bed corners, completely exposed', '大の字拘束'],
+    ['collar and leash, on hands and knees, led by leash, submissive gaze upward', '首輪リード'],
+    ['blindfolded and restrained, heightened sensation, anticipatory tension', '目隠し拘束'],
+    ['over the knee spanking, draped across lap, ass raised, reddened cheek', 'お尻叩き'],
+    ['face down ass up restrained, wrists bound to ankle, unable to move, exposed', 'うつ伏せ拘束'],
+  ]},
+  { group: '複数人', items: [
+    ['double penetration, vaginal and anal simultaneously, two men from front and behind', 'ダブル挿入'],
+    ['spitroast position, on all fours, servicing one orally from front and one anally from behind', 'スピットロースト'],
+    ['threesome cowgirl, woman on top of one man vaginally, giving blowjob to another', '3P騎乗位＋フェラ'],
+    ['reverse spitroast, lying on back, oral from one direction, vaginal from other', '逆スピットロースト'],
+    ['double blowjob, kneeling between two men, alternating between both', 'ダブルフェラ'],
+    ['gangbang on knees, multiple men surrounding, servicing each in turn', 'ギャングバング'],
+    ['two women one man, both women attending to single man together', '2女1男'],
+    ['triple penetration, all three openings filled simultaneously, overwhelmed expression', 'トリプル挿入'],
+  ]},
+  { group: '射精', items: [
+    ['mouth full of cum, lips sealed around tip at moment of orgasm, swallowing', '口内射精・飲み込み'],
+    ['creampie missionary, man collapsing forward, deep internal ejaculation, legs wrapped around him', '膣内中出し'],
+    ['pull out and cum on stomach, man straddling, releasing across her abdomen', '腹射'],
+    ['cum on breasts, kneeling receiver with chest offered upward', '胸射'],
+    ['cum on ass, bent over, man finishing across her buttocks', 'お尻射精'],
+    ['double creampie, aftermath of double penetration, fluids dripping from both openings', 'ダブル中出し後'],
+  ]},
+];
+
+// NSFW2：ソフト系（フェラ・クンニ・手淫・自慰）
+const POSTURE_NSFW2 = [
+  { group: null, items: [['', '（Ollamaに任せる）']] },
+  { group: 'フェラ', items: [
+    ['on knees giving blowjob, looking up with eye contact, hands on thighs', '見上げ'],
+    ['lying on back with head hanging off edge, deep blowjob, throat exposed', '頭下げ'],
+    ['standing blowjob, man standing, woman crouching below looking up submissively', '立位'],
+    ['sitting on bed giving blowjob, both hands wrapped around shaft, attentive expression', '座位両手'],
+    ['deepthroat blowjob, head held in place, eyes watering, nose pressed against pelvis', 'ディープスロート'],
+    ['sloppy blowjob, excessive saliva, messy and enthusiastic, looking up through wet lashes', 'ねちょフェラ'],
+    ['blowjob with eye contact, kneeling, maintaining intense gaze while taking full length', '目線フェラ'],
+    ['two-handed blowjob, stroking shaft while sucking tip, focused technique', '両手奉仕'],
+    ['gagging blowjob, throat visibly bulging, eyes tearing, breathless between strokes', 'イラマチオ'],
+    ['post-orgasm blowjob, continuing after climax, overstimulation expression', '射精後フェラ'],
+    ['facial cumshot, kneeling with eyes closed, receiving ejaculation on face', '顔射'],
+  ]},
+  { group: 'クンニ', items: [
+    ['lying back with legs spread wide, receiving cunnilingus, back arched in pleasure', '仰向け'],
+    ['sitting on face, straddling partner\'s head, hands braced on headboard', '顔面騎乗'],
+    ['standing with one leg raised on surface, receiving oral from kneeling partner', '立位'],
+    ['thighs clamped around head, partner buried in pussy, gripping sheets', '脚締め'],
+    ['cunnilingus from behind, on all fours, partner licking from behind between legs', '後ろから'],
+    ['69 position, mutual oral simultaneously, both focused on pleasuring each other', 'シックスナイン'],
+  ]},
+  { group: '手淫', items: [
+    ['lying back receiving handjob, hips lifting slightly, expression of restrained pleasure', '手コキ・仰向け'],
+    ['fingering from behind while standing, head tilted back against partner\'s shoulder', '指・立位後ろ'],
+    ['two-finger penetration, lying back, legs spread, looking down at partner\'s hand', '二本指挿入'],
+    ['deep fingering, arched back, fist partially inserted, overwhelmed expression', '深指'],
+    ['fingering while kissing, passionate embrace, hand moving beneath waistband', '指・キスしながら'],
+    ['handjob with both hands, kneeling before partner, focused upward gaze', '両手手コキ'],
+    ['mutual fingering face to face, foreheads touching, synchronized breathing', '相互指'],
+  ]},
+  { group: '自慰', items: [
+    ['lying on back masturbating, knees bent and spread, fingers between legs, eyes half-closed', '仰向け'],
+    ['sitting spread-legged facing camera, using vibrator, expression of focused pleasure', 'バイブ'],
+    ['on all fours masturbating, looking back at camera, one hand reaching between legs', '四つん這い'],
+    ['kneeling upright, one hand on breast, one hand between legs, lips parted', '正座'],
+    ['mirror masturbation, watching self in mirror, kneeling with legs spread', '鏡前'],
+    ['shower masturbation, standing under running water, hand between legs, head back', 'シャワー'],
+    ['anal masturbation, lying on back, finger inserted in anus, other hand on clitoris', 'アナル指'],
+    ['dual stimulation, vibrator on clitoris, fingers penetrating simultaneously, overwhelmed', '二重刺激'],
+    ['edging masturbation, stopping just before climax repeatedly, tortured pleasure expression', '寸止め'],
+    ['orgasm face, full body convulsion, toes curled, back arched at moment of climax', 'イキ顔'],
+  ]},
+];
+
+// 0=通常 1=NSFW1(ハード) 2=NSFW2(ソフト)
+let nsfwPostureMode = 0;
+
+function togglePosturePanel() {
+  const panel = document.getElementById('posture-panel');
+  const arrow = document.getElementById('posture-toggle-arrow');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  arrow.textContent = open ? '▲' : '▼';
+}
+
+function selectPostureItem(val, label) {
+  const sel = document.getElementById('sel-posture');
+  sel.innerHTML = '';
+  const opt = document.createElement('option');
+  opt.value = val; opt.selected = true;
+  sel.appendChild(opt);
+  const lbl = document.getElementById('posture-selected-label');
+  lbl.textContent = label || '（Ollamaに任せる）';
+  lbl.style.color = val ? 'var(--accent)' : 'var(--muted)';
+  document.getElementById('posture-items').style.display = 'none';
+  document.getElementById('posture-panel').style.display = 'none';
+  document.getElementById('posture-toggle-arrow').textContent = '▼';
+  document.getElementById('posture-categories').querySelectorAll('button').forEach(b => {
+    b._active = false; b.style.background='var(--surface)'; b.style.color='var(--text)';
+  });
+  markSelected(sel);
+}
+
+function buildPostureAccordion(data, isNsfw) {
+  const catDiv = document.getElementById('posture-categories');
+  const itemDiv = document.getElementById('posture-items');
+  catDiv.innerHTML = '';
+  itemDiv.innerHTML = '';
+  itemDiv.style.display = 'none';
+
+  // 「指定なし」ボタン
+  const clearBtn = document.createElement('button');
+  clearBtn.textContent = '指定なし';
+  clearBtn.style.cssText = 'padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:14px;cursor:pointer;';
+  clearBtn.onclick = () => selectPostureItem('', '（Ollamaに任せる）');
+  catDiv.appendChild(clearBtn);
+
+  if (!isNsfw) {
+    // 通常ポーズ：グループなし → カテゴリボタン不要、直接リスト
+    const allBtn = document.createElement('button');
+    allBtn.textContent = '一覧';
+    allBtn.style.cssText = 'padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;cursor:pointer;';
+    allBtn.onclick = () => {
+      itemDiv.innerHTML = '';
+      data.forEach(([val, label]) => {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        btn.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 10px;border:none;border-bottom:1px solid var(--border);background:transparent;color:var(--text);font-size:14px;cursor:pointer;';
+        btn.onclick = () => selectPostureItem(val, label);
+        itemDiv.appendChild(btn);
+      });
+      itemDiv.style.display = itemDiv.style.display === 'none' ? 'block' : 'none';
+    };
+    catDiv.appendChild(allBtn);
+  } else {
+    data.forEach(({ group, items }) => {
+      if (!group) return;
+      const btn = document.createElement('button');
+      btn.textContent = group;
+      btn.style.cssText = 'padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;cursor:pointer;';
+      btn.onclick = () => {
+        // 同じカテゴリを再タップで閉じる
+        if (btn._active) {
+          itemDiv.style.display = 'none';
+          btn._active = false;
+          btn.style.background = 'var(--surface)';
+          btn.style.color = 'var(--text)';
+          return;
+        }
+        // 他ボタンリセット
+        catDiv.querySelectorAll('button').forEach(b => { b._active = false; b.style.background='var(--surface)'; b.style.color='var(--text)'; });
+        btn._active = true;
+        btn.style.background = 'var(--accent)';
+        btn.style.color = '#000';
+        itemDiv.innerHTML = '';
+        items.forEach(([val, label]) => {
+          const item = document.createElement('button');
+          item.textContent = label;
+          item.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 10px;border:none;border-bottom:1px solid var(--border);background:transparent;color:var(--text);font-size:14px;cursor:pointer;';
+          item.onclick = () => selectPostureItem(val, label);
+          itemDiv.appendChild(item);
+        });
+        itemDiv.style.display = 'block';
+      };
+      catDiv.appendChild(btn);
+    });
+  }
+}
+
+function buildPostureSelect(sel, data, isNsfw) {
+  buildPostureAccordion(data, isNsfw);
+}
+
+function toggleNsfwPosture(mode) {
+  // 同じボタンを再度押したら通常に戻す（排他）
+  nsfwPostureMode = (nsfwPostureMode === mode) ? 0 : mode;
+
+  const btn1 = document.getElementById('btn-nsfw1');
+  const btn2 = document.getElementById('btn-nsfw2');
+  const sel  = document.getElementById('sel-posture');
+  const panel = document.getElementById('posture-panel');
+  const arrow = document.getElementById('posture-toggle-arrow');
+
+  // ボタン状態リセット
+  [btn1, btn2].forEach(b => { b.style.background=''; b.style.color=''; });
+
+  if (nsfwPostureMode === 1) {
+    btn1.style.background = '#c0392b'; btn1.style.color = '#fff';
+    buildPostureSelect(sel, POSTURE_NSFW1, true);
+    panel.style.display = 'block';
+    arrow.textContent = '▲';
+  } else if (nsfwPostureMode === 2) {
+    btn2.style.background = '#8e44ad'; btn2.style.color = '#fff';
+    buildPostureSelect(sel, POSTURE_NSFW2, true);
+    panel.style.display = 'block';
+    arrow.textContent = '▲';
+  } else {
+    buildPostureSelect(sel, POSTURE_NORMAL, false);
+    panel.style.display = 'none';
+    arrow.textContent = '▼';
+  }
+  markSelected(sel);
+}
+
+async function runBackup() {
+  const jupyterUrl = document.getElementById('jupyterUrl').value.trim().replace(/\/+$/,'');
+  if (!jupyterUrl) { alert('Jupyter URLを入力してください'); return; }
+  const btn = document.getElementById('backupBtn');
+  btn.disabled = true; btn.textContent = '実行中...';
+  document.getElementById('backupLog').textContent = '';
+  const backupNb = currentModel === 'flux1' ? 'backup_flux1.ipynb' : 'backup_flux2.ipynb';
+  await runJupyterNotebook(jupyterUrl, backupNb, 'backupLog');
+  btn.disabled = false; btn.textContent = '💾 バックアップ実行';
+}
+
+// ===== 汎用アコーディオンセレクタ =====
+function buildAccordion(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const accordionId = selectId + '-accordion';
+  if (document.getElementById(accordionId)) return;
+
+  sel.style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.id = accordionId;
+
+  // トグルボタン（タイトル行）
+  const toggleBtn = document.createElement('div');
+  toggleBtn.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 14px;cursor:pointer;';
+  const selectedLabel = document.createElement('span');
+  selectedLabel.id = selectId + '-selected';
+  selectedLabel.style.cssText = 'font-size:18px;color:var(--muted);';
+  selectedLabel.textContent = sel.options[0]?.text || '（Ollamaに任せる）';
+  const arrow = document.createElement('span');
+  arrow.style.cssText = 'color:var(--muted);font-size:14px;';
+  arrow.textContent = '▼';
+  toggleBtn.appendChild(selectedLabel);
+  toggleBtn.appendChild(arrow);
+  wrap.appendChild(toggleBtn);
+
+  // パネル（カテゴリ＋アイテム）
+  const panel = document.createElement('div');
+  panel.style.cssText = 'display:none;margin-top:6px;';
+  wrap.appendChild(panel);
+
+  const catDiv = document.createElement('div');
+  catDiv.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:8px;';
+  panel.appendChild(catDiv);
+
+  const itemDiv = document.createElement('div');
+  itemDiv.style.cssText = 'display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;max-height:220px;overflow-y:auto;';
+  panel.appendChild(itemDiv);
+
+  sel.parentNode.insertBefore(wrap, sel.nextSibling);
+
+  // トグル開閉
+  toggleBtn.onclick = () => {
+    const open = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    arrow.textContent = open ? '▲' : '▼';
+  };
+
+  function selectItem(val, label) {
+    sel.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.value = val; opt.selected = true;
+    sel.appendChild(opt);
+    selectedLabel.textContent = label || '（Ollamaに任せる）';
+    selectedLabel.style.color = val ? 'var(--accent)' : 'var(--muted)';
+    itemDiv.style.display = 'none';
+    panel.style.display = 'none';
+    arrow.textContent = '▼';
+    catDiv.querySelectorAll('button').forEach(b => { b._active=false; b.style.background='var(--surface)'; b.style.color='var(--text)'; });
+    markSelected(sel);
+  }
+
+  // 「指定なし」ボタン
+  const clearBtn = document.createElement('button');
+  clearBtn.textContent = '指定なし';
+  clearBtn.style.cssText = 'padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:14px;cursor:pointer;';
+  clearBtn.onclick = () => selectItem('', '（Ollamaに任せる）');
+  catDiv.appendChild(clearBtn);
+
+  const groups = sel.querySelectorAll('optgroup');
+  if (groups.length > 0) {
+    groups.forEach(grp => {
+      const btn = document.createElement('button');
+      btn.textContent = grp.label.replace(/^── /, '').replace(/ ──$/, '');
+      btn.style.cssText = 'padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;cursor:pointer;';
+      btn.onclick = () => {
+        if (btn._active) { itemDiv.style.display='none'; btn._active=false; btn.style.background='var(--surface)'; btn.style.color='var(--text)'; return; }
+        catDiv.querySelectorAll('button').forEach(b => { b._active=false; b.style.background='var(--surface)'; b.style.color='var(--text)'; });
+        btn._active=true; btn.style.background='var(--accent)'; btn.style.color='#000';
+        itemDiv.innerHTML='';
+        grp.querySelectorAll('option').forEach(opt => {
+          const item = document.createElement('button');
+          item.textContent = opt.text;
+          item.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 10px;border:none;border-bottom:1px solid var(--border);background:transparent;color:var(--text);font-size:14px;cursor:pointer;';
+          item.onclick = () => selectItem(opt.value, opt.text);
+          itemDiv.appendChild(item);
+        });
+        itemDiv.style.display='block';
+      };
+      catDiv.appendChild(btn);
+    });
+  } else {
+    const allBtn = document.createElement('button');
+    allBtn.textContent = '一覧';
+    allBtn.style.cssText = 'padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;cursor:pointer;';
+    allBtn.onclick = () => {
+      if (allBtn._active) { itemDiv.style.display='none'; allBtn._active=false; allBtn.style.background='var(--surface)'; allBtn.style.color='var(--text)'; return; }
+      allBtn._active=true; allBtn.style.background='var(--accent)'; allBtn.style.color='#000';
+      itemDiv.innerHTML='';
+      sel.querySelectorAll('option').forEach(opt => {
+        if (!opt.value) return;
+        const item = document.createElement('button');
+        item.textContent = opt.text;
+        item.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 10px;border:none;border-bottom:1px solid var(--border);background:transparent;color:var(--text);font-size:14px;cursor:pointer;';
+        item.onclick = () => selectItem(opt.value, opt.text);
+        itemDiv.appendChild(item);
+      });
+      itemDiv.style.display='block';
+    };
+    catDiv.appendChild(allBtn);
+  }
+}
+// ポーズセレクト初期化（全定義・関数ロード後に実行）
+buildPostureSelect(document.getElementById('sel-posture'), POSTURE_NORMAL, false);
+
+
+const CAMERA_NORMAL = [
+  { group: '広角・引き', items: [
+    ['wide establishing shot with subject centered in environment', 'ワイド・環境込み'],
+    ['medium full-body shot with environmental context', '全身ミディアム'],
+    ['symmetrical front-facing centered composition', '左右対称・正面'],
+    ['wide-angle with slight natural lens distortion', '広角・自然な歪み'],
+    ['fish-eye lens with curved dramatic distortion', '魚眼レンズ'],
+  ]},
+  { group: '寄り・クローズ', items: [
+    ['intimate close-up portrait with shallow depth of field', '浅い被写界深度のポートレート'],
+    ['extreme close-up macro on facial details', '顔のディテール超アップ'],
+    ['telephoto compressed background with subject sharp', '望遠・背景圧縮'],
+    ['split focus with face sharp and body blurred behind', '顔にピント・体がボケ'],
+  ]},
+  { group: 'アングル', items: [
+    ['low angle shot looking up emphasizing power and scale', 'ローアングル・見上げ'],
+    ['extreme low angle from ground level', '地面からの超ローアングル'],
+    ['high angle looking down with subject below', 'ハイアングル・見下ろし'],
+    ['bird\'s eye view from directly above', '真上からの俯瞰'],
+    ['Dutch tilt angle creating tension and unease', 'オランダ傾き・緊張感'],
+    ['dynamic diagonal composition with leading lines', '対角線・ダイナミック'],
+  ]},
+  { group: '視点・特殊', items: [
+    ['point-of-view first-person intimate perspective', '一人称POV'],
+    ['over-the-shoulder perspective looking forward', '肩越し視点'],
+    ['candid side profile in natural environment', 'サイドプロフィール・自然'],
+    ['three-quarter profile view', '斜め45度'],
+    ['reflection shot through mirror or water surface', 'ミラー・水面の反射'],
+    ['split-screen through doorframe or window', 'ドア枠・窓越し'],
+    ['clandestine voyeuristic shot through a partially open door gap', '隙間から覗く視点'],
+    ['security CCTV camera perspective with high-angle fish-eye grain', '防犯カメラ視点'],
+  ]},
+];
+
+const CAMERA_NSFW = [
+  { group: 'NSFW特化', items: [
+    ['close-up on penetration point, graphic and explicit', '挿入部分のクローズアップ'],
+    ['overhead shot looking down at spread body below', '真上から広げた体を見下ろす'],
+    ['between-the-legs upward shot from below', '脚の間から下から見上げる'],
+    ['close-up on face during climax, extreme portrait', '絶頂中の顔・極アップ'],
+    ['pull-back reveal shot showing full act in context', '引いて全体の行為を見せる'],
+    ['side profile capturing full body motion', '横から全身の動きを捉える'],
+    ['close-up on hands gripping flesh', '肉を掴む手のクローズアップ'],
+    ['worm\'s eye view from floor level looking up', '床からの虫の目視点'],
+    ['extreme macro focus on thigh absolute territory area', '絶対領域の超アップ'],
+    ['intense low angle tracing legs upward to waist', '脚から腰へのローアングル'],
+    ['straddled POV, looking directly up at the subject sitting on top', '跨がれた視点・見上げる'],
+  ]},
+];
+
+let nsfwCameraActive = false;
+
+function buildCameraSelect(sel, data, isNsfw) {
+  sel.innerHTML = '<option value="">（Ollamaに任せる）</option>';
+  data.forEach(({ group, items }) => {
+    const grp = document.createElement('optgroup');
+    grp.label = '── ' + group + ' ──';
+    items.forEach(([val, label]) => {
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = label;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  });
+}
+
+function toggleNsfwCamera() {
+  nsfwCameraActive = !nsfwCameraActive;
+  const btn = document.getElementById('btn-nsfw-camera');
+  const sel = document.getElementById('sel-camera');
+  btn.textContent = '🔞';
+  btn.style.background = nsfwCameraActive ? '#c0392b' : '';
+  btn.style.color = nsfwCameraActive ? '#fff' : '';
+  buildCameraSelect(sel, nsfwCameraActive ? CAMERA_NSFW : CAMERA_NORMAL, nsfwCameraActive);
+  markSelected(sel);
+}
+
+const HAIR_NORMAL = [
+  { group: 'ショート', items: [
+    ['short bob cut, clean and sharp jawline framing', 'ボブカット'],
+    ['pixie cut, short wispy strands framing the face', 'ピクシーカット'],
+    ['undercut with longer top, edgy and stylish', 'アンダーカット'],
+    ['short textured crop with natural movement', 'ショートクロップ'],
+    ['asymmetric short cut, longer on one side', 'アシメショート'],
+    ['shaggy short hair with soft natural layers', 'シャギーショート'],
+    ['short straight hair tucked behind ears', '耳かけショートストレート'],
+  ]},
+  { group: 'ミディアム', items: [
+    ['medium length straight hair falling to shoulders', '肩までのストレート'],
+    ['collarbone length hair with blunt ends', '鎖骨ラインの切りっぱなし'],
+    ['medium wavy hair with natural volume', 'ミディアムウェーブ'],
+    ['layered medium hair with feathered ends', 'レイヤーミディアム'],
+    ['lob cut, sleek and polished shoulder length', 'ロブカット'],
+    ['medium hair parted in the middle, curtain framing', 'センターパート・ミディアム'],
+    ['soft waves falling just below the shoulders', '肩下のソフトウェーブ'],
+  ]},
+  { group: 'ロング', items: [
+    ['long straight black hair falling to waist', '腰までの黒髪ロングストレート'],
+    ['long silky hair cascading down the back', 'サラサラロングヘア'],
+    ['long layered hair with subtle movement', 'レイヤーロング'],
+    ['very long hair reaching past the hips', 'ヒップ越えの超ロング'],
+    ['long straight hair parted neatly in the middle', 'センター分けロングストレート'],
+    ['long hair with wispy face-framing layers', '顔周りに毛束のロング'],
+    ['floor-length ultra-long straight hair', '床まで届く超ロングストレート'],
+  ]},
+  { group: 'アップスタイル', items: [
+    ['high ponytail, sleek and tight', 'ハイポニーテール'],
+    ['low ponytail loosely tied', 'ローポニーテール'],
+    ['side ponytail falling over one shoulder', 'サイドポニーテール'],
+    ['twin tails, high and symmetrical', 'ツインテール（高め）'],
+    ['low twin tails resting on shoulders', 'ツインテール（低め）'],
+    ['messy bun with loose strands falling around face', 'ルーズなお団子'],
+    ['tight neat bun at the nape of the neck', 'うなじのきっちりお団子'],
+    ['half-up half-down with top section pinned back', 'ハーフアップ'],
+    ['braided crown wrapping around the head', '編み込みクラウン'],
+    ['single braid over one shoulder', 'サイドの一本三つ編み'],
+    ['double braids framing the face', 'ツインブレイド'],
+    ['fishtail braid draped over shoulder', 'フィッシュテール編み'],
+    ['loose updo with tendrils escaping around the face', 'ルーズなアップスタイル'],
+    ['top knot with chopsticks through it', '簪ありのトップノット'],
+    ['high ponytail tied with ribbon bow', 'リボン付きハイポニーテール'],
+  ]},
+  { group: 'ウェーブ・カール', items: [
+    ['loose natural waves with beachy texture', 'ビーチウェーブ'],
+    ['tight spiral curls bouncing with movement', '縦ロールカール'],
+    ['soft romantic curls falling over shoulders', 'ロマンティックカール'],
+    ['voluminous curly hair with wide natural shape', 'ボリュームカーリーヘア'],
+    ['wavy hair with loose S-curve texture', '緩いSカールウェーブ'],
+    ['crimped hair with angular wave pattern', 'クリンプヘア'],
+    ['ringlet curls framing the face softly', '顔周りのリングカール'],
+  ]},
+  { group: '特殊状態', items: [
+    ['wet hair clinging to skin and neck', '肌に張り付く濡れ髪'],
+    ['disheveled hair spread across pillow', '枕に広がる乱れ髪'],
+    ['windswept hair blown dramatically to one side', '風になびく髪'],
+    ['hair tousled and messy after sleep', '寝起きの乱れ髪'],
+    ['hair stuck to face with sweat', '汗で顔に張り付く髪'],
+    ['hair fanned out around head while lying down', '横になって広がる髪'],
+    ['damp hair with water droplets catching light', '水滴が光る湿った髪'],
+    ['hair loosely falling after being undone from a bun', 'お団子を解いた髪'],
+    ['post-sex disheveled hair, tangled and wild', '事後の乱れた髪'],
+    ['hair pinned up with several strands escaping', 'ピンアップ・一部おろし'],
+  ]},
+  { group: 'カラー・質感', items: [
+    ['glossy jet-black hair with blue light reflections', '艶のある黒髪（青みの光沢）'],
+    ['dark brown hair with warm chestnut highlights', 'ダークブラウン×栗色ハイライト'],
+    ['honey blonde with golden sun-kissed streaks', 'ハニーブロンド'],
+    ['silver white hair with ethereal sheen', 'シルバーホワイト'],
+    ['two-tone hair, dark roots fading to light ends', 'ツートン（根元暗め）'],
+    ['pastel pink tinted hair at the tips', '毛先パステルピンク'],
+    ['deep burgundy hair with rich red undertones', 'ボルドーレッド'],
+  ]},
+];
+
+const EYE_CONTACT_NORMAL = [
+  { group: '正面', items: [
+    ['looking directly at camera, intense direct gaze', 'カメラを直視・強い視線'],
+    ['eyes closed, facing directly forward', '正面・目を閉じる'],
+  ]},
+  { group: '上向き', items: [
+    ['looking upward, eyes lifted toward ceiling', '上を見る'],
+    ['eyes closed, face tilted slightly upward', '上向き・目を閉じる'],
+  ]},
+  { group: '下向き', items: [
+    ['looking downward, downcast gaze toward floor', '下を見る・うつむき'],
+    ['eyes closed, face tilted slightly downward', '下向き・目を閉じる'],
+  ]},
+  { group: '左向き', items: [
+    ['looking to the left, gaze directed sideways', '左を見る'],
+    ['eyes closed, face turned to the left', '左向き・目を閉じる'],
+  ]},
+  { group: '右向き', items: [
+    ['looking to the right, gaze directed sideways', '右を見る'],
+    ['eyes closed, face turned to the right', '右向き・目を閉じる'],
+  ]},
+  { group: '斜め', items: [
+    ['glancing up to the left, soft sidelong look', '左上に視線・流し目'],
+    ['eyes closed, face angled up toward the left', '左上向き・目を閉じる'],
+    ['glancing up to the right, soft sidelong look', '右上に視線・流し目'],
+    ['eyes closed, face angled up toward the right', '右上向き・目を閉じる'],
+  ]},
+  { group: '後ろ向き', items: [
+    ['facing away from camera, back of head visible', '後ろ向き・後頭部'],
+    ['facing away, back of head visible, eyes closed', '後ろ向き・目を閉じる'],
+  ]},
+];
+
+// カメラ・髪型・視線セレクト初期化 → その後アコーディオン化
+document.addEventListener('DOMContentLoaded', () => {
+  buildCameraSelect(document.getElementById('sel-camera'), CAMERA_NORMAL, false);
+  buildCameraSelect(document.getElementById('sel-hair'), HAIR_NORMAL, false);
+  buildCameraSelect(document.getElementById('sel-eye-contact'), EYE_CONTACT_NORMAL, false);
+
+  ['sel-nationality','sel-body','sel-bust','sel-pussy','sel-scenario','sel-camera','sel-hair','sel-eye-contact','wcSelect'].forEach(id => {
+    buildAccordion(id);
+  });
+});
+
+</script>
+</body>
+</html>

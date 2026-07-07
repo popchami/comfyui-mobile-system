@@ -1,0 +1,32 @@
+# download_list_sdxl.txt (SDXL / 24GB専用 / 商用OK)
+# 列: 名前[TAB]種別[TAB]URL[TAB]バージョンID[TAB]保存先
+
+# === Checkpoint: chibi・アニメ生成 ===
+animagine_xl4_opt	civitai	https://civitai.com/api/download/models/1408658	1408658	checkpoints/
+
+# === Checkpoint: PixelArt変換 ===
+# ※ Pixel Art Diffusion XL (Yamer) - 商用確認待ち
+# pixel_art_diffusion_xl	civitai	https://civitai.com/api/download/models/XXXXXX	XXXXXX	checkpoints/
+
+# === LoRA: Chibi Style XL ===
+lora_chibi_style_xl	civitai	https://civitai.com/api/download/models/138601	138601	loras/
+
+# === IPAdapter: SDXL用 ===
+ipadapter_sdxl	hf	https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors	-	ipadapter/
+ipadapter_plus_sdxl	hf	https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors	-	ipadapter/
+
+# === CLIP Vision: IPAdapter用 ===
+clip_vision_sdxl	hf	https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors	-	clip_vision/
+
+# === LLM (Ollama) ===
+ollama_qwen35	ollama	jaahas/qwen3.5-uncensored:9b	-	-
+
+# === IPAdapter FaceID PLUS V2 (SDXL) ===
+ipadapter_faceid_sdxl	hf	https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl.bin	-	ipadapter/
+ipadapter_faceid_sdxl_lora	hf	https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl_lora.safetensors	-	loras/
+
+# === ControlNet SDXL (canny) ===
+controlnet_canny_sdxl	hf	https://huggingface.co/diffusers/controlnet-canny-sdxl-1.0/resolve/main/diffusion_pytorch_model.fp16.safetensors	-	controlnet/
+
+# === FaceDetailer: YOLOモデル ===
+face_yolov8m	hf	https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8m.pt	-	ult_bbox/

@@ -1,0 +1,1971 @@
+{
+  "id": "flux2-klein-fp8-ollama-wildcard-lora",
+  "revision": 0,
+  "last_node_id": 38,
+  "last_link_id": 59,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "UNETLoader",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        320,
+        82
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "unet_name",
+          "localized_name": "unet_name",
+          "name": "unet_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "unet_name"
+          },
+          "link": null
+        },
+        {
+          "label": "weight_dtype",
+          "localized_name": "weight_dtype",
+          "name": "weight_dtype",
+          "type": "COMBO",
+          "widget": {
+            "name": "weight_dtype"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            1
+          ],
+          "slot_index": 0,
+          "label": "MODEL",
+          "localized_name": "MODEL"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "UNETLoader"
+      },
+      "title": "Load Diffusion Model【Flux.1 Dev BF16】",
+      "widgets_values": [
+        "__DIFFUSION_MODEL__",
+        "bf16"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "DualCLIPLoader",
+      "pos": [
+        0,
+        120
+      ],
+      "size": [
+        320,
+        100
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "clip_name",
+          "localized_name": "clip_name",
+          "name": "clip_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "clip_name"
+          },
+          "link": null
+        },
+        {
+          "label": "type",
+          "localized_name": "type",
+          "name": "type",
+          "type": "COMBO",
+          "widget": {
+            "name": "type"
+          },
+          "link": null
+        },
+        {
+          "label": "device",
+          "localized_name": "device",
+          "name": "device",
+          "type": "COMBO",
+          "widget": {
+            "name": "device"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            21
+          ],
+          "slot_index": 0,
+          "label": "CLIP",
+          "localized_name": "CLIP"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPLoader"
+      },
+      "title": "Load Text Encoder【Qwen3-8B FP8】",
+      "widgets_values": [
+        "__CLIP1_MODEL__",
+        "__CLIP2_MODEL__",
+        "flux",
+        "default"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "VAELoader",
+      "pos": [
+        0,
+        260
+      ],
+      "size": [
+        320,
+        82
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "vae_name",
+          "localized_name": "vae_name",
+          "name": "vae_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "vae_name"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            4,
+            48
+          ],
+          "slot_index": 0,
+          "label": "VAE",
+          "localized_name": "VAE"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "title": "Load VAE【Flux.1 VAE】",
+      "widgets_values": [
+        "vae/ae.safetensors"
+      ]
+    },
+    {
+      "id": 18,
+      "type": "LoraLoader",
+      "pos": [
+        360,
+        0
+      ],
+      "size": [
+        320,
+        126
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1,
+          "label": "model",
+          "localized_name": "model"
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 21,
+          "label": "clip",
+          "localized_name": "clip"
+        },
+        {
+          "label": "lora_name",
+          "localized_name": "lora_name",
+          "name": "lora_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "lora_name"
+          },
+          "link": null
+        },
+        {
+          "label": "strength_model",
+          "localized_name": "strength_model",
+          "name": "strength_model",
+          "type": "FLOAT",
+          "widget": {
+            "name": "strength_model"
+          },
+          "link": null
+        },
+        {
+          "label": "strength_clip",
+          "localized_name": "strength_clip",
+          "name": "strength_clip",
+          "type": "FLOAT",
+          "widget": {
+            "name": "strength_clip"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            22
+          ],
+          "slot_index": 0,
+          "label": "MODEL",
+          "localized_name": "MODEL"
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            23
+          ],
+          "slot_index": 1,
+          "label": "CLIP",
+          "localized_name": "CLIP"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoader"
+      },
+      "title": "LoRA Loader (FP8対応)",
+      "color": "#322",
+      "bgcolor": "#533",
+      "widgets_values": [
+        "Japanese Beauty V0.1.safetensors",
+        0.7,
+        0.7
+      ]
+    },
+    {
+      "id": 9,
+      "type": "EmptyLatentImage",
+      "pos": [
+        0,
+        480
+      ],
+      "size": [
+        300,
+        110
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "width",
+          "localized_name": "width",
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": null
+        },
+        {
+          "label": "height",
+          "localized_name": "height",
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": null
+        },
+        {
+          "label": "batch_size",
+          "localized_name": "batch_size",
+          "name": "batch_size",
+          "type": "INT",
+          "widget": {
+            "name": "batch_size"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            10
+          ],
+          "slot_index": 0,
+          "label": "LATENT",
+          "localized_name": "LATENT"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "EmptyLatentImage"
+      },
+      "title": "Empty Latent【768×1344】",
+      "widgets_values": [
+        768,
+        1344,
+        1
+      ]
+    },
+    {
+      "id": 6,
+      "type": "CLIPTextEncode",
+      "pos": [
+        960,
+        340
+      ],
+      "size": [
+        400,
+        100
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 25,
+          "label": "clip",
+          "localized_name": "clip"
+        },
+        {
+          "label": "text",
+          "localized_name": "text",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": 44
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            7
+          ],
+          "slot_index": 0,
+          "label": "CONDITIONING",
+          "localized_name": "CONDITIONING"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "title": "Positive Prompt (LLMから自動入力)",
+      "widgets_values": [
+        "← Ollamaから自動入力"
+      ]
+    },
+    {
+      "id": 8,
+      "type": "CLIPTextEncode",
+      "pos": [
+        960,
+        480
+      ],
+      "size": [
+        400,
+        100
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 26,
+          "label": "clip",
+          "localized_name": "clip"
+        },
+        {
+          "label": "text",
+          "localized_name": "text",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            9,
+            52
+          ],
+          "slot_index": 0,
+          "label": "CONDITIONING",
+          "localized_name": "CONDITIONING"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "title": "Negative Prompt",
+      "widgets_values": [
+        "deformed hands, extra fingers, extra limbs, floating limbs, bad anatomy, bad teeth, open mouth"
+      ]
+    },
+    {
+      "id": 7,
+      "type": "FluxGuidance",
+      "pos": [
+        1400,
+        340
+      ],
+      "size": [
+        280,
+        60
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 7,
+          "label": "conditioning",
+          "localized_name": "conditioning"
+        },
+        {
+          "label": "guidance",
+          "localized_name": "guidance",
+          "name": "guidance",
+          "type": "FLOAT",
+          "widget": {
+            "name": "guidance"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            8,
+            49
+          ],
+          "slot_index": 0,
+          "label": "CONDITIONING",
+          "localized_name": "CONDITIONING"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "FluxGuidance"
+      },
+      "widgets_values": [
+        2.0
+      ]
+    },
+    {
+      "id": 10,
+      "type": "KSampler",
+      "pos": [
+        1720,
+        340
+      ],
+      "size": [
+        320,
+        280
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 24,
+          "label": "model",
+          "localized_name": "model"
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 8,
+          "label": "positive",
+          "localized_name": "positive"
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 9,
+          "label": "negative",
+          "localized_name": "negative"
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 10,
+          "label": "latent_image",
+          "localized_name": "latent_image"
+        },
+        {
+          "label": "seed",
+          "localized_name": "seed",
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        },
+        {
+          "label": "control_after_generate",
+          "localized_name": "control_after_generate",
+          "name": "control_after_generate",
+          "type": "COMBO",
+          "widget": {
+            "name": "control_after_generate"
+          },
+          "link": null
+        },
+        {
+          "label": "steps",
+          "localized_name": "steps",
+          "name": "steps",
+          "type": "INT",
+          "widget": {
+            "name": "steps"
+          },
+          "link": null
+        },
+        {
+          "label": "cfg",
+          "localized_name": "cfg",
+          "name": "cfg",
+          "type": "FLOAT",
+          "widget": {
+            "name": "cfg"
+          },
+          "link": null
+        },
+        {
+          "label": "sampler_name",
+          "localized_name": "sampler_name",
+          "name": "sampler_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "sampler_name"
+          },
+          "link": null
+        },
+        {
+          "label": "scheduler",
+          "localized_name": "scheduler",
+          "name": "scheduler",
+          "type": "COMBO",
+          "widget": {
+            "name": "scheduler"
+          },
+          "link": null
+        },
+        {
+          "label": "denoise",
+          "localized_name": "denoise",
+          "name": "denoise",
+          "type": "FLOAT",
+          "widget": {
+            "name": "denoise"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            11
+          ],
+          "slot_index": 0,
+          "label": "LATENT",
+          "localized_name": "LATENT"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        42,
+        "randomize",
+        20,
+        1.0,
+        "dpmpp_2m",
+        "simple",
+        1.0
+      ]
+    },
+    {
+      "id": 11,
+      "type": "VAEDecode",
+      "pos": [
+        2080,
+        340
+      ],
+      "size": [
+        210,
+        50
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 11,
+          "label": "samples",
+          "localized_name": "samples"
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 4,
+          "label": "vae",
+          "localized_name": "vae"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            45
+          ],
+          "slot_index": 0,
+          "label": "IMAGE",
+          "localized_name": "IMAGE"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "id": 12,
+      "type": "SaveImage",
+      "pos": [
+        2320,
+        340
+      ],
+      "size": [
+        400,
+        300
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 59,
+          "label": "images",
+          "localized_name": "images"
+        },
+        {
+          "label": "filename_prefix",
+          "localized_name": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "flux1_dev"
+      ]
+    },
+    {
+      "id": 19,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        0,
+        360
+      ],
+      "size": [
+        320,
+        98
+      ],
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [],
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [],
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [],
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "__CHECKPOINT_MODEL__"
+      ],
+      "title": "Checkpoint Loader（マージモデル用）",
+      "color": "#322",
+      "bgcolor": "#533",
+      "flags": {
+        "collapsed": false
+      }
+    },
+    {
+      "id": 20,
+      "type": "LoraLoader",
+      "pos": [
+        700,
+        40
+      ],
+      "size": [
+        320,
+        130
+      ],
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 22
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 23
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            24,
+            46
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            25,
+            26,
+            47
+          ],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoader"
+      },
+      "widgets_values": [
+        "FLUX2_KLEIN_UNLOCKED_V1.safetensors",
+        0.5,
+        0.5
+      ],
+      "title": "LoRA Loader 2（Flux.1 LoRA用）",
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 21,
+      "type": "OllamaConnectivityV2",
+      "pos": [
+        360,
+        340
+      ],
+      "size": [
+        400,
+        130
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "connectivity",
+          "type": "OLLAMA_CONNECTIVITY",
+          "links": [
+            30
+          ],
+          "slot_index": 0,
+          "label": "connectivity"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "OllamaConnectivityV2"
+      },
+      "widgets_values": [
+        "http://127.0.0.1:11434",
+        "__OLLAMA_MODEL__",
+        5
+      ],
+      "title": "Ollama Connectivity V2",
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 22,
+      "type": "OllamaGenerateV2",
+      "pos": [
+        820,
+        340
+      ],
+      "size": [
+        450,
+        400
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "connectivity",
+          "type": "OLLAMA_CONNECTIVITY",
+          "link": 30,
+          "label": "connectivity"
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "link": 53,
+          "label": "prompt",
+          "widget": {
+            "name": "prompt"
+          }
+        },
+        {
+          "name": "options",
+          "type": "OLLAMA_OPTIONS",
+          "link": null,
+          "label": "options",
+          "shape": 7
+        },
+        {
+          "name": "context",
+          "type": "OLLAMA_CONTEXT",
+          "link": null,
+          "label": "context",
+          "shape": 7
+        },
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": null,
+          "label": "images",
+          "shape": 7
+        },
+        {
+          "name": "meta",
+          "type": "OLLAMA_META",
+          "link": null,
+          "label": "meta",
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "result",
+          "type": "STRING",
+          "links": [
+            32,
+            42
+          ],
+          "slot_index": 0,
+          "label": "result"
+        },
+        {
+          "name": "thinking",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1,
+          "label": "thinking"
+        },
+        {
+          "name": "context",
+          "type": "OLLAMA_CONTEXT",
+          "links": null,
+          "slot_index": 2,
+          "label": "context"
+        },
+        {
+          "name": "meta",
+          "type": "OLLAMA_META",
+          "links": null,
+          "slot_index": 3,
+          "label": "meta"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "OllamaGenerateV2"
+      },
+      "widgets_values": [
+        "/no_think\nYou are a translator for adult image generation using FLUX.1 Dev.\nTranslate Japanese input to English prose. Be explicit and direct.\n\nOutput rules:\n- Translation only. No additions beyond what is written.\n- Never omit or soften any detail the user specified.\n- All characters are adults aged 18+.\n- Maximum 80 words.\n- Prose format, not tag lists.\n\nVisual quality (append to every output):\nbeautiful symmetrical face, large expressive eyes, flawless skin, closed natural lips, perfect anatomy, realistic proportions",
+        false,
+        false,
+        "text"
+      ],
+      "title": "Ollama Generate V2 (think=OFF)",
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 23,
+      "type": "ShowText|pysssss",
+      "pos": [
+        1320,
+        640
+      ],
+      "size": {
+        "0": 400,
+        "1": 100
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 32
+        }
+      ],
+      "outputs": [
+        {
+          "name": "TEXT",
+          "type": "STRING",
+          "links": [],
+          "shape": 3
+        }
+      ],
+      "title": "翻訳結果",
+      "properties": {
+        "Node name for S&R": "ShowText|pysssss"
+      },
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "id": 24,
+      "type": "UpscaleModelLoader",
+      "pos": [
+        2080,
+        520
+      ],
+      "size": {
+        "0": 200,
+        "1": 58
+      },
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "UPSCALE_MODEL",
+          "type": "UPSCALE_MODEL",
+          "links": [
+            33
+          ],
+          "shape": 3
+        }
+      ],
+      "title": "Upscale Model",
+      "properties": {
+        "Node name for S&R": "UpscaleModelLoader"
+      },
+      "widgets_values": [
+        "4x-UltraSharp.pth"
+      ]
+    },
+    {
+      "id": 25,
+      "type": "ImageUpscaleWithModel",
+      "pos": [
+        2320,
+        520
+      ],
+      "size": {
+        "0": 240,
+        "1": 66
+      },
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "upscale_model",
+          "type": "UPSCALE_MODEL",
+          "link": 33
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 50
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            58
+          ],
+          "shape": 3
+        }
+      ],
+      "title": "2x Upscale",
+      "properties": {
+        "Node name for S&R": "ImageUpscaleWithModel"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 26,
+      "type": "ABWildcardNode",
+      "pos": [
+        420,
+        140
+      ],
+      "size": {
+        "0": 280,
+        "1": 80
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [
+            36
+          ],
+          "shape": 3
+        }
+      ],
+      "title": "World Setting",
+      "properties": {
+        "Node name for S&R": "ABWildcardNode"
+      },
+      "widgets_values": [
+        "{__world_setting__}"
+      ]
+    },
+    {
+      "id": 27,
+      "type": "StringConcatenate",
+      "pos": [
+        420,
+        260
+      ],
+      "size": {
+        "0": 280,
+        "1": 100
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "link": 41
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "link": 36
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            53
+          ],
+          "shape": 3
+        }
+      ],
+      "title": "Concat② キャラ+ユーザー入力 + 世界観",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "",
+        "",
+        ", "
+      ]
+    },
+    {
+      "id": 28,
+      "type": "LoadImage",
+      "pos": [
+        2020,
+        540
+      ],
+      "size": {
+        "0": 280,
+        "1": 120
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            37
+          ],
+          "shape": 3
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "shape": 3
+        }
+      ],
+      "title": "i2i入力画像 (未接続)",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "example.png",
+        "image"
+      ]
+    },
+    {
+      "id": 29,
+      "type": "VAEEncode",
+      "pos": [
+        2020,
+        690
+      ],
+      "size": {
+        "0": 280,
+        "1": 80
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pixels",
+          "type": "IMAGE",
+          "link": 37
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 38
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [],
+          "shape": 3
+        }
+      ],
+      "title": "i2i VAEEncode (→KSampler.latent_imageへ接続)",
+      "properties": {
+        "Node name for S&R": "VAEEncode"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 30,
+      "type": "ABWildcardNode",
+      "pos": [
+        420,
+        0
+      ],
+      "size": {
+        "0": 280,
+        "1": 80
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [
+            39
+          ],
+          "shape": 3
+        }
+      ],
+      "title": "Character Setting",
+      "properties": {
+        "Node name for S&R": "ABWildcardNode"
+      },
+      "widgets_values": [
+        "{__character_setting__}"
+      ]
+    },
+    {
+      "id": 31,
+      "type": "StringConcatenate",
+      "pos": [
+        720,
+        0
+      ],
+      "size": {
+        "0": 300,
+        "1": 100
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "link": 39
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            41
+          ],
+          "shape": 3
+        }
+      ],
+      "title": "Concat① キャラ設定 + ユーザー入力",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "日本語プロンプトをここに入力",
+        "",
+        ", "
+      ]
+    },
+    {
+      "id": 32,
+      "type": "StringConcatenate",
+      "pos": [
+        800,
+        450
+      ],
+      "size": {
+        "0": 350,
+        "1": 100
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "link": 42
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "link": 57
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            44
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "",
+        "",
+        ", "
+      ]
+    },
+    {
+      "id": 33,
+      "type": "ABWildcardNode",
+      "pos": [
+        800,
+        600
+      ],
+      "size": {
+        "0": 350,
+        "1": 80
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            55
+          ],
+          "slot_index": 0
+        }
+      ],
+      "title": "直接埋め込み Wildcard",
+      "properties": {
+        "Run widget replace on values": false
+      },
+      "widgets_values": [
+        "{__nationality__}, {__age__}, {__body__}, {__bust__}, {__pussy__}",
+        "fixed",
+        0
+      ],
+      "inputs": []
+    },
+    {
+      "id": 34,
+      "type": "UltralyticsDetectorProvider",
+      "pos": [
+        1400,
+        800
+      ],
+      "size": [
+        300,
+        60
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "BBOX_DETECTOR",
+          "type": "BBOX_DETECTOR",
+          "links": [
+            51
+          ],
+          "slot_index": 0
+        }
+      ],
+      "title": "Face BBox Detector",
+      "properties": {},
+      "widgets_values": [
+        "face_yolov8m.pt"
+      ]
+    },
+    {
+      "id": 35,
+      "type": "FaceDetailer",
+      "pos": [
+        1400,
+        600
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 45
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 46
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 47
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 48
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 49
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 52
+        },
+        {
+          "name": "bbox_detector",
+          "type": "BBOX_DETECTOR",
+          "link": 51
+        },
+        {
+          "name": "sam_model_opt",
+          "type": "SAM_MODEL",
+          "link": null
+        },
+        {
+          "name": "segm_detector_opt",
+          "type": "SEGM_DETECTOR",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            50
+          ],
+          "slot_index": 0
+        }
+      ],
+      "title": "Face Detailer",
+      "properties": {},
+      "widgets_values": [
+        512,
+        0.5,
+        0.5,
+        "face_yolov8m.pt",
+        0.5,
+        10,
+        3,
+        "euler",
+        "normal",
+        20,
+        7,
+        0,
+        true,
+        0,
+        0,
+        0,
+        0,
+        0,
+        "False",
+        "False",
+        0,
+        0,
+        10,
+        "",
+        1,
+        false,
+        20,
+        false,
+        false
+      ]
+    },
+    {
+      "id": 36,
+      "type": "PrimitiveNode",
+      "pos": [
+        1200,
+        900
+      ],
+      "size": [
+        300,
+        60
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            56
+          ],
+          "slot_index": 0
+        }
+      ],
+      "title": "直接埋め込み 手打ち欄",
+      "properties": {},
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "id": 37,
+      "type": "StringConcatenate",
+      "pos": [
+        1400,
+        900
+      ],
+      "size": [
+        300,
+        80
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "link": 55
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "link": 56
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            57
+          ],
+          "slot_index": 0
+        }
+      ],
+      "title": "直接埋め込み Concat",
+      "properties": {},
+      "widgets_values": [
+        "",
+        "",
+        ", "
+      ]
+    },
+    {
+      "id": 38,
+      "type": "ImageScale",
+      "pos": [
+        1800,
+        600
+      ],
+      "size": [
+        300,
+        100
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 58
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            59
+          ],
+          "slot_index": 0
+        }
+      ],
+      "title": "Resize to 1920 (long side)",
+      "properties": {},
+      "widgets_values": [
+        "lanczos",
+        1080,
+        1920,
+        "disabled"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      18,
+      0,
+      "MODEL"
+    ],
+    [
+      4,
+      3,
+      0,
+      11,
+      1,
+      "VAE"
+    ],
+    [
+      7,
+      6,
+      0,
+      7,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      8,
+      7,
+      0,
+      10,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      9,
+      8,
+      0,
+      10,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      10,
+      9,
+      0,
+      10,
+      3,
+      "LATENT"
+    ],
+    [
+      11,
+      10,
+      0,
+      11,
+      0,
+      "LATENT"
+    ],
+    [
+      21,
+      2,
+      0,
+      18,
+      1,
+      "CLIP"
+    ],
+    [
+      22,
+      18,
+      0,
+      20,
+      0,
+      "MODEL"
+    ],
+    [
+      23,
+      18,
+      1,
+      20,
+      1,
+      "CLIP"
+    ],
+    [
+      24,
+      20,
+      0,
+      10,
+      0,
+      "MODEL"
+    ],
+    [
+      25,
+      20,
+      1,
+      6,
+      0,
+      "CLIP"
+    ],
+    [
+      26,
+      20,
+      1,
+      8,
+      0,
+      "CLIP"
+    ],
+    [
+      30,
+      21,
+      0,
+      22,
+      0,
+      "OLLAMA_CONNECTIVITY"
+    ],
+    [
+      32,
+      22,
+      0,
+      23,
+      0,
+      "STRING"
+    ],
+    [
+      33,
+      24,
+      0,
+      25,
+      0,
+      "UPSCALE_MODEL"
+    ],
+    [
+      36,
+      26,
+      0,
+      27,
+      0,
+      "STRING"
+    ],
+    [
+      37,
+      28,
+      0,
+      29,
+      0,
+      "IMAGE"
+    ],
+    [
+      38,
+      3,
+      0,
+      29,
+      1,
+      "VAE"
+    ],
+    [
+      39,
+      30,
+      0,
+      31,
+      1,
+      "STRING"
+    ],
+    [
+      41,
+      31,
+      0,
+      27,
+      0,
+      "STRING"
+    ],
+    [
+      42,
+      22,
+      0,
+      32,
+      0,
+      "STRING"
+    ],
+    [
+      44,
+      32,
+      0,
+      6,
+      0,
+      "STRING"
+    ],
+    [
+      45,
+      11,
+      0,
+      35,
+      0,
+      "IMAGE"
+    ],
+    [
+      46,
+      20,
+      0,
+      35,
+      1,
+      "MODEL"
+    ],
+    [
+      47,
+      20,
+      1,
+      35,
+      2,
+      "CLIP"
+    ],
+    [
+      48,
+      3,
+      0,
+      35,
+      3,
+      "VAE"
+    ],
+    [
+      49,
+      7,
+      0,
+      35,
+      4,
+      "CONDITIONING"
+    ],
+    [
+      50,
+      35,
+      0,
+      25,
+      1,
+      "IMAGE"
+    ],
+    [
+      51,
+      34,
+      0,
+      35,
+      6,
+      "BBOX_DETECTOR"
+    ],
+    [
+      52,
+      8,
+      0,
+      35,
+      5,
+      "CONDITIONING"
+    ],
+    [
+      53,
+      27,
+      0,
+      22,
+      1,
+      "STRING"
+    ],
+    [
+      55,
+      33,
+      0,
+      37,
+      0,
+      "STRING"
+    ],
+    [
+      56,
+      36,
+      0,
+      37,
+      1,
+      "STRING"
+    ],
+    [
+      57,
+      37,
+      0,
+      32,
+      1,
+      "STRING"
+    ],
+    [
+      58,
+      25,
+      0,
+      38,
+      0,
+      "IMAGE"
+    ],
+    [
+      59,
+      38,
+      0,
+      12,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4,
+  "models": [
+    {
+      "name": "flux2-klein-9b-fp8.safetensors",
+      "url": "https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8/resolve/main/flux2-klein-9b-fp8.safetensors",
+      "directory": "unet"
+    },
+    {
+      "name": "qwen_3_8b_fp8mixed.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/flux2-klein-9B/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors",
+      "directory": "text_encoders"
+    },
+    {
+      "name": "flux2-vae.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors",
+      "directory": "vae"
+    }
+  ]
+}

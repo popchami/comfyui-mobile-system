@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>PixelArt Generator</title>
+<style>
+  :root{
+    --bg:#0a0a0f;--surface:#13131a;--border:#2a2a3a;
+    --text:#e8e8f0;--muted:#6b7280;
+    --accent:#a78bfa;--accent2:#34d399;
+    --danger:#f87171;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;min-height:100vh}
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:10px}
+  .header h1{font-size:16px;font-weight:700;color:var(--accent)}
+  .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--accent);color:#000}
+  .tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:99}
+  .tab{flex:1;padding:12px 4px;text-align:center;font-size:14px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;cursor:pointer}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab-content{display:none;padding:16px}
+  .tab-content.active{display:block}
+  .section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+  .section-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+  label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+  textarea,input,select{width:100%;background:#0d0d14;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:10px 12px;outline:none}
+  textarea:focus,input:focus,select:focus{border-color:var(--accent)}
+  textarea{resize:vertical;min-height:80px}
+  .btn{width:100%;padding:16px;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s}
+  .btn-primary{background:var(--accent);color:#000}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px;font-size:14px;font-weight:600;border-radius:8px;cursor:pointer}
+  .progress-wrap{display:none;margin:12px 0}
+  .progress-wrap.show{display:block}
+  .progress-bar-bg{background:var(--border);border-radius:4px;height:6px;overflow:hidden}
+  .progress-bar{background:var(--accent);height:100%;width:0%;transition:width .3s}
+  .progress-info{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px}
+  .result-wrap{display:none;margin-top:12px}
+  .result-wrap.show{display:block}
+  .result-wrap img{width:100%;border-radius:10px;border:1px solid var(--border)}
+  .result-seed{font-size:11px;color:var(--accent);margin-top:6px;text-align:center}
+  .result-prompt{font-size:11px;color:var(--muted);margin-top:6px;background:#0d0d14;border-radius:6px;padding:8px;word-break:break-all}
+  .row{display:flex;gap:8px}
+  .row>*{flex:1}
+  .range-row{display:flex;align-items:center;gap:8px}
+  .range-row input[type=range]{flex:1}
+  .range-row input[type=number]{width:64px;flex:none}
+  .hist-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .hist-item img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border)}
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;flex-direction:column;align-items:center;justify-content:center}
+  .modal.show{display:flex}
+  .modal img{max-width:100%;max-height:80vh;border-radius:8px}
+  .modal-close{position:absolute;top:16px;right:16px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .modal-info{color:var(--muted);font-size:12px;margin-top:8px;text-align:center;max-width:90vw;word-break:break-all}
+  .connection-status{font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600}
+  .connection-status.connected{background:#065f46;color:#34d399}
+  .connection-status.disconnected{background:#450a0a;color:#f87171}
+  .str-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+  .str-row label{font-size:12px;color:var(--muted);white-space:nowrap;margin:0;width:60px;flex:none}
+  .str-row input[type=range]{flex:1}
+  .str-row input[type=number]{width:56px;flex:none}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+  .toggle-row span{font-size:13px;color:var(--text)}
+  .toggle{position:relative;width:44px;height:24px;flex:none}
+  .toggle input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.2s}
+  .slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  input:checked+.slider{background:var(--accent)}
+  input:checked+.slider:before{transform:translateX(20px)}
+  .copy-btn{font-size:11px;padding:4px 8px;border-radius:4px;background:var(--surface);border:1px solid var(--border);color:var(--muted);cursor:pointer;margin-left:8px}
+  .lora-block{background:#0d0d14;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎮 PixelArt</h1>
+  <span class="badge">FLUX.1 Dev</span>
+  <span id="connStatus" class="connection-status disconnected" style="margin-left:auto">未接続</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('generate')">生成</div>
+  <div class="tab" onclick="switchTab('params')">パラメータ</div>
+  <div class="tab" onclick="switchTab('history')">履歴</div>
+  <div class="tab" onclick="switchTab('manage')">管理</div>
+</div>
+
+<!-- 生成タブ -->
+<div id="tab-generate" class="tab-content active">
+
+  <div class="section">
+    <div class="section-title">プロンプト</div>
+    <textarea id="prompt" rows="4" placeholder="例: かわいいプリン型モンスター、正面、ちびスタイル、透過背景"></textarea>
+  </div>
+
+  <div class="section">
+    <div class="section-title">LoRA</div>
+    <div class="lora-block">
+      <label>LoRA 1</label>
+      <select id="lora1">
+        <option value="">なし</option>
+        <option value="lora_pixelart_koronyx.safetensors" selected>koronyx（Pixel Art Illustrations）</option>
+        <option value="lora_pixelart_dever.safetensors">Dever（Pixel Game Assets）</option>
+      </select>
+      <div class="str-row">
+        <label>強度</label>
+        <input type="range" id="lora1str" min="0" max="1.5" step="0.05" value="1.0" oninput="document.getElementById('lora1str-num').value=this.value">
+        <input type="number" id="lora1str-num" min="0" max="1.5" step="0.05" value="1.0" oninput="document.getElementById('lora1str').value=this.value">
+      </div>
+    </div>
+    <div class="lora-block">
+      <label>LoRA 2</label>
+      <select id="lora2">
+        <option value="">なし</option>
+        <option value="lora_pixelart_koronyx.safetensors">koronyx（Pixel Art Illustrations）</option>
+        <option value="lora_pixelart_dever.safetensors" selected>Dever（Pixel Game Assets）</option>
+      </select>
+      <div class="str-row">
+        <label>強度</label>
+        <input type="range" id="lora2str" min="0" max="1.5" step="0.05" value="1.0" oninput="document.getElementById('lora2str-num').value=this.value">
+        <input type="number" id="lora2str-num" min="0" max="1.5" step="0.05" value="1.0" oninput="document.getElementById('lora2str').value=this.value">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">生成設定</div>
+    <div class="row">
+      <div>
+        <label>Steps</label>
+        <input type="number" id="stepsInput" value="20" min="1" max="50">
+      </div>
+      <div>
+        <label>バッチ数</label>
+        <input type="number" id="batchInput" value="1" min="1" max="4">
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <label>Seed（-1でランダム）</label>
+      <input type="number" id="seed" value="-1">
+    </div>
+    <div class="toggle-row" style="margin-top:10px">
+      <span>🖼️ 透過PNG出力（RemBG）</span>
+      <label class="toggle">
+        <input type="checkbox" id="rembgToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="generateBtn" onclick="generate()">🎨 生成</button>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="progress-info">
+      <span id="progressLabel">待機中...</span>
+      <span id="progressPct">0%</span>
+    </div>
+  </div>
+
+  <div class="result-wrap" id="resultWrap">
+    <img id="resultImg" src="" onclick="openModal(this.src,'')">
+    <div class="result-seed" id="resultSeed"></div>
+    <div style="display:flex;align-items:center;margin-top:4px">
+      <span style="font-size:11px;color:var(--muted)">翻訳結果:</span>
+      <button class="copy-btn" onclick="copyTranslated()">コピー</button>
+    </div>
+    <div class="result-prompt" id="translatedPrompt"></div>
+  </div>
+</div>
+
+<!-- パラメータタブ -->
+<div id="tab-params" class="tab-content">
+  <div class="section">
+    <div class="section-title">サンプリング詳細</div>
+    <div class="row">
+      <div>
+        <label>Guidance</label>
+        <input type="number" id="guidanceInput" value="2.0" min="1" max="10" step="0.1">
+      </div>
+      <div>
+        <label>CFG</label>
+        <input type="number" id="cfgInput" value="1.0" min="1" max="20" step="0.1">
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div>
+        <label>Sampler</label>
+        <select id="sampler">
+          <option value="dpmpp_2m">dpmpp_2m</option>
+          <option value="euler" selected>euler</option>
+          <option value="euler_ancestral">euler_a</option>
+          <option value="dpmpp_sde">dpmpp_sde</option>
+        </select>
+      </div>
+      <div>
+        <label>Scheduler</label>
+        <select id="scheduler">
+          <option value="simple" selected>simple</option>
+          <option value="normal">normal</option>
+          <option value="karras">karras</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <label>Denoise</label>
+      <div class="range-row">
+        <input type="range" id="denoiseRange" min="0" max="1" step="0.01" value="1.0" oninput="document.getElementById('denoiseInput').value=this.value">
+        <input type="number" id="denoiseInput" min="0" max="1" step="0.01" value="1.0" oninput="document.getElementById('denoiseRange').value=this.value">
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">ネガティブプロンプト</div>
+    <textarea id="negPrompt" rows="3">deformed, bad anatomy, extra limbs, blurry, low quality</textarea>
+  </div>
+</div>
+
+<!-- 履歴タブ -->
+<div id="tab-history" class="tab-content">
+  <div id="historyGrid" class="hist-grid"></div>
+  <div id="historyEmpty" style="text-align:center;color:var(--muted);padding:40px">まだ生成画像がありません</div>
+</div>
+
+<!-- 管理タブ -->
+<div id="tab-manage" class="tab-content">
+  <div class="section">
+    <div class="section-title">ComfyUI接続</div>
+    <label>サーバーURL</label>
+    <input type="url" id="serverUrl" placeholder="https://xxxxx-8188.proxy.runpod.net">
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="connectServer()">接続</button>
+  </div>
+  <div class="section">
+    <div class="section-title">情報</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.8">
+      <div>モデル: Flux.1 Dev FP8</div>
+      <div>LoRA 1: lora_pixelart_koronyx.safetensors</div>
+      <div>LoRA 2: lora_pixelart_dever.safetensors</div>
+      <div>解像度: 512 × 512</div>
+      <div>Ollama: jaahas/qwen3.5-uncensored:9b</div>
+      <div>透過PNG: ImageRemoveBackground + SaveImageWithAlpha</div>
+      <div style="margin-top:8px">セットアップ: setup_pixelart.ipynb</div>
+      <div>バックアップ: backup_pixelart.ipynb</div>
+    </div>
+  </div>
+</div>
+
+<!-- モーダル -->
+<div class="modal" id="modal" onclick="closeModal()">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <img id="modalImg" src="">
+  <div class="modal-info" id="modalInfo"></div>
+</div>
+
+<script>
+const SP_PIXELART = `/no_think
+You are a translator for pixel art game asset generation using FLUX.1 Dev.
+Translate Japanese input to English. Be explicit and direct.
+
+Output rules:
+- Translation only. No additions beyond what is specified.
+- Never omit or soften any detail the user specified.
+- Maximum 60 words.
+- Tag-list format preferred.
+
+Visual quality (append to every output):
+pixel art, dvr-pixel-flux, clean lineart, flat colors, kawaii style`;
+
+const clientId = crypto.randomUUID();
+let historyItems = [];
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const ids=['generate','params','history','manage'];
+    t.classList.toggle('active', ids[i]===id);
+  });
+  document.querySelectorAll('.tab-content').forEach(c=>{
+    c.classList.toggle('active', c.id==='tab-'+id);
+  });
+}
+
+async function connectServer() {
+  const url = document.getElementById('serverUrl').value.trim().replace(/\/+$/,'');
+  if (!url) { alert('URLを入力してください'); return; }
+  try {
+    const r = await fetch(`${url}/system_stats`, {mode:'cors'});
+    if (r.ok) {
+      document.getElementById('connStatus').textContent = '接続済み';
+      document.getElementById('connStatus').className = 'connection-status connected';
+      alert('接続成功');
+    } else throw new Error();
+  } catch {
+    document.getElementById('connStatus').textContent = '未接続';
+    document.getElementById('connStatus').className = 'connection-status disconnected';
+    alert('接続失敗');
+  }
+}
+
+async function generate() {
+  const url = document.getElementById('serverUrl').value.trim().replace(/\/+$/,'');
+  if (!url) { alert('管理タブでComfyUIに接続してください'); return; }
+  const jpPrompt = document.getElementById('prompt').value.trim();
+  if (!jpPrompt) { alert('プロンプトを入力してください'); return; }
+
+  const genBtn = document.getElementById('generateBtn');
+  const pWrap  = document.getElementById('progressWrap');
+  const pBar   = document.getElementById('progressBar');
+  const pPct   = document.getElementById('progressPct');
+  const pLabel = document.getElementById('progressLabel');
+
+  genBtn.disabled = true;
+  pWrap.classList.add('show');
+  pBar.style.width = '0%';
+  pPct.textContent = '0%';
+  pLabel.textContent = 'キュー送信中...';
+
+  const seedVal  = parseInt(document.getElementById('seed').value);
+  const finalSeed = (isNaN(seedVal)||seedVal===-1) ? Math.floor(Math.random()*2147483647) : seedVal;
+
+  const steps     = parseInt(document.getElementById('stepsInput').value)    || 20;
+  const batchSize = parseInt(document.getElementById('batchInput').value)    || 1;
+  const guidance  = parseFloat(document.getElementById('guidanceInput').value) || 3.5;
+  const cfg       = parseFloat(document.getElementById('cfgInput').value)    || 1.0;
+  const denoise   = parseFloat(document.getElementById('denoiseInput').value)|| 1.0;
+  const sampler   = document.getElementById('sampler').value;
+  const scheduler = document.getElementById('scheduler').value;
+  const negPrompt = document.getElementById('negPrompt').value;
+  const lora1Name = document.getElementById('lora1').value;
+  const lora1Str  = parseFloat(document.getElementById('lora1str-num').value)|| 1.0;
+  const lora2Name = document.getElementById('lora2').value;
+  const lora2Str  = parseFloat(document.getElementById('lora2str-num').value)|| 1.0;
+  const rembgOn   = document.getElementById('rembgToggle').checked;
+
+  const wf = {};
+  wf['1']  = {class_type:'UNETLoader',    inputs:{unet_name:'flux1-dev-fp8.safetensors', weight_dtype:'fp8_e4m3fn'}};
+  wf['2']  = {class_type:'DualCLIPLoader',inputs:{clip_name1:'clip_l.safetensors', clip_name2:'t5xxl_fp8_e4m3fn.safetensors', type:'flux', device:'default'}};
+  wf['3']  = {class_type:'VAELoader',     inputs:{vae_name:'ae.safetensors'}};
+
+  let lastModel='1', lastClip='2', lastClipSlot=0;
+  if (lora1Name) {
+    wf['18'] = {class_type:'LoraLoader', inputs:{model:[lastModel,0], clip:[lastClip,lastClipSlot], lora_name:lora1Name, strength_model:lora1Str, strength_clip:lora1Str}};
+    lastModel='18'; lastClip='18'; lastClipSlot=1;
+  }
+  if (lora2Name) {
+    wf['20'] = {class_type:'LoraLoader', inputs:{model:[lastModel,0], clip:[lastClip,lastClipSlot], lora_name:lora2Name, strength_model:lora2Str, strength_clip:lora2Str}};
+    lastModel='20'; lastClip='20'; lastClipSlot=1;
+  }
+
+  wf['5a'] = {class_type:'OllamaConnectivityV2', inputs:{url:'http://127.0.0.1:11434', model:'jaahas/qwen3.5-uncensored:9b', keep_alive:0}};
+  wf['5']  = {class_type:'OllamaGenerateV2',     inputs:{system:SP_PIXELART, prompt:jpPrompt, think:false, keep_context:false, format:'text', connectivity:['5a',0]}};
+  wf['6']  = {class_type:'CLIPTextEncode',        inputs:{clip:[lastClip,lastClipSlot], text:['5',0]}};
+  wf['8']  = {class_type:'CLIPTextEncode',        inputs:{clip:[lastClip,lastClipSlot], text:negPrompt}};
+  wf['7']  = {class_type:'FluxGuidance',          inputs:{conditioning:['6',0], guidance}};
+  wf['9']  = {class_type:'EmptyLatentImage',      inputs:{width:512, height:512, batch_size:batchSize}};
+  wf['10'] = {class_type:'KSampler', inputs:{model:[lastModel,0], positive:['7',0], negative:['8',0], latent_image:['9',0], seed:finalSeed, control_after_generate:'randomize', steps, cfg, sampler_name:sampler, scheduler, denoise}};
+  wf['11'] = {class_type:'VAEDecode', inputs:{samples:['10',0], vae:['3',0]}};
+  wf['21'] = {class_type:'ShowText|pysssss', inputs:{text:['5',0]}};
+
+  if (rembgOn) {
+    // 透過PNG: RemBG → SaveImageWithAlpha
+    wf['50'] = {class_type:'ImageRemoveBackground', inputs:{image:['11',0]}};
+    wf['51'] = {class_type:'SaveImageWithAlpha',    inputs:{image:['50',0], mask:['50',1], filename_prefix:'pixelart_transparent'}};
+    // 通常PNGも同時保存
+    wf['12'] = {class_type:'SaveImage', inputs:{images:['11',0], filename_prefix:'pixelart'}};
+  } else {
+    wf['12'] = {class_type:'SaveImage', inputs:{images:['11',0], filename_prefix:'pixelart'}};
+  }
+
+  try {
+    const qRes = await fetch(`${url}/prompt`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, mode:'cors',
+      body:JSON.stringify({prompt:wf, client_id:clientId})
+    });
+    if (!qRes.ok) throw new Error('キュー投入失敗');
+    const qData   = await qRes.json();
+    const promptId = qData.prompt_id;
+    pLabel.textContent = 'キュー待機中...';
+
+    const finishGeneration = async () => {
+      pBar.style.width = '100%';
+      pPct.textContent = '100%';
+      pLabel.textContent = '完了';
+      const hRes  = await fetch(`${url}/history/${promptId}`, {mode:'cors'});
+      const hData = await hRes.json();
+      const outputs = (hData[promptId]&&hData[promptId].outputs)||{};
+      let images=[], translatedText='';
+      for (const nid in outputs) {
+        if (outputs[nid].images) images = outputs[nid].images;
+        if (outputs[nid].text)   translatedText = outputs[nid].text[0]||'';
+      }
+      if (images.length>0) {
+        // 透過PNGがあれば優先表示
+        const dispImg = rembgOn
+          ? (images.find(i=>i.filename.includes('transparent'))||images[0])
+          : images[0];
+        const imgUrl = `${url}/view?filename=${encodeURIComponent(dispImg.filename)}&subfolder=${encodeURIComponent(dispImg.subfolder||'')}&type=${dispImg.type||'output'}`;
+        document.getElementById('resultImg').src = imgUrl;
+        document.getElementById('resultWrap').classList.add('show');
+        document.getElementById('generateBtn').scrollIntoView({behavior:'smooth',block:'center'});
+        document.getElementById('resultSeed').textContent = `SEED: ${finalSeed} [FLUX.1 Dev / PixelArt${rembgOn?' / 透過':''}]`;
+        document.getElementById('translatedPrompt').textContent = translatedText||'';
+        images.forEach(im=>{
+          const iUrl=`${url}/view?filename=${encodeURIComponent(im.filename)}&subfolder=${encodeURIComponent(im.subfolder||'')}&type=${im.type||'output'}`;
+          addToHistory(iUrl, finalSeed, jpPrompt, translatedText);
+        });
+      }
+      genBtn.disabled=false;
+      setTimeout(()=>{ pWrap.classList.remove('show'); },2000);
+    };
+
+    let finished=false;
+    const ws=new WebSocket(`${url.replace(/^http/,'ws')}/ws?clientId=${clientId}`);
+    ws.onmessage=(e)=>{
+      const msg=JSON.parse(e.data);
+      if (msg.type==='progress') {
+        const pct=Math.round(msg.data.value/msg.data.max*100);
+        pBar.style.width=pct+'%'; pPct.textContent=pct+'%';
+        pLabel.textContent=`Step ${msg.data.value}/${msg.data.max}`;
+      }
+      if (msg.type==='executing'&&msg.data.prompt_id===promptId&&msg.data.node===null) {
+        if (!finished){finished=true;ws.close();finishGeneration();}
+      }
+    };
+    ws.onerror=()=>{ if(!finished){finished=true;finishGeneration();} };
+    setTimeout(()=>{ if(!finished){finished=true;ws.close();finishGeneration();} },300000);
+
+  } catch(e) {
+    alert('エラー: '+e.message);
+    genBtn.disabled=false;
+    pWrap.classList.remove('show');
+  }
+}
+
+function addToHistory(imgUrl, seed, jpPrompt, translated) {
+  historyItems.unshift({imgUrl, seed, jpPrompt, translated});
+  renderHistory();
+}
+function renderHistory() {
+  const grid=document.getElementById('historyGrid');
+  const empty=document.getElementById('historyEmpty');
+  if (historyItems.length===0){empty.style.display='block';grid.innerHTML='';return;}
+  empty.style.display='none';
+  grid.innerHTML=historyItems.map(item=>
+    `<div class="hist-item" onclick="openModal('${item.imgUrl}','SEED:${item.seed}')">
+      <img src="${item.imgUrl}" loading="lazy">
+    </div>`
+  ).join('');
+}
+
+function openModal(src,info){
+  document.getElementById('modalImg').src=src;
+  document.getElementById('modalInfo').textContent=info;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+function copyTranslated(){
+  const t=document.getElementById('translatedPrompt').textContent;
+  if(t) navigator.clipboard.writeText(t).then(()=>alert('コピーしました'));
+}
+
+window.addEventListener('load',()=>{
+  const host=location.hostname;
+  if(host.includes('runpod')){
+    const base=host.replace(/(-\d+)?(\.proxy\.runpod\.net)$/,'-8188$2');
+    document.getElementById('serverUrl').value='https://'+base;
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# download_list.txt (Flux.1 Dev用)
+# 列: 名前[TAB]種別[TAB]URL[TAB]バージョンID(省略=-)[TAB]保存先上書き(省略=-)
+# 種別: hf / civitai / ollama
+
+# === Diffusion Model (Flux.1 Dev FP8) ===
+flux1_dev_fp8	hf	https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors	-	diffusion_models/
+
+# === Text Encoder (CLIP-L + T5XXL) ===
+clip_l	hf	https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors	-	text_encoders/
+t5xxl_fp8	hf	https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors	-	text_encoders/
+
+# === VAE (Flux.1用 ae) ===
+flux1_vae_ae	hf	https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/ae.safetensors	-	vae/
+
+# === Upscaler ===
+4x_ultrasharp	hf	https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/4x-UltraSharp.pth	-	upscale_models/
+
+# === Face Detection ===
+# face_yolov8m	hf	https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8m.pt	-	ultralytics/bbox/
+
+# === LLM (Ollama) ===
+ollama_qwen35	ollama	jaahas/qwen3.5-uncensored:9b	-	-
+
+
+# === LoRA ===
+# lora_flat_chest	civitai	https://civitai.com/models/984890/	984890	loras/
+# lora_asian	civitai	https://civitai.red/models/633841/	633841	loras/
+# lora_asian_mix	civitai	https://civitai.red/models/706111/	706111	loras/
+# lora_pussydiffusion	civitai	https://civitai.red/models/983498/	983498	loras/
+# lora_asian_female_13	civitai	https://civitai.red/models/866375/	866375	loras/
+# lora_nsfw_anal	civitai	https://civitai.red/models/1542563/	1542563	loras/
+# lora_ai_angel	civitai	https://civitai.red/models/1246192/	1246192	loras/
+# lora_haruka_japan	civitai	https://civitai.com/models/1563104/	1563104	loras/
+# lora_asian_beauty	civitai	https://civitai.com/models/799377/	799377	loras/
+
+# === 追加: Flux NSFW UNLOCKED (checkpoint) ===
+flux_nsfw_unlocked	civitai	https://civitai.com/api/download/models/2835136	2835136	diffusion_models/
+
+# === 追加: aidmaNSFWunlock (LoRA) ===
+aidma_nsfw_unlock	hf	https://huggingface.co/Drockdgd/aidmaNSFWunlock-FLUX-V0.2/resolve/main/aidmaNSFWunlock-FLUX-V0.2.safetensors	-	loras/
+# === Flux.1 LoRA: Pussy ===
+lora_flux1_pussy	civitai	https://civitai.red/api/download/models/1253891	1253891	loras/
+
