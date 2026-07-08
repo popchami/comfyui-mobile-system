@@ -1,0 +1,113 @@
+# Test Plan
+
+## Purpose
+
+This document defines the first checks needed before merging the mobile system design and skeleton into `main`.
+
+The goal is not full production validation. The goal is to confirm that the architecture can work end-to-end.
+
+## Phase 1: Documentation review
+
+Reviewer: Claude or another AI/code reviewer.
+
+Check:
+
+- `app_profile.json` has enough information for the mobile app.
+- `patch_targets` are safe and clear.
+- UI visibility levels are practical.
+- MVP scope is not too large.
+- Analyzer and mobile app responsibilities are separated correctly.
+- Unknown nodes are preserved.
+- Missing requirements are reported, not auto-installed.
+
+Pass condition:
+
+- Reviewer confirms the design is understandable and implementable.
+- Any blocking issues are fixed in the PR branch.
+
+## Phase 2: Static code review
+
+Check analyzer skeleton files:
+
+- `__init__.py`
+- `nodes.py`
+- `server.py`
+
+Check:
+
+- No auto-install behavior.
+- No model download behavior.
+- No arbitrary shell execution.
+- Output path is limited to `output/mobile_profiles/`.
+- Zip contains `workflow.json` and `app_profile.json`.
+- Unknown nodes are not removed.
+- Generated profile uses `schema_version`.
+
+Pass condition:
+
+- No obvious unsafe behavior.
+- No obvious syntax or import issue.
+
+## Phase 3: ComfyUI runtime smoke test
+
+Install draft custom node folder into ComfyUI custom_nodes.
+
+Expected location:
+
+```text
+ComfyUI/custom_nodes/ComfyUI-Mobile-Analyzer/
+```
+
+Check:
+
+- ComfyUI starts.
+- `MobileProfileExporter` appears in node menu.
+- Node accepts pasted API-format workflow JSON.
+- Node creates a zip under `output/mobile_profiles/`.
+- Zip can be opened.
+- Zip contains `workflow.json`.
+- Zip contains `app_profile.json`.
+
+Pass condition:
+
+- One valid zip is created without crashing ComfyUI.
+
+## Phase 4: API smoke test
+
+After a zip exists, check:
+
+```text
+GET /mobile_analyzer/profiles
+GET /mobile_analyzer/profiles/{id}/download
+```
+
+Pass condition:
+
+- Profile list returns at least one profile.
+- Download endpoint returns the zip.
+
+## Phase 5: Mobile app prototype test
+
+Use any simple app prototype or HTML/PWA test harness.
+
+Check:
+
+- Register ComfyUI URL.
+- Fetch profile list.
+- Download zip.
+- Extract zip.
+- Read `app_profile.json`.
+- Render simple fields.
+- Patch prompt / seed / steps / cfg.
+- Submit patched workflow to `/prompt`.
+- Show output image.
+
+Pass condition:
+
+- One image can be generated from a profile imported through the new flow.
+
+## Merge rule
+
+Do not merge to `main` until at least documentation review and static code review are complete.
+
+Runtime smoke test should be completed before treating the skeleton as usable.
