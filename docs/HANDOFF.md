@@ -35,19 +35,34 @@
   元ZIPの再アップロードが必要。緊急度低、ComfyUI動作確認が優先
 
 ## 重要な注意事項(繰り返し確認が必要なルール)
-- ChatGPTはchatgpt-workブランチ内でのみ、実行・commit・push可(mainには直接触れない)
-- mainブランチへの反映は、必ずClaude Code側でchatgpt-workの内容をレビューしてからマージする
-- ファイル名一致だけで同一判定しない、SHA256必須
-- ノードの有無はworkflow JSON内を実際に確認してから判断(ハルシネーション禁止)
+- ChatGPTは分析・提案のみ。編集・commit・push は一切行わない
+  (GitHubコネクタで読み取りは可能だが、書き込みはさせない)
+  ※理由:ChatGPT側のGitHubコネクタはchatgpt-workのような
+  非デフォルトブランチを検索・認識できない制約があることが
+  2026-07-08に判明したため、実行役には向かない
+- 実際のファイル編集・commit・push は全てClaude Code側で、
+  chatgpt-workブランチ上で行う(mainには直接触れない)
+- chatgpt-work → main のマージは、必ずClaude側が内容を
+  確認してから行う(自動マージ禁止)
+- ファイル名が同じでも中身が違う可能性があるため、
+  同一判定にはSHA256ハッシュ比較を使う
+- ノードの有無はworkflow JSON内を実際に確認してから判断する
+  (ハルシネーション禁止)
 - NSFW/通常は物理フォルダで分けず、1workflow内でwildcard切り替え
-- 同じリポジトリに対し、Claude Code経由の作業と、ユーザーがChatGPTの指示を
-  直接実行する作業が並走すると、push衝突・方針の逆行が発生する
-  (2026-07-08に実際に発生、SVG対応方針がPNGのみ方針で上書きされかけた)
-- 今後、ChatGPTから「このコマンドを実行してください」と言われても、
-  ユーザーは直接実行せず、必ずClaude(claude.aiチャットまたはClaude Code)経由で
-  確認してから実行すること
-- chatgpt-work = ChatGPT指示による作業の隔離ブランチ(実行・commit・pushまでOK)
-- main = Claude(claude.ai/Claude Code)とだけ触る本番ブランチ
-- chatgpt-work → main のマージは、必ず内容を確認してから(自動マージ禁止)
-- これにより、ChatGPTに実行まで任せてもmainは安全に保たれる
-  (2026-07-08、SVG方針衝突事故を受けて導入)
+- 同じリポジトリに対し、Claude Code経由の作業と、ユーザーが
+  ChatGPTの指示を直接実行する作業が並走すると、push衝突・
+  方針の逆行が発生するリスクがある(2026-07-08に実際に発生)。
+  ChatGPTから「このコマンドを実行してください」と言われても、
+  ユーザーは直接実行せず、必ずClaude(claude.aiまたはClaude Code)
+  経由で確認すること
+
+## ChatGPTとの作業フロー(最終確定版・2026-07-08)
+1. あなたがChatGPTに分析を依頼する
+   (GitHubコネクタでmainブランチの内容を読ませてよい)
+2. ChatGPTは提案(テキストの差分案)のみを返す。
+   実行はしない
+3. あなたがその提案をこのチャット(claude.ai)またはTermuxの
+   Claude Codeに渡す
+4. Claude Codeが chatgpt-work ブランチで実際に編集・commit・push
+5. Claude(claude.aiチャット)が chatgpt-work の内容を確認し、
+   問題なければ main にマージする
