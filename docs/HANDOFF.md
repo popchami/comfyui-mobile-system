@@ -24,6 +24,10 @@
   実在未確認、実装前にworkflow内で確認が必要)
 - [Claude Code要実施] 上記実装後、RunPod実機で /object_info を見て
   SVG系3ノードのAPI入力名を確認
+- [Claude Code要実施] mainブランチへの直接pushをGit hookでブロックする
+  安全装置を作る(pre-push hook等)。ChatGPTがブランチを自動認識できない
+  ため、人間の確認だけに頼らず機械的に事故を防ぐ目的。
+  chatgpt-workブランチへのpushは許可、mainへの直接pushのみ拒否する設定。
 
 ## ブロック中・保留
 - ICON_SPEC_street.md(specs/icons/)のSHA256照合:kickkick_icon_bundle_all_v1.zip由来の
