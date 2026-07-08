@@ -17,6 +17,36 @@ The app should:
 9. Submit to `/prompt`
 10. Display images from `/history` and `/view`
 
+## Current prototype
+
+```text
+mobile-app/prototype/index.html
+```
+
+This is a temporary HTML/PWA-style prototype for validating the app flow before building Flutter.
+
+It can currently:
+
+- Save a ComfyUI URL in the input field
+- Check `/system_stats`
+- Fetch `/mobile_analyzer/profiles`
+- Show remote profile names
+- Accept pasted `app_profile.json`
+- Accept pasted `workflow.json`
+- Render `ui.simple` fields
+- Patch `workflow.json` using `patch_targets`
+- Submit patched workflow to `/prompt`
+
+## Not implemented in prototype yet
+
+- ZIP extraction in browser
+- Local persistent profile storage
+- Image upload patching
+- WebSocket progress
+- `/history/{prompt_id}` polling
+- `/view` image display
+- Flutter UI
+
 ## MVP simple fields
 
 - prompt
