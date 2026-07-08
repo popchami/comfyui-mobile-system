@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Comfy Mobile Prototype</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #f5f5f5; }
+    header { padding: 16px; background: #191919; position: sticky; top: 0; z-index: 1; }
+    main { padding: 16px; display: grid; gap: 16px; }
+    section { background: #1b1b1b; border: 1px solid #333; border-radius: 14px; padding: 14px; }
+    label { display: block; font-size: 13px; color: #bbb; margin-bottom: 6px; }
+    input, textarea, select, button { width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid #444; padding: 10px; background: #101010; color: #f5f5f5; }
+    textarea { min-height: 90px; resize: vertical; }
+    button { background: #ff7a00; color: #111; border: none; font-weight: 700; margin-top: 8px; }
+    button.secondary { background: #333; color: #f5f5f5; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field { margin-bottom: 12px; }
+    .status { font-size: 13px; color: #ccc; white-space: pre-wrap; }
+    img { max-width: 100%; border-radius: 12px; margin-top: 8px; }
+    pre { overflow: auto; background: #0b0b0b; padding: 10px; border-radius: 10px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Comfy Mobile Prototype</strong>
+    <div class="status" id="status">未接続</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. 接続</h2>
+      <label>ComfyUI URL</label>
+      <input id="comfyUrl" placeholder="https://xxxxx-8188.proxy.runpod.net" />
+      <button onclick="checkConnection()">接続確認</button>
+      <button class="secondary" onclick="fetchProfiles()">Profile一覧取得</button>
+    </section>
+
+    <section>
+      <h2>2. Profile</h2>
+      <label>Remote Profiles</label>
+      <select id="profileSelect"></select>
+      <button onclick="downloadSelectedProfile()">選択Profileを取得</button>
+      <p class="status">注意: ZIP展開はまだ未実装。MVP検証では下のJSON欄に app_profile.json と workflow.json を貼り付ける。</p>
+    </section>
+
+    <section>
+      <h2>3. 手動Profile読み込み</h2>
+      <label>app_profile.json</label>
+      <textarea id="appProfileText" placeholder="app_profile.jsonを貼り付け"></textarea>
+      <label>workflow.json</label>
+      <textarea id="workflowText" placeholder="workflow.jsonを貼り付け"></textarea>
+      <button onclick="loadManualProfile()">Profileを読み込む</button>
+    </section>
+
+    <section>
+      <h2>4. Simple UI</h2>
+      <div id="simpleUi"></div>
+      <button onclick="buildPatchedWorkflow()">Patch確認</button>
+      <button onclick="submitPrompt()">生成実行</button>
+    </section>
+
+    <section>
+      <h2>5. 結果</h2>
+      <div class="status" id="resultStatus"></div>
+      <div id="images"></div>
+      <details>
+        <summary>patched workflow</summary>
+        <pre id="patchedOutput"></pre>
+      </details>
+    </section>
+  </main>
+
+<script>
+let appProfile = null;
+let workflow = null;
+let patchedWorkflow = null;
+let profiles = [];
+
+function baseUrl() {
+  return document.getElementById('comfyUrl').value.replace(/\/$/, '');
+}
+
+function setStatus(text) {
+  document.getElementById('status').textContent = text;
+}
+
+async function checkConnection() {
+  try {
+    const res = await fetch(baseUrl() + '/system_stats');
+    if (!res.ok) throw new Error(res.status);
+    setStatus('接続OK');
+  } catch (e) {
+    setStatus('接続失敗: ' + e.message);
+  }
+}
+
+async function fetchProfiles() {
+  try {
+    const res = await fetch(baseUrl() + '/mobile_analyzer/profiles');
+    if (!res.ok) throw new Error(res.status);
+    profiles = await res.json();
+    const select = document.getElementById('profileSelect');
+    select.innerHTML = '';
+    profiles.forEach((p, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = p.name || p.id || p.file || ('profile ' + i);
+      select.appendChild(opt);
+    });
+    setStatus('Profile一覧取得OK: ' + profiles.length + '件');
+  } catch (e) {
+    setStatus('Profile一覧取得失敗: ' + e.message);
+  }
+}
+
+async function downloadSelectedProfile() {
+  const selected = profiles[document.getElementById('profileSelect').value];
+  if (!selected) return setStatus('Profile未選択');
+  setStatus('ZIP取得はこのHTMLでは未展開。URL確認: ' + baseUrl() + '/mobile_analyzer/profiles/' + selected.id + '/download');
+}
+
+function loadManualProfile() {
+  try {
+    appProfile = JSON.parse(document.getElementById('appProfileText').value);
+    workflow = JSON.parse(document.getElementById('workflowText').value);
+    renderSimpleUi();
+    setStatus('手動Profile読み込みOK');
+  } catch (e) {
+    setStatus('JSON読み込み失敗: ' + e.message);
+  }
+}
+
+function renderSimpleUi() {
+  const root = document.getElementById('simpleUi');
+  root.innerHTML = '';
+  const fields = (appProfile.ui && appProfile.ui.simple) || [];
+  fields.forEach(field => {
+    const wrap = document.createElement('div');
+    wrap.className = 'field';
+    const label = document.createElement('label');
+    label.textContent = field.label || field.field_id;
+    wrap.appendChild(label);
+
+    let input;
+    if (field.type === 'textarea') {
+      input = document.createElement('textarea');
+    } else if (field.type === 'select') {
+      input = document.createElement('select');
+      (field.options || []).forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        input.appendChild(opt);
+      });
+    } else {
+      input = document.createElement('input');
+      input.type = field.type === 'number' || field.type === 'slider' ? 'number' : 'text';
+      if (field.min !== undefined) input.min = field.min;
+      if (field.max !== undefined) input.max = field.max;
+      if (field.step !== undefined) input.step = field.step;
+    }
+    input.id = 'field_' + field.field_id;
+    input.value = field.default ?? '';
+    wrap.appendChild(input);
+    root.appendChild(wrap);
+  });
+}
+
+function buildPatchedWorkflow() {
+  if (!appProfile || !workflow) return setStatus('Profile未読み込み');
+  patchedWorkflow = JSON.parse(JSON.stringify(workflow));
+  const targets = appProfile.patch_targets || [];
+  targets.forEach(target => {
+    const el = document.getElementById('field_' + target.field_id);
+    if (!el) return;
+    const node = patchedWorkflow[target.node_id];
+    if (!node || !node.inputs || !(target.input in node.inputs)) return;
+    node.inputs[target.input] = castValue(el.value, target.value_type);
+  });
+  document.getElementById('patchedOutput').textContent = JSON.stringify(patchedWorkflow, null, 2);
+  setStatus('Patch作成OK');
+  return patchedWorkflow;
+}
+
+function castValue(value, type) {
+  if (type === 'INT') return parseInt(value, 10);
+  if (type === 'FLOAT') return parseFloat(value);
+  if (type === 'BOOLEAN') return value === 'true' || value === true;
+  return value;
+}
+
+async function submitPrompt() {
+  try {
+    const wf = buildPatchedWorkflow();
+    if (!wf) return;
+    const res = await fetch(baseUrl() + '/prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: wf })
+    });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    document.getElementById('resultStatus').textContent = '送信OK prompt_id: ' + data.prompt_id + '\n履歴取得は次段階で実装';
+  } catch (e) {
+    document.getElementById('resultStatus').textContent = '生成失敗: ' + e.message;
+  }
+}
+</script>
+</body>
+</html>
