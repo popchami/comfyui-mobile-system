@@ -1,0 +1,161 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "minimal_api_workflow",
+  "profile_name": "Minimal API Workflow",
+  "profile_version": "0.1.0",
+  "workflow_id": "sha256_example",
+  "workflow_format": "api",
+  "created_at": "2026-07-09T00:00:00+0900",
+  "updated_at": "2026-07-09T00:00:00+0900",
+  "source": {
+    "type": "example",
+    "name": "minimal_api_workflow.json",
+    "url": "",
+    "note": "Example output shape for mobile app development."
+  },
+  "compatibility": {
+    "status": "partial",
+    "missing_nodes_count": 0,
+    "missing_models_count": 1,
+    "attention_nodes_count": 0,
+    "warnings_count": 1
+  },
+  "ui": {
+    "simple": [
+      {
+        "field_id": "prompt",
+        "label": "Prompt",
+        "type": "textarea",
+        "section": "prompt",
+        "ui_visibility": "simple",
+        "node_id": "2",
+        "input": "text",
+        "default": "a cute pixel art cat",
+        "patch_target_id": "patch_prompt"
+      },
+      {
+        "field_id": "negative",
+        "label": "Negative Prompt",
+        "type": "textarea",
+        "section": "prompt",
+        "ui_visibility": "simple",
+        "node_id": "3",
+        "input": "text",
+        "default": "low quality, blurry",
+        "patch_target_id": "patch_negative"
+      },
+      {
+        "field_id": "seed",
+        "label": "Seed",
+        "type": "number",
+        "section": "basic_sampling",
+        "ui_visibility": "simple",
+        "node_id": "5",
+        "input": "seed",
+        "default": 12345,
+        "patch_target_id": "patch_seed"
+      },
+      {
+        "field_id": "steps",
+        "label": "Steps",
+        "type": "number",
+        "section": "basic_sampling",
+        "ui_visibility": "simple",
+        "node_id": "5",
+        "input": "steps",
+        "default": 20,
+        "min": 1,
+        "max": 100,
+        "step": 1,
+        "patch_target_id": "patch_steps"
+      },
+      {
+        "field_id": "cfg",
+        "label": "CFG",
+        "type": "slider",
+        "section": "basic_sampling",
+        "ui_visibility": "simple",
+        "node_id": "5",
+        "input": "cfg",
+        "default": 7.0,
+        "min": 1,
+        "max": 30,
+        "step": 0.5,
+        "patch_target_id": "patch_cfg"
+      }
+    ],
+    "advanced": [],
+    "expert": []
+  },
+  "patch_targets": [
+    {
+      "patch_target_id": "patch_prompt",
+      "field_id": "prompt",
+      "node_id": "2",
+      "input": "text",
+      "value_type": "STRING"
+    },
+    {
+      "patch_target_id": "patch_negative",
+      "field_id": "negative",
+      "node_id": "3",
+      "input": "text",
+      "value_type": "STRING"
+    },
+    {
+      "patch_target_id": "patch_seed",
+      "field_id": "seed",
+      "node_id": "5",
+      "input": "seed",
+      "value_type": "INT"
+    },
+    {
+      "patch_target_id": "patch_steps",
+      "field_id": "steps",
+      "node_id": "5",
+      "input": "steps",
+      "value_type": "INT"
+    },
+    {
+      "patch_target_id": "patch_cfg",
+      "field_id": "cfg",
+      "node_id": "5",
+      "input": "cfg",
+      "value_type": "FLOAT"
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "1",
+      "class_type": "CheckpointLoaderSimple",
+      "category": "model_loader",
+      "known": true,
+      "exists_in_comfyui": true,
+      "ui_visibility": "expert",
+      "editable": true,
+      "role": "model_loader"
+    },
+    {
+      "node_id": "5",
+      "class_type": "KSampler",
+      "category": "sampler",
+      "known": true,
+      "exists_in_comfyui": true,
+      "ui_visibility": "simple",
+      "editable": true,
+      "role": "main_sampler"
+    }
+  ],
+  "missing_nodes": [],
+  "missing_models": [
+    {
+      "type": "checkpoint",
+      "name": "example.safetensors",
+      "path_hint": "models/checkpoints"
+    }
+  ],
+  "attention_nodes": [],
+  "warnings": [
+    "This is an example profile. The checkpoint file is intentionally a placeholder."
+  ]
+}
