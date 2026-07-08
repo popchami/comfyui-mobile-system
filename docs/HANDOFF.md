@@ -41,3 +41,8 @@
 - 今後、ChatGPTから「このコマンドを実行してください」と言われても、
   ユーザーは直接実行せず、必ずClaude(claude.aiチャットまたはClaude Code)経由で
   確認してから実行すること
+- chatgpt-work = ChatGPT指示による作業の隔離ブランチ(実行・commit・pushまでOK)
+- main = Claude(claude.ai/Claude Code)とだけ触る本番ブランチ
+- chatgpt-work → main のマージは、必ず内容を確認してから(自動マージ禁止)
+- これにより、ChatGPTに実行まで任せてもmainは安全に保たれる
+  (2026-07-08、SVG方針衝突事故を受けて導入)
