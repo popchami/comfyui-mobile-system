@@ -1,0 +1,158 @@
+# app_profile.json v1.0
+
+## Purpose
+
+`app_profile.json` is the contract between ComfyUI-Mobile-Analyzer and the smartphone app.
+
+The Analyzer writes this file. The smartphone app reads it to build the UI, validate the profile, patch safe values into `workflow.json`, and submit the workflow to ComfyUI.
+
+## Top-level structure
+
+Required fields:
+
+- `schema_version`
+- `profile_id`
+- `profile_name`
+- `profile_version`
+- `workflow_id`
+- `workflow_format`
+- `created_at`
+- `updated_at`
+- `source`
+- `compatibility`
+- `ui`
+- `patch_targets`
+- `nodes`
+- `missing_nodes`
+- `missing_models`
+- `attention_nodes`
+- `warnings`
+
+## workflow_format
+
+Allowed values:
+
+- `api`
+- `ui`
+- `converted_api`
+- `unknown`
+
+`converted_api` means the Analyzer converted a ComfyUI UI workflow into a workflow that can be sent to `/prompt`.
+
+## compatibility.status
+
+Allowed values:
+
+- `ready`
+- `partial`
+- `missing_requirements`
+- `needs_attention`
+- `invalid`
+
+Use `needs_attention` for external API nodes, unusual file access nodes, or special nodes that may require user review. Do not use a hard-blocking status name for normal imported workflow nodes.
+
+## ui groups
+
+The `ui` field contains three groups:
+
+- `simple`
+- `advanced`
+- `expert`
+
+Hidden nodes are not placed in `ui`, but they remain listed in `nodes` and remain inside `workflow.json`.
+
+## ui field shape
+
+A UI field should contain:
+
+- `field_id`
+- `label`
+- `type`
+- `section`
+- `ui_visibility`
+- `node_id`
+- `input`
+- `default`
+- optional `min`
+- optional `max`
+- optional `step`
+- optional `options`
+- optional `patch_target_id`
+
+## UI types for MVP
+
+- `text`
+- `textarea`
+- `number`
+- `slider`
+- `switch`
+- `select`
+- `image`
+- `readonly`
+
+## nodes shape
+
+Each node entry should include:
+
+- `node_id`
+- `class_type`
+- `category`
+- `known`
+- `exists_in_comfyui`
+- `ui_visibility`
+- `editable`
+- `role`
+
+## ui_visibility
+
+Allowed values:
+
+- `simple`
+- `advanced`
+- `expert`
+- `hidden`
+
+## MVP simple fields
+
+The MVP should expose only these fields when they exist in the workflow:
+
+- prompt
+- negative
+- seed
+- steps
+- cfg
+- sampler
+- scheduler
+- denoise
+- width
+- height
+- batch
+
+## MVP known nodes
+
+Initial known nodes:
+
+- KSampler
+- CLIPTextEncode
+- LoadImage
+- SaveImage
+- PreviewImage
+- EmptyLatentImage
+- CheckpointLoaderSimple
+- UNETLoader
+- DualCLIPLoader
+- VAELoader
+- VAEEncode
+- VAEDecode
+- LoraLoader
+
+## Rules
+
+- Do not remove workflow nodes.
+- Do not change node connections in MVP.
+- Only fields listed in `patch_targets` may be patched.
+- Connection inputs are read-only by default.
+- Hidden nodes remain in `workflow.json`.
+- Unknown nodes remain in `workflow.json`.
+- Missing nodes and models are not installed by the smartphone app in MVP.
+- If requirements are missing, the user should fix the ComfyUI environment and run the Analyzer again.
