@@ -31,7 +31,8 @@
   元ZIPの再アップロードが必要。緊急度低、ComfyUI動作確認が優先
 
 ## 重要な注意事項(繰り返し確認が必要なルール)
-- ChatGPTは分析・提案のみ、編集・commit・push禁止
+- ChatGPTはchatgpt-workブランチ内でのみ、実行・commit・push可(mainには直接触れない)
+- mainブランチへの反映は、必ずClaude Code側でchatgpt-workの内容をレビューしてからマージする
 - ファイル名一致だけで同一判定しない、SHA256必須
 - ノードの有無はworkflow JSON内を実際に確認してから判断(ハルシネーション禁止)
 - NSFW/通常は物理フォルダで分けず、1workflow内でwildcard切り替え
