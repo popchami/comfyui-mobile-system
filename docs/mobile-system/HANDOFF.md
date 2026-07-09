@@ -4,7 +4,41 @@
 
 This file is the single source of truth for "what is done / in progress / blocked" on this PR.
 
-Last updated by: ChatGPT, after recording full HTML and official ComfyUI API conflict notes on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
+Last updated by: Claude, work session paused by user request on branch `docs/mobile-system-spec` (PR #1), 2026-07-09 13:22 JST (commit `f824389`). Then updated by: ChatGPT, after recording full HTML and official ComfyUI API conflict notes on the same branch, through 2026-07-09 21:30 JST (multiple commits, tip `cee7b9b` at merge time). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in ChatGPT's update.
+
+**要確認(rebase統合時のメモ)**: 本ファイルは2つの独立した更新系列を統合したものです。時系列としてはClaudeによる「Session paused — quick resume summary」(13:22)が先、ChatGPTによる大幅な拡張(同日21:30まで、複数コミット)が後です。両者はそれぞれ別のブランチ状態からの記述であり、このrebase統合コミットで初めて突き合わされました。内容に新旧の食い違いがある場合、基本的にはこの後に続く各セクション(ChatGPT側、時系列で後)がより新しい状態を反映しています。Claudeの記録は「その時点のスナップショット」として保持しています。
+
+## Session paused — quick resume summary (Claude、2026-07-09 13:22 JST 時点)
+
+```text
+Where we stopped:
+  Architecture review + runtime validation is fully DONE and PUSHED.
+  Nothing is mid-flight. Working tree is clean (git status: nothing to commit).
+
+What was planned next (not started):
+  1. Validate Flutter Android pass conditions 9-10 for real, on the user's
+     actual RunPod Pod with GPU + a real checkpoint model (not on this
+     local sandbox, which has no GPU).
+  2. Add INTERNET permission to the real generated Android manifest when a
+     real Flutter project shell is created for real device testing.
+  3. Only after 1-2 pass, revisit OPEN_TODOS.md / FUTURE_ISSUES_AND_IMPROVEMENTS.md
+     and reprioritize.
+
+Sandbox environment kept installed for reuse (do not re-download):
+  /tmp/claude-0/-root-comfyui-mobile-system/f3061f5e-90f9-482b-b8ab-f51e1fa15f7d/scratchpad/
+    ComfyUI/            official ComfyUI clone + venv with torch(cpu)/aiohttp/etc installed,
+                         custom_nodes/ComfyUI-Mobile-Analyzer/ already copied in (with the fix)
+    flutter_git/         flutter/flutter stable clone with bootstrapped flutter tool (already
+                         built the flutter_tools snapshot once — this is the slow part)
+    dart_sdk/             standalone arm64 Dart SDK zip extracted
+    comfy_mobile_mvp/     flutter create --platforms=android shell with lib/+pubspec.yaml
+                         copied in from the real repo, pub get already done
+  This is a session-scratchpad path (not guaranteed permanent across all
+  environments) — if a future session finds it gone, it must be recreated;
+  see "Runtime validation" below for the exact steps that worked.
+  No processes are currently running (ComfyUI server was stopped after
+  validation); only the installed files remain.
+```
 
 ## Current decision
 
@@ -36,11 +70,17 @@ The user should only need to prepare a ComfyUI workflow.
 The dedicated custom node/analyzer converts that user-provided workflow into an app-readable profile.
 ```
 
+Conclusion (Claudeの記録, 2026-07-09 13:22時点): direction and decisions in `PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md` are still valid. No large rewrite needed.
+
 Concept detail:
 
 ```text
 docs/mobile-system/USER_PROVIDED_WORKFLOW_CONCEPT.md
 ```
+
+### Runtime validation (executed on-device, not just documented)
+
+ComfyUI + the custom node + Flutter tooling were actually installed in the throwaway sandbox directory listed above (outside the repo, CPU-only, aarch64, no GPU), and the real flow was run end-to-end. Results against the 10-item pass condition in `CLAUDE_FINAL_REVIEW_AND_INSTALL.md` (see the numbered list under "## Completed: architecture and limited runtime validation" below):
 
 ## Final smartphone-only status
 
@@ -101,6 +141,37 @@ Keep core creative inputs visible by default.
 Collapse detailed settings by default.
 ```
 
+This confirms the client-side data flow (download -> parse -> patch -> submit) is correct end-to-end at the code level. What is NOT confirmed: actual Flutter widget rendering, `file_picker` native Android plugin behavior, and real image generation/display (needs a real GPU + real checkpoint, which this sandbox intentionally does not have).
+
+### Bug fixed (blocker) — pushed
+
+```text
+File: analyzer/ComfyUI-Mobile-Analyzer/nodes.py
+Fix: added `OUTPUT_NODE = True` to MobileProfileExporter.
+Reason: without it, ComfyUI rejects any /prompt containing only this node with
+  400 "prompt_no_outputs", because the node has no dependents and wasn't marked
+  as an output node itself. Reproduced live, fixed, re-verified live (queue ->
+  execute -> zip written -> downloadable).
+Commit: 6ab9ef7. Pushed to origin/docs/mobile-system-spec.
+```
+
+This was the only code change made. No other files were touched.
+
+### HANDOFF.md rewrite — pushed
+
+```text
+Commit: 0f942ab. Pushed to origin/docs/mobile-system-spec.
+```
+
+## In progress / not yet done (Claudeの記録, 2026-07-09 13:22時点)
+
+```text
+- Nothing is mid-flight. Session was paused cleanly by user request.
+- git status is clean; both commits above are pushed; no local-only changes exist.
+```
+
+**要確認**: 上記はClaudeが2026-07-09 13:22時点で記録した内容です。その後ChatGPTが同日21:30頃までに本ファイル全体を大幅に拡張しており(下記「## Blocked / deferred」「## Do next when RunPod is available」等、より詳細な項目群が追加されています)。「Nothing is mid-flight」という記述は統合後のドキュメント全体としては古い可能性があります。最新の未完了事項は下部の該当セクションを参照してください。
+
 Default generation screen layout:
 
 ```text
@@ -153,6 +224,8 @@ Default generation screen layout:
 - image picker + selected image preview behavior reference.
 - mask canvas, paint, erase, clear, and brush size behavior reference.
 ```
+
+(Claudeの記録, 2026-07-09 13:22時点の補足: Still Draft. Do not merge. Both commits (OUTPUT_NODE fix + this HANDOFF.md) are pushed to origin/docs/mobile-system-spec. Architecture direction confirmed valid; no large rewrite triggered.)
 
 Existing HTML profiles under `profiles/` were reviewed as proven behavior references. Details are recorded in:
 
@@ -406,3 +479,5 @@ User-provided workflow import is the correct product concept.
 Image input / mask / img2img / inpaint must be workflow-driven, not fixed-HTML-workflow-driven.
 Full HTML is a behavior reference and client, not a competing API layer.
 ```
+
+(Claudeの記録, 2026-07-09 13:22時点の「次にやること」は、冒頭の「Session paused — quick resume summary」に記載済みの内容と重複するため、ここでは繰り返さず参照のみとします。)
