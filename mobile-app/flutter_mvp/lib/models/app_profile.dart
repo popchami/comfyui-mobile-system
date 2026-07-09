@@ -50,6 +50,8 @@ class UiField {
     required this.input,
     required this.defaultValue,
     required this.patchTargetId,
+    this.nodeColor = '',
+    this.nodeBgColor = '',
   });
 
   final String fieldId;
@@ -60,6 +62,8 @@ class UiField {
   final String input;
   final dynamic defaultValue;
   final String patchTargetId;
+  final String nodeColor;
+  final String nodeBgColor;
 
   factory UiField.fromJson(Map<String, dynamic> json) {
     return UiField(
@@ -71,6 +75,8 @@ class UiField {
       input: json['input'] as String? ?? '',
       defaultValue: json['default'],
       patchTargetId: json['patch_target_id'] as String? ?? '',
+      nodeColor: json['node_color'] as String? ?? '',
+      nodeBgColor: json['node_bgcolor'] as String? ?? '',
     );
   }
 }
