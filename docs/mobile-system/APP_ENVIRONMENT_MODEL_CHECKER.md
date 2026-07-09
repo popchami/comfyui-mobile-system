@@ -11,6 +11,7 @@ This is a read-only check. It must not download models, install custom nodes, or
 ```text
 Implemented in:
 mobile-app/flutter_mvp/lib/services/environment_model_checker.dart
+mobile-app/flutter_mvp/lib/screens/generate_screen.dart
 ```
 
 ## Related files
@@ -19,6 +20,7 @@ mobile-app/flutter_mvp/lib/services/environment_model_checker.dart
 mobile-app/flutter_mvp/lib/services/comfy_api_client.dart
 mobile-app/flutter_mvp/lib/services/model_folder_resolver.dart
 mobile-app/flutter_mvp/lib/models/app_profile.dart
+mobile-app/flutter_mvp/lib/screens/generate_screen.dart
 ```
 
 ## What it checks
@@ -97,6 +99,28 @@ Folders unavailable: vae.
 No models or custom nodes were installed automatically.
 ```
 
+## GenerateScreen integration
+
+`GenerateScreen` now imports and calls:
+
+```text
+EnvironmentModelChecker
+```
+
+The `Check environment` button inside the Profile warnings card now uses this service instead of inline checkpoint-only logic.
+
+Current behavior:
+
+```text
+1. User opens a profile with warnings.
+2. Warning card appears.
+3. User taps Check environment.
+4. App calls EnvironmentModelChecker.check(appProfile).
+5. App displays EnvironmentModelCheckResult.toDisplayText().
+```
+
+This keeps the screen logic smaller and allows missing model checks to cover multiple folders.
+
 ## Safety rules
 
 ```text
@@ -107,12 +131,6 @@ No models or custom nodes were installed automatically.
 - Do not block the whole app if one /models/{folder} endpoint is unavailable.
 - Do not assume every ComfyUI version supports every model folder route.
 ```
-
-## Current UI integration note
-
-`GenerateScreen` already has a basic read-only `Check environment` button.
-
-The next cleanup step is to replace the inline checkpoint-only logic in `GenerateScreen` with `EnvironmentModelChecker`, so the button can check multiple model folders without making `GenerateScreen` larger.
 
 ## Runtime validation checklist
 
@@ -125,5 +143,6 @@ During RunPod + Android validation, confirm:
 4. /models/vae check works if supported.
 5. Unsupported /models/{folder} routes do not crash the app.
 6. Display text is readable on Android.
-7. No automatic install or download occurs.
+7. Check environment button uses the shared EnvironmentModelChecker path.
+8. No automatic install or download occurs.
 ```
