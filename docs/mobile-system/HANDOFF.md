@@ -4,27 +4,43 @@
 
 This file is the single source of truth for "what is done / in progress / blocked" on this PR.
 
-Last updated by: ChatGPT, after recording legacy HTML UI review as a post-validation item on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
+Last updated by: ChatGPT, after correcting the project concept to user-provided workflow import on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
 
 ## Current decision
 
 ```text
-ComfyUI-side Analyzer
+User prepares any ComfyUI workflow
   ↓
-mobile_profile_export.zip
+ComfyUI-Mobile-Analyzer reads/analyzes the user workflow
   ↓
-Smartphone app imports profile
+Analyzer exports workflow.json + app_profile.json as mobile_profile_export.zip
   ↓
-Dynamic simple UI
+Smartphone app imports profile zip
   ↓
-Patch workflow using app_profile.json.patch_targets only
+Smartphone app renders dynamic simple UI from app_profile.json
   ↓
-Submit to ComfyUI official APIs
+Smartphone app patches only app_profile.json.patch_targets
   ↓
-Display generated result
+Smartphone app submits the workflow to ComfyUI official APIs
+  ↓
+Smartphone app displays generated result
 ```
 
 Do not discard this system. Use official ComfyUI APIs wherever possible; keep custom code focused on the missing mobile profile layer.
+
+Important clarification:
+
+```text
+The product must not be narrowed into a fixed set of app-owned dedicated workflows.
+The user should only need to prepare a ComfyUI workflow.
+The dedicated custom node/analyzer converts that user-provided workflow into an app-readable profile.
+```
+
+Concept detail:
+
+```text
+docs/mobile-system/USER_PROVIDED_WORKFLOW_CONCEPT.md
+```
 
 ## Final smartphone-only status
 
@@ -205,6 +221,7 @@ Read these first for status:
 ```text
 docs/mobile-system/HANDOFF.md
 docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
+docs/mobile-system/USER_PROVIDED_WORKFLOW_CONCEPT.md
 docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
 docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
 docs/mobile-system/NEXT_PHASE_PLAN.md
@@ -257,6 +274,8 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
    Reset to defaults, and generated UI grouping all need Android/RunPod validation.
 
 5. Legacy HTML visual UI review is deferred until after RunPod + Android validation.
+
+6. User-provided workflow import must be validated with at least one real user workflow.
 ```
 
 ## Do next when RunPod is available
@@ -266,15 +285,16 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 2. Start RunPod ComfyUI.
 3. Place Analyzer into custom_nodes.
 4. Confirm ComfyUI starts and Analyzer loads.
-5. Export profile zip.
-6. Check Analyzer profile list/download routes.
-7. Run real generation with an existing model.
-8. Validate /prompt -> /ws -> /history -> /view.
-9. Validate /queue and /interrupt.
-10. Validate /object_info and /models/{folder} behavior.
-11. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
-12. Compare with existing HTML behavior where useful.
-13. Update this HANDOFF.md.
+5. Use or prepare a real user-provided ComfyUI workflow.
+6. Export profile zip from that workflow.
+7. Check Analyzer profile list/download routes.
+8. Run real generation with an existing model.
+9. Validate /prompt -> /ws -> /history -> /view.
+10. Validate /queue and /interrupt.
+11. Validate /object_info and /models/{folder} behavior.
+12. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
+13. Compare with existing HTML behavior where useful.
+14. Update this HANDOFF.md.
 ```
 
 ## Do next when Android validation is available
@@ -286,7 +306,7 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 4. Add Android INTERNET permission.
 5. Run pub get / analyze / run.
 6. Connect to ComfyUI.
-7. Download/save/open profile.
+7. Download/save/open a profile generated from a user-provided workflow.
 8. Confirm generated UI layout: core inputs open, detailed settings collapsed.
 9. Confirm profile-specific previous input restore.
 10. Confirm Reset to profile defaults.
@@ -332,6 +352,7 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 - Do not collapse every usable generated UI field.
 - Do not add more smartphone-only features before real validation.
 - Do not copy legacy HTML visual layout before Android validation.
+- Do not narrow the product into a fixed set of app-owned workflows.
 ```
 
 ## Merge readiness rule
@@ -342,6 +363,7 @@ Do not move toward merge until:
 - RunPod ComfyUI validation passes.
 - Real checkpoint image generation passes.
 - Android device/emulator validation passes.
+- A real user-provided workflow import/export path is validated.
 - Generated UI layout is validated on Android.
 - Seed reuse interaction is validated on Android.
 - Check environment is validated against real ComfyUI.
@@ -358,4 +380,5 @@ Smartphone-only work is complete.
 Do not continue adding smartphone-only features.
 The next meaningful work is RunPod/Android real validation unless a new source-level blocker is discovered.
 Legacy HTML visual UI review is a post-validation issue, not a pre-validation change.
+User-provided workflow import is the correct product concept.
 ```
