@@ -78,6 +78,28 @@ mobile-app/flutter_mvp/RUN_CHECKLIST.md
 
 Added Android Internet permission note and real Flutter project shell caveat.
 
+### 5. Analyzer profile API metadata
+
+Updated:
+
+```text
+analyzer/ComfyUI-Mobile-Analyzer/server.py
+```
+
+The profile list now includes:
+
+```text
+id
+name
+file
+status
+size_bytes
+modified_at
+download_url
+```
+
+Download lookup is now more tolerant if a caller accidentally passes an id with `.zip` included.
+
 ## Flutter target clarification
 
 The current Flutter MVP is Android-first.
