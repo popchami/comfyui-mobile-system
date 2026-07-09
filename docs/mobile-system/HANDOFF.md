@@ -4,7 +4,7 @@
 
 This file is the single source of truth for "what is done / in progress / blocked" on this PR. It is fully rewritten at the end of each work session.
 
-Last updated by: ChatGPT, after generated UI collapsible-section decision on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
+Last updated by: ChatGPT, after generated UI collapsible grouping implementation on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
 
 ## Current decision (unchanged)
 
@@ -85,6 +85,26 @@ docs/mobile-system/UI_VISIBILITY_RULES.md
 docs/mobile-system/MOBILE_APP_SPEC.md
 ```
 
+Flutter implementation updated:
+
+```text
+mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+```
+
+Implementation behavior:
+
+```text
+- Uses app_profile simple fields.
+- Groups fields by field_id / label / type / section.
+- Core Inputs are shown directly.
+- Basic Generation Settings uses ExpansionTile collapsed by default.
+- Size / Output uses ExpansionTile collapsed by default.
+- Advanced Workflow Features uses ExpansionTile collapsed by default.
+- Expert / Debug uses ExpansionTile collapsed by default.
+- Empty sections are not rendered.
+- If no core field is detected, the first editable field is shown as Core fallback.
+```
+
 ## Current PR status
 
 ```text
@@ -97,6 +117,7 @@ Smartphone-only preparation: complete
 Cross-file static review fixes: complete
 Legacy HTML behavior review/reuse: complete
 Generated UI collapsible section decision: complete
+Generated UI collapsible grouping implementation: complete
 RunPod GPU validation: not complete
 Android real-device/emulator validation: not complete
 Implementation: paused except for minimal blocker fixes
@@ -370,6 +391,6 @@ Do not move toward merge until:
 ## Static review stop condition
 
 ```text
-Cross-file static review fixes, legacy HTML reuse pass, and collapsible generated UI decision are complete for the issues found in this pass.
+Cross-file static review fixes, legacy HTML reuse pass, collapsible generated UI decision, and Flutter generated UI grouping implementation are complete for the issues found in this pass.
 The next meaningful work is RunPod/Android real validation unless a new source-level issue is discovered.
 ```
