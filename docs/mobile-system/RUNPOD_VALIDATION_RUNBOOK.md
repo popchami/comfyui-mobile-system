@@ -4,7 +4,7 @@
 
 This is the step-by-step runbook for validating the ComfyUI Mobile System on RunPod.
 
-Use this when RunPod becomes available again.
+Use this after smartphone-only preparation is complete.
 
 ## Current rule
 
@@ -20,6 +20,21 @@ export a profile zip,
 serve it through Analyzer routes,
 run a real model generation,
 and expose generated images through official ComfyUI APIs.
+```
+
+It also validates the official API surfaces prepared during smartphone-only work:
+
+```text
+/system_stats
+/object_info
+/models/{folder}
+/queue
+/interrupt
+/prompt
+/ws
+/history/{prompt_id}
+/view
+/upload/image
 ```
 
 ## Before starting
@@ -44,6 +59,8 @@ Rules:
 - Do not auto-install custom nodes.
 - Do not merge PR.
 - Do not test Serverless yet.
+- Do not add new app features during validation.
+- Fix only the smallest blocker if validation fails.
 ```
 
 ## Validation steps
@@ -65,6 +82,7 @@ Check:
 ```text
 ComfyUI opens in browser: PASS / FAIL
 /system_stats responds: PASS / FAIL
+/object_info responds: PASS / FAIL
 ```
 
 ### Step 2: Place Analyzer
@@ -98,6 +116,7 @@ Check:
 ComfyUI starts: PASS / FAIL
 Analyzer imports without error: PASS / FAIL
 Mobile Profile Exporter appears: PASS / FAIL
+WEB_DIRECTORY cleanup causes no startup error: PASS / FAIL
 ```
 
 If import fails, use:
@@ -117,6 +136,7 @@ Record:
 Workflow name:
 Workflow format: API workflow
 Model referenced:
+Custom nodes referenced:
 ```
 
 Check:
@@ -128,6 +148,9 @@ workflow.json included: PASS / FAIL
 app_profile.json included: PASS / FAIL
 app_profile parses: PASS / FAIL
 patch_targets present: PASS / FAIL
+missing_models present when expected: PASS / FAIL / N/A
+missing_nodes present when expected: PASS / FAIL / N/A
+warnings present when expected: PASS / FAIL / N/A
 ```
 
 ### Step 5: Check Analyzer routes
@@ -148,7 +171,27 @@ Profile name:
 Downloaded zip size:
 ```
 
-### Step 6: Real generation with actual model
+### Step 6: Validate prepared official API helpers
+
+Check:
+
+```text
+GET /queue: PASS / FAIL
+POST /interrupt with nothing running: PASS / FAIL
+GET /models/checkpoints: PASS / FAIL / UNSUPPORTED
+GET /models/loras: PASS / FAIL / UNSUPPORTED
+GET /models/vae: PASS / FAIL / UNSUPPORTED
+GET /models/controlnet: PASS / FAIL / UNSUPPORTED
+```
+
+Important:
+
+```text
+Unsupported /models/{folder} routes are not automatic failures.
+Record them so Android Check environment behavior can be interpreted correctly.
+```
+
+### Step 7: Real generation with actual model
 
 Use an already available model.
 
@@ -170,7 +213,21 @@ Check:
 Generated image exists: PASS / FAIL
 ```
 
-### Step 7: Record result
+### Step 8: Validate interrupt during generation
+
+Use a generation that takes long enough to interrupt.
+
+Check:
+
+```text
+Generation starts: PASS / FAIL
+/queue shows running or pending item: PASS / FAIL
+POST /interrupt returns success: PASS / FAIL
+ComfyUI handles interrupt without crashing: PASS / FAIL
+App can submit a later generation after interrupt: PASS / FAIL / NOT TESTED
+```
+
+### Step 9: Record result
 
 Use:
 
@@ -198,6 +255,10 @@ RunPod validation is PASS only if:
 - Analyzer profile list/download routes work.
 - Real model generation works.
 - /prompt -> /ws -> /history -> /view path works.
+- /queue can be read.
+- /interrupt behavior is understood and recorded.
+- /object_info works.
+- /models/{folder} behavior is recorded.
 ```
 
 ## Partial condition
@@ -209,6 +270,13 @@ RunPod validation is PARTIAL if:
   but real model generation cannot be completed.
 ```
 
+or:
+
+```text
+- Real generation works,
+  but a non-critical helper API such as a specific /models/{folder} route is unsupported.
+```
+
 ## Fail condition
 
 RunPod validation is FAIL if:
@@ -218,6 +286,7 @@ RunPod validation is FAIL if:
 - Mobile Profile Exporter cannot be loaded.
 - Profile zip cannot be generated.
 - Analyzer routes do not work.
+- Real /prompt generation cannot run because of a project-side blocker.
 ```
 
 ## Common failures to capture
@@ -225,10 +294,14 @@ RunPod validation is FAIL if:
 ```text
 - Analyzer import error
 - missing model
+- missing custom node
 - /prompt rejected
 - /ws connection failed
 - /history empty
 - /view image not found
+- /queue response shape differs
+- /interrupt response differs
+- /models/{folder} unsupported
 - RunPod URL expired/changed
 - uploaded input image missing
 ```
