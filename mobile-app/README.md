@@ -21,6 +21,7 @@ The app should:
 
 ```text
 mobile-app/prototype/index.html
+mobile-app/prototype/profile-storage.js
 ```
 
 This is a temporary HTML/PWA-style prototype for validating the app flow before building Flutter.
@@ -48,9 +49,23 @@ It can currently:
 - Display generated images
 - Show patched workflow and history JSON for debugging
 
+## Storage helper
+
+`profile-storage.js` adds localStorage helper functions for browser-side profile persistence.
+
+Supported helper actions:
+
+- load stored profiles
+- save stored profiles
+- upsert profile by `profile_id`
+- delete profile
+- clear profiles
+
+This helper is prepared for the next prototype step where imported zip profiles are saved and reopened without importing again.
+
 ## Not implemented in prototype yet
 
-- Local persistent profile storage
+- Full UI wiring for stored profile list
 - WebSocket progress
 - Flutter UI
 
