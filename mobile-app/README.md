@@ -33,9 +33,14 @@ It can currently:
 - Show remote profile names
 - Accept pasted `app_profile.json`
 - Accept pasted `workflow.json`
+- Validate minimal profile shape
 - Render `ui.simple` fields
 - Patch `workflow.json` using `patch_targets`
 - Submit patched workflow to `/prompt`
+- Poll `/history/{prompt_id}`
+- Build `/view` URLs
+- Display generated images
+- Show patched workflow and history JSON for debugging
 
 ## Not implemented in prototype yet
 
@@ -43,8 +48,6 @@ It can currently:
 - Local persistent profile storage
 - Image upload patching
 - WebSocket progress
-- `/history/{prompt_id}` polling
-- `/view` image display
 - Flutter UI
 
 ## MVP simple fields
