@@ -4,7 +4,7 @@
 
 This file is the single source of truth for "what is done / in progress / blocked" on this PR.
 
-Last updated by: ChatGPT, after final smartphone-only completion on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
+Last updated by: ChatGPT, after recording legacy HTML UI review as a post-validation item on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
 
 ## Current decision
 
@@ -140,6 +140,28 @@ Existing HTML profiles under `profiles/` were reviewed as proven behavior refere
 docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 ```
 
+## Legacy HTML visual UI decision
+
+```text
+Legacy HTML visual layout was not copied into the Flutter MVP.
+Legacy HTML UI/UX behavior was used as a reference.
+A dedicated visual UI review is deferred until after RunPod + Android validation.
+```
+
+Post-validation review note:
+
+```text
+docs/mobile-system/POST_VALIDATION_LEGACY_HTML_UI_REVIEW.md
+```
+
+Reason:
+
+```text
+The old HTML files are fixed per-profile pages.
+The new Flutter app generates UI dynamically from app_profile.json + patch_targets.
+Copying the old visual layout before validation could reintroduce workflow-specific assumptions.
+```
+
 ## Completed: architecture and limited runtime validation
 
 Claude previously completed architecture alignment review and limited CPU-only runtime validation.
@@ -199,6 +221,7 @@ docs/mobile-system/APP_PROFILE_WARNING_DISPLAY.md
 docs/mobile-system/APP_MODEL_FOLDER_RESOLVER.md
 docs/mobile-system/APP_ENVIRONMENT_MODEL_CHECKER.md
 docs/mobile-system/APP_GENERATED_IMAGE_METADATA.md
+docs/mobile-system/POST_VALIDATION_LEGACY_HTML_UI_REVIEW.md
 ```
 
 Use these for the next validation pass:
@@ -232,6 +255,8 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 4. /queue, /interrupt, /object_info, /models/{folder}, Check environment,
    generated image metadata, session history display, seed reuse, Random seed,
    Reset to defaults, and generated UI grouping all need Android/RunPod validation.
+
+5. Legacy HTML visual UI review is deferred until after RunPod + Android validation.
 ```
 
 ## Do next when RunPod is available
@@ -306,6 +331,7 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 - Do not copy legacy HTML prompt/content lists into the new dynamic app.
 - Do not collapse every usable generated UI field.
 - Do not add more smartphone-only features before real validation.
+- Do not copy legacy HTML visual layout before Android validation.
 ```
 
 ## Merge readiness rule
@@ -331,4 +357,5 @@ Do not move toward merge until:
 Smartphone-only work is complete.
 Do not continue adding smartphone-only features.
 The next meaningful work is RunPod/Android real validation unless a new source-level blocker is discovered.
+Legacy HTML visual UI review is a post-validation issue, not a pre-validation change.
 ```
