@@ -133,6 +133,14 @@ Flutter scaffold path:
 mobile-app/flutter_mvp/
 ```
 
+Current MVP target:
+
+```text
+Android-first.
+```
+
+Do not treat Flutter Web support as required for this MVP. `GenerateScreen` uses `file_picker` and `dart:io File` for image upload, so Web may fail unless rewritten later.
+
 Current files include:
 
 ```text
@@ -227,7 +235,7 @@ Claude should specifically check these:
 
 ```text
 1. Dart type errors in Flutter files
-2. Whether file_picker + dart:io works for selected target platforms
+2. Whether file_picker + dart:io works for Android target
 3. Whether ComfyApiClient.uploadImage signature matches usage
 4. Whether ComfyProgressClient constructor uses baseUrl or baseUri consistently
 5. Whether /ws clientId parameter name matches current ComfyUI behavior
