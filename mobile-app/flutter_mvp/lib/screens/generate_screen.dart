@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../models/app_profile.dart';
@@ -22,6 +24,8 @@ class GenerateScreen extends StatefulWidget {
 
 class _GenerateScreenState extends State<GenerateScreen> {
   final Map<String, TextEditingController> _controllers = {};
+  final Map<String, File> _selectedImages = {};
+  final Map<String, String> _uploadedImageNames = {};
   String _status = 'Ready';
   String _patchedPreview = '';
   String _promptId = '';
@@ -37,6 +41,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
   void initState() {
     super.initState();
     for (final field in _appProfile.simpleFields) {
+      if (field.type == 'image') continue;
       _controllers[field.fieldId] = TextEditingController(text: field.defaultValue?.toString() ?? '');
     }
   }
@@ -56,6 +61,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
     for (final entry in _controllers.entries) {
       values[entry.key] = entry.value.text;
     }
+    for (final field in _appProfile.simpleFields.where((field) => field.type == 'image')) {
+      final uploadedName = _uploadedImageNames[field.fieldId];
+      values[field.fieldId] = uploadedName ?? field.defaultValue ?? '';
+    }
     return values;
   }
 
@@ -65,6 +74,24 @@ class _GenerateScreenState extends State<GenerateScreen> {
       profile: _appProfile,
       fieldValues: _fieldValues(),
     );
+  }
+
+  Future<void> _pickImage(UiField field) async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    final path = result?.files.single.path;
+    if (path == null) return;
+    setState(() {
+      _selectedImages[field.fieldId] = File(path);
+      _uploadedImageNames.remove(field.fieldId);
+      _status = 'Selected image for ${field.label}';
+    });
+  }
+
+  Future<void> _uploadSelectedImages(ComfyApiClient client) async {
+    for (final entry in _selectedImages.entries) {
+      final uploadedName = await client.uploadImage(entry.value);
+      _uploadedImageNames[entry.key] = uploadedName;
+    }
   }
 
   void _buildPatchPreview() {
@@ -110,16 +137,21 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
     setState(() {
       _submitting = true;
-      _status = 'Submitting prompt...';
+      _status = 'Preparing prompt...';
       _promptId = '';
       _historyPreview = '';
       _images = const [];
     });
 
     try {
-      final patched = _patchedWorkflow();
       await _connectProgress();
       final client = ComfyApiClient(baseUrl: widget.profile.comfyUrl);
+      if (_selectedImages.isNotEmpty) {
+        setState(() => _status = 'Uploading selected images...');
+        await _uploadSelectedImages(client);
+      }
+      final patched = _patchedWorkflow();
+      setState(() => _status = 'Submitting prompt...');
       final promptId = await client.queuePrompt(
         workflow: patched,
         clientId: _progressClient?.clientId,
@@ -160,6 +192,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
   }
 
   Widget _buildField(UiField field) {
+    if (field.type == 'image') {
+      return _buildImageField(field);
+    }
+
     final controller = _controllers[field.fieldId]!;
     final maxLines = field.type == 'textarea' ? 4 : 1;
     final keyboardType = field.type == 'number' || field.type == 'slider'
@@ -176,6 +212,34 @@ class _GenerateScreenState extends State<GenerateScreen> {
           labelText: field.label,
           helperText: '${field.fieldId} / ${field.type}',
           border: const OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageField(UiField field) {
+    final selected = _selectedImages[field.fieldId];
+    final uploadedName = _uploadedImageNames[field.fieldId];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(field.label, style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 6),
+              Text('Default: ${field.defaultValue ?? '-'}'),
+              if (selected != null) Text('Selected: ${selected.path}'),
+              if (uploadedName != null) Text('Uploaded: $uploadedName'),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () => _pickImage(field),
+                child: const Text('Choose image'),
+              ),
+            ],
+          ),
         ),
       ),
     );
