@@ -33,11 +33,13 @@ class _GenerateScreenState extends State<GenerateScreen> {
   String _promptId = '';
   String _historyPreview = '';
   String _lastUsedSeed = '';
+  String _environmentCheckResult = '';
   List<GeneratedImage> _images = const [];
   List<GeneratedImage> _sessionHistory = const [];
   bool _submitting = false;
   bool _queueChecking = false;
   bool _interrupting = false;
+  bool _environmentChecking = false;
   ComfyProgressClient? _progressClient;
   StreamSubscription<ComfyProgressEvent>? _progressSub;
 
@@ -290,6 +292,58 @@ class _GenerateScreenState extends State<GenerateScreen> {
       setState(() => _status = 'Interrupt failed: ${_friendlyError(e)}');
     } finally {
       if (mounted) setState(() => _interrupting = false);
+    }
+  }
+
+  Future<void> _checkEnvironment() async {
+    if (widget.profile.comfyUrl.isEmpty) {
+      setState(() => _status = 'ComfyUI URL missing on local profile');
+      return;
+    }
+    setState(() {
+      _environmentChecking = true;
+      _status = 'Checking environment...';
+      _environmentCheckResult = '';
+    });
+    try {
+      final client = ComfyApiClient(baseUrl: widget.profile.comfyUrl);
+      final objectInfo = await client.getObjectInfo();
+      final objectClasses = objectInfo.keys.map((value) => value.toString()).toSet();
+
+      List<String> checkpoints = const [];
+      Object? modelListError;
+      try {
+        checkpoints = await client.getModels(folder: 'checkpoints');
+      } catch (e) {
+        modelListError = e;
+      }
+      final checkpointSet = checkpoints.toSet();
+
+      final foundNodes = _appProfile.missingNodes.where((node) => objectClasses.contains(node.classType)).length;
+      final stillMissingNodes = _appProfile.missingNodes.length - foundNodes;
+      final checkpointModels = _appProfile.missingModels.where((model) => model.type.toLowerCase().contains('checkpoint')).toList();
+      final foundModels = checkpointModels.where((model) => checkpointSet.contains(model.name)).length;
+      final stillMissingModels = checkpointModels.length - foundModels;
+
+      final details = <String>[
+        'Environment check: node types ${objectClasses.length}; checkpoints ${checkpoints.length}.',
+        if (_appProfile.missingNodes.isNotEmpty) 'Custom nodes found $foundNodes / ${_appProfile.missingNodes.length}; still missing $stillMissingNodes.',
+        if (checkpointModels.isNotEmpty) 'Checkpoint models found $foundModels / ${checkpointModels.length}; still missing $stillMissingModels.',
+        if (modelListError != null) 'Model list unavailable: ${_friendlyError(modelListError)}',
+        'No models or custom nodes were installed automatically.',
+      ];
+
+      setState(() {
+        _environmentCheckResult = details.join('\n');
+        _status = 'Environment check complete';
+      });
+    } catch (e) {
+      setState(() {
+        _status = 'Environment check failed: ${_friendlyError(e)}';
+        _environmentCheckResult = '';
+      });
+    } finally {
+      if (mounted) setState(() => _environmentChecking = false);
     }
   }
 
@@ -652,6 +706,18 @@ class _GenerateScreenState extends State<GenerateScreen> {
               'No models or custom nodes are installed automatically.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: _environmentChecking ? null : _checkEnvironment,
+              child: Text(_environmentChecking ? 'Checking environment...' : 'Check environment'),
+            ),
+            if (_environmentCheckResult.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              SelectableText(
+                _environmentCheckResult,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
           ],
         ),
       ),
