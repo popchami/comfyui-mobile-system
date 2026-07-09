@@ -33,6 +33,23 @@ class ComfyApiClient {
     return _decodeJsonResponse(response);
   }
 
+  Future<Map<String, dynamic>> getObjectInfo() async {
+    final response = await http.get(_uri('/object_info'));
+    return _decodeJsonResponse(response);
+  }
+
+  Future<List<String>> getModels({String folder = 'checkpoints'}) async {
+    final response = await http.get(_uri('/models/$folder'));
+    final decoded = _decodeJson(response);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ComfyApiException('Models request failed: HTTP ${response.statusCode}: ${response.body}');
+    }
+    if (decoded is List) {
+      return decoded.map((value) => value.toString()).toList();
+    }
+    throw ComfyApiException('Models response is not a list');
+  }
+
   Future<List<RemoteProfile>> getRemoteProfiles() async {
     final response = await http.get(_uri('/mobile_analyzer/profiles'));
     final decoded = _decodeJson(response);
