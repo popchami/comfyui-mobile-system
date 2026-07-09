@@ -619,6 +619,45 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
+  Widget _buildWarningCard() {
+    final profile = _appProfile;
+    final hasWarnings = profile.warnings.isNotEmpty || profile.missingModels.isNotEmpty || profile.missingNodes.isNotEmpty;
+    if (!hasWarnings) return const SizedBox.shrink();
+
+    final lines = <String>[];
+    for (final model in profile.missingModels) {
+      final hint = model.pathHint.isEmpty ? '' : ' (${model.pathHint})';
+      lines.add('Missing ${model.type} model: ${model.name}$hint');
+    }
+    for (final node in profile.missingNodes) {
+      final id = node.nodeId.isEmpty ? '' : ' node ${node.nodeId}';
+      lines.add('Missing custom node$id: ${node.classType}');
+    }
+    lines.addAll(profile.warnings);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Profile warnings', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            ...lines.map((line) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text('• $line'),
+                )),
+            const SizedBox(height: 4),
+            Text(
+              'No models or custom nodes are installed automatically.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildImage(GeneratedImage image) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -711,6 +750,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
         children: [
           Text(_status),
           if (_promptId.isNotEmpty) Text('prompt_id: $_promptId'),
+          const SizedBox(height: 12),
+          _buildWarningCard(),
           const SizedBox(height: 12),
           ..._buildGeneratedFieldSections(fields),
           FilledButton(
