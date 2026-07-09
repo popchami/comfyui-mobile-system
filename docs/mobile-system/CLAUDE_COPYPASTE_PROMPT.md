@@ -4,7 +4,7 @@ Use this prompt when handing PR #1 to Claude.
 
 The handoff is no longer only runtime validation.
 
-Because this is still before implementation hardens, Claude should first review whether the current design should be adjusted based on official ComfyUI/RunPod capabilities and the external reference review.
+Because this is still before implementation hardens, Claude should first review the edited pre-implementation decisions, then confirm whether the current design should be adjusted based on official ComfyUI/RunPod capabilities and the external reference review.
 
 ```text
 Repository:
@@ -20,7 +20,8 @@ This PR is intentionally Draft and labeled runtime-validation-pending.
 Do not merge it yet.
 
 Goal:
-First perform a pre-runtime architecture inventory and official API alignment review.
+First read the edited pre-implementation alignment decisions.
+Then perform a pre-runtime architecture inventory and official API alignment review.
 Then run install/runtime checks only after confirming the current direction still makes sense.
 Fix only blocking errors or small alignment issues.
 This is not final product completion.
@@ -28,12 +29,22 @@ This is not final product completion.
 Read these files first, in this order:
 1. docs/mobile-system/PRE_CLAUDE_STATUS.md
 2. docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
-3. docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
-4. docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
-5. docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
-6. docs/mobile-system/PRIORITY_CONFLICT_REVIEW.md
-7. docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
-8. docs/mobile-system/STATIC_REVIEW_NOTES.md
+3. docs/mobile-system/PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
+4. docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
+5. docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
+6. docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
+7. docs/mobile-system/PRIORITY_CONFLICT_REVIEW.md
+8. docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
+9. docs/mobile-system/STATIC_REVIEW_NOTES.md
+
+Current edited decision:
+- Do not discard the current system.
+- Do change the implementation strategy.
+- Use official ComfyUI APIs wherever possible.
+- Keep custom code focused on the missing mobile profile layer.
+- Move /object_info and /models earlier than originally planned, but do not fully implement them before minimum runtime validation unless they are blockers.
+- Keep UI workflow conversion optional for now.
+- Use comfy-portal-endpoint as a reference only, not as a dependency or identity.
 
 Important context:
 - The project should remain mobile-first.
@@ -45,8 +56,8 @@ Important context:
 
 Architecture review questions to answer before runtime validation:
 1. Which current custom logic duplicates official ComfyUI APIs?
-2. Should /object_info be moved earlier to avoid manual field-type guessing?
-3. Should /models and /models/{folder} be moved earlier for missing model checks?
+2. Should /object_info be the first post-validation Analyzer improvement?
+3. Should /models and /models/{folder} be the first post-validation model-check improvement?
 4. Which /mobile_analyzer custom routes are still necessary?
 5. Should UI workflow to API workflow conversion remain optional for now?
 6. Does comfy-portal-endpoint provide a useful reference without shifting this project into a workflow portal?
