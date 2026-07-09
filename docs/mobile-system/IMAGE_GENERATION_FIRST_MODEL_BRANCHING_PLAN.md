@@ -36,6 +36,16 @@ Not implemented (deferred by user decision, 2026-07-10):
     being assumed to be sd15.
 ```
 
+**Decided (user, 2026-07-10, second review pass): approved.** Treating
+sd15/merged_checkpoint as `unknown` rather than guessing is the correct
+behavior for now. This is not expected to be permanent: if a RunPod
+real-environment session finds a reliable node-level signal (e.g., a marker
+node analogous to `CLIPTextEncodeSDXL` for SD1.5, or a model-registry lookup
+keyed off `ckpt_name`), extend `_detect_model_family()` /
+`_detect_loader_strategy()` in `model_strategy_detector.py` at that point
+rather than guessing now. Track this as a RunPod-verification follow-up
+alongside the `fp8_checkpoint`/`gguf_quantized` items in HANDOFF.md.
+
 Tests: `analyzer/ComfyUI-Mobile-Analyzer/tests/test_model_strategy_detector.py`
 (8 cases) plus the existing 14-case `test_v2_validated_debug.py` — 22/22 PASS.
 Also verified end-to-end against a live ComfyUI instance for both a Flux.1
@@ -248,3 +258,23 @@ implementation pass of `detect_model_strategy()`; that first pass should cover
 `model_family` (including the Flux.1/Flux.2 Klein split), `checkpoint_single_file`,
 `diffusion_model_plus_text_encoders_plus_vae`, `fp8_diffusion_model`,
 `vae_strategy`, and `lora_family` only.
+
+## Future work (not needed now)
+
+```text
+Multi-model-family LoRA tracing: the current lora_family implementation
+(model_strategy_detector.py, _detect_lora_family) assumes a single dominant
+model_family per workflow — it traces each LoraLoader/LoraLoaderModelOnly
+node's `model` input back to a recognized base-model loader, then assigns
+the already-computed, workflow-wide model_family. It does not yet build a
+separate model_family classification per branch, so a workflow that
+genuinely mixes multiple model families (e.g. a Flux base model chained
+with LoRAs alongside a completely separate SDXL branch in the same graph)
+would not get distinct lora_family values per LoRA loader.
+
+Decided (user, 2026-07-10): this is acceptable for now. Multi-family
+workflows in this pattern are not a current priority. Revisit only if a
+real user-provided workflow actually needs this (per this project's
+user-provided-workflow-first principle) rather than building it
+speculatively ahead of time.
+```
