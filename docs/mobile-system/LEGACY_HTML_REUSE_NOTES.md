@@ -36,16 +36,24 @@ The existing normal HTML contains a ComfyUI flow that is useful as a reference:
 ```text
 1. Normalize the ComfyUI URL by removing trailing slashes.
 2. Save the ComfyUI URL to localStorage.
-3. Use /object_info as a connection/runtime capability check.
-4. Generate a browser-side clientId.
-5. Connect to /ws with the same clientId used for /prompt.
-6. Submit /prompt with { prompt, client_id }.
-7. Watch /ws executing/progress events.
-8. Treat executing node null as completion.
-9. Fetch /history/{prompt_id} after completion.
-10. Extract images from history outputs.
-11. Fetch/display images through /view.
-12. If WebSocket is unavailable, fall back to polling /history/{prompt_id}.
+3. Restore the saved ComfyUI URL on app start.
+4. Use /object_info as a connection/runtime capability check.
+5. Generate a browser-side clientId.
+6. Connect to /ws with the same clientId used for /prompt.
+7. Submit /prompt with { prompt, client_id }.
+8. Watch /ws executing/progress events.
+9. Treat executing node null as completion.
+10. Fetch /history/{prompt_id} after completion.
+11. Extract images from history outputs.
+12. Fetch/display images through /view.
+13. If WebSocket is unavailable, fall back to polling /history/{prompt_id}.
+14. Upload an input image through /upload/image.
+15. Show a local preview of the selected input image before generation.
+16. Add generated images to an in-session history list.
+17. Open generated images in a larger preview.
+18. Copy/reuse seed value.
+19. Mark selected controls visually.
+20. Use collapsible setting sections to avoid overwhelming the mobile screen.
 ```
 
 ## Reused in this PR
@@ -95,6 +103,109 @@ Changes:
 - WebSocket executing null now shows "Execution complete; loading history...".
 ```
 
+### 3. ComfyUI URL restore
+
+Existing HTML restores the saved ComfyUI URL from localStorage on startup.
+
+Flutter SetupScreen now restores and saves the ComfyUI URL through `shared_preferences`.
+
+Fixed:
+
+```text
+mobile-app/flutter_mvp/lib/screens/setup_screen.dart
+```
+
+Changes:
+
+```text
+- Restore saved ComfyUI URL on SetupScreen startup.
+- Save normalized ComfyUI URL after successful connection.
+- Save normalized ComfyUI URL before opening remote profiles.
+```
+
+### 4. Selected image preview
+
+Existing HTML previews a selected i2i image locally before generation.
+
+Flutter GenerateScreen now shows a local preview for selected image fields.
+
+Fixed:
+
+```text
+mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+```
+
+Changes:
+
+```text
+- Show Image.file preview for selected image fields.
+- Keep uploaded filename display after /upload/image.
+```
+
+## App-prepared components from legacy HTML
+
+These are useful as app-side components because they are UI/UX or client behavior, not workflow-specific model content:
+
+```text
+S: Already reused or should be app core
+- URL normalization and saved URL restore
+- connection check status
+- client_id lifecycle
+- /prompt + /ws + /history + /view generation flow
+- /history polling fallback
+- /upload/image handling
+- selected image preview
+- generated image display
+
+A: Useful after MVP validation
+- local generated history list
+- larger image preview screen
+- seed copy/reuse
+- last-used field values per profile
+- visual selected-state markers
+- collapsible advanced sections
+- friendly progress labels mapped from node roles
+
+B: Useful only after Analyzer metadata improves
+- dynamic LoRA list from /object_info
+- sampler/scheduler option lists from /object_info
+- model existence warnings from /models
+- feature visibility based on detected workflow nodes
+
+C: Do not reuse for MVP
+- Jupyter notebook execution from the app
+- setup notebook runner
+- hardcoded Flux-only workflow construction
+- NSFW/content-specific prompt lists
+- model-specific prompt preset content
+```
+
+## Official API vs legacy HTML
+
+Use official APIs as the source of truth when possible:
+
+```text
+/system_stats
+/object_info
+/models
+/upload/image
+/prompt
+/ws
+/history/{prompt_id}
+/view
+/queue
+/interrupt
+```
+
+Use legacy HTML only for proven client-side behavior around those APIs:
+
+```text
+- when to call each API
+- how to recover when /ws is unavailable
+- what to show in the mobile UI
+- how to keep the mobile flow understandable
+```
+
 ## Not reused directly
 
 Do not directly copy these parts from the legacy HTML into the new architecture:
@@ -105,6 +216,7 @@ Do not directly copy these parts from the legacy HTML into the new architecture:
 - NSFW or profile-specific option lists
 - fixed Flux-only model filenames as global app assumptions
 - old UI layout as final app architecture
+- Jupyter notebook execution as normal app behavior
 ```
 
 Reason:
@@ -122,6 +234,7 @@ Use existing HTML as:
 - fallback logic reference
 - RunPod/ComfyUI practical flow reference
 - known-good workflow operation reference
+- mobile UI friction reference
 ```
 
 Do not use it as:
@@ -131,6 +244,7 @@ Do not use it as:
 - source of app_profile schema
 - source of universal model assumptions
 - content/prompt template source
+- automatic setup executor
 ```
 
 ## Next validation impact
@@ -139,8 +253,10 @@ During RunPod/Android validation, compare the new MVP against the existing HTML 
 
 ```text
 - Can connect to ComfyUI.
+- Can remember and restore ComfyUI URL.
 - Can submit /prompt with client_id.
 - Can receive /ws events when available.
 - Can still finish via /history polling if /ws is not available.
+- Can upload and preview input images.
 - Can fetch/display images through /view.
 ```
