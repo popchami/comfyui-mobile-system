@@ -366,7 +366,7 @@ def infer_output_type(class_type: str, runtime_def: Dict[str, Any]) -> str:
         return "video"
     if "audio" in lower_class or "AUDIO" in return_types_upper:
         return "audio"
-    if "text" in lower_class or "STRING" in return_types_upper:
+    if "STRING" in return_types_upper:
         return "text"
     if "json" in lower_class or "JSON" in return_types_upper:
         return "json"
