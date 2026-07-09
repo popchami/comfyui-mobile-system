@@ -22,16 +22,20 @@ Smartphone App
 
 PCでの実行確認はClaudeに引き継ぐ。
 
-Claudeは最初にこのファイルを見る:
+Claudeは最初にこの順番で見る:
 
 ```text
+docs/mobile-system/PRE_CLAUDE_STATUS.md
+docs/mobile-system/PRIORITY_CONFLICT_REVIEW.md
 docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
+docs/mobile-system/STATIC_REVIEW_NOTES.md
 ```
 
 目的:
 
 ```text
 - PR全体レビュー
+- インストール前にやるべきこと/後回し/今やらないことの確認
 - ComfyUI custom node install確認
 - Flutter MVP install/run確認
 - blocking error修正
@@ -51,7 +55,10 @@ docs/mobile-system/
   ANALYZER_SPEC.md
   MOBILE_APP_SPEC.md
   HANDOFF.md
+  PRE_CLAUDE_STATUS.md
+  PRIORITY_CONFLICT_REVIEW.md
   CLAUDE_FINAL_REVIEW_AND_INSTALL.md
+  STATIC_REVIEW_NOTES.md
   OPEN_TODOS.md
 ```
 
