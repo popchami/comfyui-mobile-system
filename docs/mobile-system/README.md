@@ -18,6 +18,26 @@ Smartphone App
   = zipをComfyUIから取得し、app_profile.jsonを読んでUI生成・workflow patch・生成実行を行う
 ```
 
+## Claude最終確認
+
+PCでの実行確認はClaudeに引き継ぐ。
+
+Claudeは最初にこのファイルを見る:
+
+```text
+docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
+```
+
+目的:
+
+```text
+- PR全体レビュー
+- ComfyUI custom node install確認
+- Flutter MVP install/run確認
+- blocking error修正
+- install-ready判定
+```
+
 ## ドキュメント構成
 
 ```text
@@ -31,6 +51,7 @@ docs/mobile-system/
   ANALYZER_SPEC.md
   MOBILE_APP_SPEC.md
   HANDOFF.md
+  CLAUDE_FINAL_REVIEW_AND_INSTALL.md
   OPEN_TODOS.md
 ```
 
