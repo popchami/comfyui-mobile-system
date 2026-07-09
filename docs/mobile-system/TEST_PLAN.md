@@ -104,8 +104,9 @@ Check:
 
 - Register ComfyUI URL.
 - Fetch profile list.
-- Read pasted `app_profile.json`.
-- Read pasted `workflow.json`.
+- Download selected remote profile zip.
+- Import local profile zip.
+- Extract `app_profile.json` and `workflow.json` from zip.
 - Render simple fields.
 - Render image fields as file pickers.
 - Upload selected image to `/upload/image`.
@@ -117,6 +118,7 @@ Check:
 
 Pass condition:
 
+- One profile zip can be imported without manual JSON paste.
 - One image can be generated from a profile imported through the new flow.
 - If the workflow uses LoadImage, one selected smartphone image can be uploaded and used.
 
