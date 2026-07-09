@@ -18,13 +18,14 @@ Do not merge yet.
 
 Add this under the current source-of-truth / validation docs section.
 
-```markdown
+````markdown
 ## Current source of truth
 
 Read these first:
 
 ```text
 docs/mobile-system/HANDOFF.md
+docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
 docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
 docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
 docs/mobile-system/NEXT_PHASE_PLAN.md
@@ -81,7 +82,7 @@ docs/mobile-system/DECISION_RECORD_TEMPLATE.md
 - Android device/emulator validation.
 - Flutter app end-to-end generated image display.
 ```
-```
+````
 
 ## Reminder
 
