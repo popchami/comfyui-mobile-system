@@ -8,6 +8,103 @@ Last updated by: Claude, work session paused by user request on branch `docs/mob
 
 **要確認(rebase統合時のメモ)**: 本ファイルは2つの独立した更新系列を統合したものです。時系列としてはClaudeによる「Session paused — quick resume summary」(13:22)が先、ChatGPTによる大幅な拡張(同日21:30まで、複数コミット)が後です。両者はそれぞれ別のブランチ状態からの記述であり、このrebase統合コミットで初めて突き合わされました。内容に新旧の食い違いがある場合、基本的にはこの後に続く各セクション(ChatGPT側、時系列で後)がより新しい状態を反映しています。Claudeの記録は「その時点のスナップショット」として保持しています。
 
+## Session update (Claude, 2026-07-10 08:18 JST) — autonomous task run
+
+This section records an autonomous ("self-driving") task run on this branch.
+Per the user's instruction for this run: confirmation-required decisions were
+skipped rather than blocking, `git commit` was auto-approved, and `git push`
+was explicitly forbidden. Nothing in this section has been pushed.
+
+### Task 1: `infer_output_type()` remaining substring-match bugs — FIXED
+
+Background: an earlier commit (`1826681`) fixed a false-positive where
+`CLIPTextEncode` (returns `CONDITIONING`, `output_node=False`) was misclassified
+as a "text" output because `"text"` is a substring of `"cliptextencode"`. The
+same function still had equivalent substring matching for video/audio/json/svg/3d.
+
+Verification: started the scratchpad ComfyUI instance (CPU-only, 795 installed
+node types) and pulled a full `/object_info` dump. Confirmed multiple real
+false-positive cases under the old logic, e.g.:
+
+```text
+VideoLinearCFGGuidance          real output: MODEL             (old logic: "video")
+ConditioningSetAreaPercentageVideo  real output: CONDITIONING   (old logic: "video")
+RecraftStyleV3DigitalIllustration   real output: RECRAFT_V3_STYLE (old logic: "3d",
+                                                  matched via "3d" inside "V3Digital")
+BuildJsonPromptIdeogram          real output: DICT             (old logic: "json")
+EmptyLatentAudio                 real output: LATENT           (old logic: "audio")
+```
+
+Fix (commit `9f8b269`): video/audio detection now uses `RETURN_TYPES` (`VIDEO`/
+`AUDIO`) plus a small **exact-name** fallback list (`VIDEO_OUTPUT_NODE_TYPES`,
+`AUDIO_OUTPUT_NODE_TYPES`) for when runtime metadata is unavailable — not a
+substring match. json/svg detection now uses only confirmed `RETURN_TYPES`
+values (`JSON`/`SVG`). 3D detection is narrowed to the `MESH` type only; the many
+inconsistent `FILE_3D*`/`SPLAT`/`VOXEL` variants seen across custom node packs
+are intentionally left unclassified (fall through to `output_node`-based
+`"unknown"` or `"none"`) rather than guessing a mapping.
+
+Caveat (disclosed, not silently assumed): `VHS_VideoCombine` is kept in the
+exact-name fallback list for test/back-compat reasons, but it was **not**
+confirmed via this session's `/object_info` (that custom node pack was not
+installed in the verification environment). It is a well-known third-party
+node (ComfyUI-VideoHelperSuite), so this is a judgment call, not a fabricated
+name — flagged here per the project's "don't hardcode unconfirmed node names"
+rule.
+
+Test result: `python -m unittest analyzer/ComfyUI-Mobile-Analyzer/tests/test_v2_validated_debug.py` — **14/14 PASS**.
+
+### Task 2: `IMAGE_GENERATION_FIRST_MODEL_BRANCHING_PLAN.md` — DRAFT CREATED, AWAITING USER REVIEW
+
+Created `docs/mobile-system/IMAGE_GENERATION_FIRST_MODEL_BRANCHING_PLAN.md`
+(commit `9be1125`), marked `Status: DRAFT - pending user review` at the top.
+
+It narrows and grounds the existing `IMAGE_MODEL_LOADER_STRATEGY_FIRST.md`
+direction in node-level facts confirmed against the same live `/object_info`
+dump, and adds a distinction that document did not make: **Flux.1 and Flux.2
+Klein use different loader node configurations** —
+`DualCLIPLoader` with `type == "flux"` (Flux.1) vs. `CLIPLoader` with
+`type == "flux2"` (Flux.2 Klein), both confirmed real combo values on those
+nodes' real `/object_info` input definitions.
+
+Two items are explicitly left unresolved in the draft rather than guessed:
+`gguf_quantized` loader detection (no GGUF-loader node was installed in the
+verification environment) and `fp8_checkpoint` detection (no confirmed
+node-level signal exists for this — `CheckpointLoaderSimple` has only a
+`ckpt_name` string input, no dtype field). See "Open questions for user review"
+at the end of that document.
+
+### Unpushed commits on this branch (as of this session)
+
+```text
+9be1125  Add draft image-generation-first model branching plan
+9f8b269  Fix video/audio/json/svg/3d substring misfires in infer_output_type
+1826681  Fix false-positive text output detection in infer_output_type
+cc8f020  Record session pause state in HANDOFF.md (rebase conflict resolution)
+```
+
+`git push` was not run for any of the above per this session's explicit
+instruction.
+
+### Items needing the user's judgment before proceeding
+
+```text
+1. Whether/when to push the 4 commits above.
+2. Review and approve/reject/edit IMAGE_GENERATION_FIRST_MODEL_BRANCHING_PLAN.md
+   (it is a draft; nothing in it has been implemented as code yet).
+3. Where model_strategy should live in the v2 debug profile schema
+   (inside runtime_requirements vs. a new top-level key) — see the draft's
+   "Open questions" section.
+4. Whether fp8_checkpoint detection should return "unknown" permanently,
+   or wait for a separate model-registry mechanism outside the workflow JSON.
+5. Whether to implement gguf_quantized detection now against an assumed
+   (locally unconfirmed) GGUF loader class name, or wait for a RunPod
+   environment with ComfyUI-GGUF installed to confirm the real name first.
+6. Whether the VHS_VideoCombine entry in VIDEO_OUTPUT_NODE_TYPES (task 1 fix)
+   is acceptable given it could not be confirmed in this session's
+   environment, or should be removed until confirmed elsewhere.
+```
+
 ## Session paused — quick resume summary (Claude、2026-07-09 13:22 JST 時点)
 
 ```text
