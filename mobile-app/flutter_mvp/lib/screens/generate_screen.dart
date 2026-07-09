@@ -248,7 +248,19 @@ class _GenerateScreenState extends State<GenerateScreen> {
               Text(field.label, style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 6),
               Text('Default: ${field.defaultValue ?? '-'}'),
-              if (selected != null) Text('Selected: ${selected.path}'),
+              if (selected != null) ...[
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(
+                    selected,
+                    height: 180,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text('Selected: ${selected.path}'),
+              ],
               if (uploadedName != null) Text('Uploaded: $uploadedName'),
               const SizedBox(height: 8),
               OutlinedButton(
@@ -316,8 +328,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
             Text('Patched workflow', style: Theme.of(context).textTheme.titleMedium),
             SelectableText(
               _patchedPreview,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+              style: Theme.of(context).textTheme.bodySmall),
           ],
         ],
       ),
