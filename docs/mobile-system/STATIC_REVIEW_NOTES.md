@@ -26,6 +26,7 @@ Static cross-file review completed.
 Low-risk issues were fixed on branch docs/mobile-system-spec.
 Legacy HTML behavior was reviewed and useful app-side behavior was reused.
 Generated UI collapsible grouping was implemented in Flutter MVP.
+Seed reuse was implemented for the current generation screen session.
 PR remains Draft.
 Runtime validation is still required.
 ```
@@ -76,6 +77,13 @@ Fixed in this pass:
    - Core Inputs remain visible.
    - Basic Generation Settings, Size / Output, Advanced Workflow Features, and Expert / Debug are collapsed with ExpansionTile.
    - If no core field is detected, the first editable field is shown as a fallback core field.
+
+11. mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+   - Reuses the last submitted seed within the current generation screen session.
+   - Detects seed fields from field_id / label / section / type.
+   - Captures the current seed before /prompt submission.
+   - Shows a Use last seed button for seed fields when a last seed exists.
+   - Still patches workflow only through patch_targets.
 ```
 
 Legacy HTML reference:
@@ -102,6 +110,7 @@ Still not proven by static review:
 - Real Android session history rendering.
 - Real Android preview dialog interaction.
 - Real Android generated field grouping layout.
+- Real Android seed reuse interaction.
 ```
 
 ## Reviewed areas
@@ -147,6 +156,7 @@ saved ComfyUI URL restore
 local preview for selected input images
 session generated image history
 larger generated image preview
+seed reuse
 ```
 
 The new Flutter MVP now follows the same safety idea more closely.
@@ -175,6 +185,25 @@ section
 ```
 
 When Analyzer later emits explicit section metadata, that metadata should replace or refine the fallback grouping.
+
+## Seed reuse implemented
+
+The Flutter MVP now keeps the last submitted seed for the current generation screen session.
+
+Current scope:
+
+```text
+- Session-only.
+- Not persisted across app restarts.
+- Does not bypass patch_targets.
+- Does not assume all workflows have seed.
+```
+
+Future improvement:
+
+```text
+Persist last seed per profile after Android validation passes.
+```
 
 ## Previously fixed during static review
 
@@ -359,6 +388,7 @@ history snapshots
 11. session history strip
 12. larger generated image preview dialog
 13. generated field grouping layout
+14. seed reuse interaction
 ```
 
 ## Known caveats
