@@ -30,6 +30,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
   String _patchedPreview = '';
   String _promptId = '';
   String _historyPreview = '';
+  String _lastUsedSeed = '';
   List<GeneratedImage> _images = const [];
   List<GeneratedImage> _sessionHistory = const [];
   bool _submitting = false;
@@ -155,6 +156,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
         await _uploadSelectedImages(client);
       }
       final patched = _patchedWorkflow();
+      _captureLastUsedSeed();
       setState(() => _status = 'Submitting prompt...');
       final promptId = await client.queuePrompt(
         workflow: patched,
@@ -268,6 +270,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
     return '${field.fieldId} ${field.label} ${field.section} ${field.type}'.toLowerCase();
   }
 
+  bool _isSeedField(UiField field) {
+    return _containsAny(_fieldSearchText(field), ['seed']);
+  }
+
   bool _isCoreInput(UiField field) {
     final text = _fieldSearchText(field);
     return field.type == 'image' || _containsAny(text, ['prompt', 'negative']);
@@ -302,6 +308,27 @@ class _GenerateScreenState extends State<GenerateScreen> {
   bool _isExpertField(UiField field) {
     final text = _fieldSearchText(field);
     return _containsAny(text, ['unknown', 'debug', 'raw', 'expert']);
+  }
+
+  void _captureLastUsedSeed() {
+    for (final field in _appProfile.simpleFields) {
+      if (!_isSeedField(field)) continue;
+      final controller = _controllers[field.fieldId];
+      final value = controller?.text.trim() ?? '';
+      if (value.isNotEmpty) {
+        _lastUsedSeed = value;
+        return;
+      }
+    }
+  }
+
+  void _reuseLastSeed(UiField field) {
+    final controller = _controllers[field.fieldId];
+    if (controller == null || _lastUsedSeed.isEmpty) return;
+    setState(() {
+      controller.text = _lastUsedSeed;
+      _status = 'Reused seed $_lastUsedSeed';
+    });
   }
 
   List<Widget> _buildGeneratedFieldSections(List<UiField> fields) {
@@ -379,17 +406,36 @@ class _GenerateScreenState extends State<GenerateScreen> {
         ? const TextInputType.numberWithOptions(decimal: true)
         : TextInputType.text;
 
+    final textField = TextField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: field.label,
+        helperText: _isSeedField(field) && _lastUsedSeed.isNotEmpty
+            ? '${field.fieldId} / ${field.type} / last seed: $_lastUsedSeed'
+            : '${field.fieldId} / ${field.type}',
+        border: const OutlineInputBorder(),
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: field.label,
-          helperText: '${field.fieldId} / ${field.type}',
-          border: const OutlineInputBorder(),
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          textField,
+          if (_isSeedField(field) && _lastUsedSeed.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton(
+                onPressed: () => _reuseLastSeed(field),
+                child: const Text('Use last seed'),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
