@@ -1,6 +1,6 @@
 # ComfyUI Mobile System Docs
 
-このフォルダは、ComfyUI Mobile System の新方針をまとめる専用ドキュメント置き場です。
+このフォルダは、ComfyUI Mobile System の新方針・検証結果・次作業・将来準備をまとめる専用ドキュメント置き場です。
 
 ## 目的
 
@@ -30,80 +30,17 @@ RunPod GPU validation: 未完了
 Android real-device/emulator validation: 未完了
 ```
 
-現在の最新状況は以下を見る。
+最新状況は以下を見る。
 
 ```text
 docs/mobile-system/HANDOFF.md
 docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
 docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
 docs/mobile-system/NEXT_PHASE_PLAN.md
+docs/mobile-system/NEXT_ACTION_QUEUE.md
 ```
 
-## 方向性ガードレール
-
-外部リポジトリを参考にしても、このプロジェクトの方向性は変えない。
-
-```text
-docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
-```
-
-## 実装前の採用判断
-
-棚卸し結果をそのままClaudeに渡すのではなく、実装前の判断として整理済み。
-
-```text
-docs/mobile-system/PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
-```
-
-現在の判断:
-
-```text
-- 現在のシステムは捨てない
-- ただし実装方針は調整する
-- ComfyUI公式APIを優先して使う
-- Analyzerは公式APIの情報をスマホ用profileへ翻訳する役割に寄せる
-- /object_info と /models は優先度を上げる
-- UI workflow変換はMVP後のoptional扱い
-- comfy-portal-endpointは参考のみ
-```
-
-## Claude検証結果
-
-Claudeは以下を完了済み。
-
-```text
-1. 実装前の採用判断を確認
-2. 現在のシステムを棚卸し
-3. comfy-portal-endpoint の参考範囲を確認
-4. ComfyUI / RunPod 公式機能との重複を確認
-5. アーキテクチャ方針が妥当であることを確認
-6. CPU-only aarch64 sandboxで限定ランタイム検証
-7. OUTPUT_NODE blockerを発見・修正
-```
-
-限定検証で通ったもの:
-
-```text
-- ComfyUI starts with ComfyUI-Mobile-Analyzer installed
-- Mobile Profile Exporter appears via /object_info
-- Mobile Profile Exporter creates a zip after OUTPUT_NODE fix
-- Zip contains workflow.json and app_profile.json
-- /mobile_analyzer/profiles returns metadata
-- /mobile_analyzer/profiles/{id}/download downloads zip
-- Flutter MVP passes flutter pub get
-- Flutter MVP passes flutter analyze for PR lib/ source
-```
-
-まだ通っていないもの:
-
-```text
-- RunPod GPU上での実モデル画像生成
-- Android実機/エミュレータでのFlutterアプリ起動
-- AndroidアプリからRunPod ComfyUIへ接続
-- Androidアプリでprofile download / save / open / patch / submit / display
-```
-
-## 重要修正
+## 重要修正済み
 
 ```text
 analyzer/ComfyUI-Mobile-Analyzer/nodes.py
@@ -120,7 +57,8 @@ analyzer/ComfyUI-Mobile-Analyzer/__init__.py
 RunPodが使えるようになったら以下へ進む。
 
 ```text
-docs/mobile-system/NEXT_PHASE_PLAN.md
+docs/mobile-system/RUNPOD_VALIDATION_RUNBOOK.md
+docs/mobile-system/ANDROID_VALIDATION_RUNBOOK.md
 ```
 
 次フェーズ名:
@@ -149,21 +87,24 @@ ComfyUI generates an image with a real model
 Android Flutter app displays the result
 ```
 
+## 最小引き継ぎ
+
+毎回長い状況説明を貼らずにAIへ渡すための短いプロンプトは以下。
+
+```text
+docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
+```
+
 ## 将来機能の事前準備
 
-RunPod + Android検証前に実装はしないが、将来機能の目的・リスク・必要データ・受け入れ条件は以下に整理する。
+実装はしないが、将来機能の目的・リスク・必要データ・受け入れ条件は以下に整理する。
 
 ```text
 docs/mobile-system/FUTURE_FEATURE_PREP.md
-```
-
-さらに、あとで実装に移す時に迷わないように、以下も準備済み。
-
-```text
+docs/mobile-system/ADDITIONAL_FEATURE_CANDIDATES.md
 docs/mobile-system/APP_PROFILE_EVOLUTION_PLAN.md
 docs/mobile-system/UX_FLOW_PREP.md
 docs/mobile-system/POST_VALIDATION_ISSUE_DRAFTS.md
-docs/mobile-system/ADDITIONAL_FEATURE_CANDIDATES.md
 ```
 
 役割:
@@ -171,6 +112,9 @@ docs/mobile-system/ADDITIONAL_FEATURE_CANDIDATES.md
 ```text
 FUTURE_FEATURE_PREP.md
   = 将来機能の目的・リスク・受け入れ条件
+
+ADDITIONAL_FEATURE_CANDIDATES.md
+  = 運用・管理・便利機能など追加候補の一覧
 
 APP_PROFILE_EVOLUTION_PLAN.md
   = app_profile.json の将来拡張案
@@ -180,9 +124,6 @@ UX_FLOW_PREP.md
 
 POST_VALIDATION_ISSUE_DRAFTS.md
   = RunPod + Android検証後にIssue化するための下書き
-
-ADDITIONAL_FEATURE_CANDIDATES.md
-  = 運用・管理・便利機能など追加候補の一覧
 ```
 
 ## 参考にすべき内容
@@ -191,18 +132,10 @@ ADDITIONAL_FEATURE_CANDIDATES.md
 
 ```text
 docs/mobile-system/REFERENCE_STUDY_BACKLOG.md
-```
-
-参考元がどの機能に効くかは以下に整理する。
-
-```text
 docs/mobile-system/REFERENCE_TO_FEATURE_MAP.md
-```
-
-実際に調査する時のチェック項目は以下に整理する。
-
-```text
 docs/mobile-system/REFERENCE_STUDY_CHECKLIST.md
+docs/mobile-system/EXTERNAL_REFERENCES.md
+docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 ```
 
 主な参考対象:
@@ -244,6 +177,10 @@ docs/mobile-system/
   ANALYZER_SPEC.md
   MOBILE_APP_SPEC.md
   HANDOFF.md
+  NEXT_ACTION_QUEUE.md
+  RUNPOD_VALIDATION_RUNBOOK.md
+  ANDROID_VALIDATION_RUNBOOK.md
+  AI_MINIMAL_HANDOFF_PROMPTS.md
   PROJECT_DIRECTION_GUARDRAILS.md
   PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
   SYSTEM_INVENTORY_BEFORE_CLAUDE.md
@@ -257,80 +194,24 @@ docs/mobile-system/
   OPEN_TODOS.md
   FUTURE_ISSUES_AND_IMPROVEMENTS.md
   FUTURE_FEATURE_PREP.md
+  ADDITIONAL_FEATURE_CANDIDATES.md
   APP_PROFILE_EVOLUTION_PLAN.md
   UX_FLOW_PREP.md
   POST_VALIDATION_ISSUE_DRAFTS.md
-  ADDITIONAL_FEATURE_CANDIDATES.md
   REFERENCE_STUDY_BACKLOG.md
   REFERENCE_TO_FEATURE_MAP.md
   REFERENCE_STUDY_CHECKLIST.md
+  EXTERNAL_REFERENCES.md
+  COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
   VALIDATION_RESULT_TEMPLATES.md
   DEBUG_REPORT_TEMPLATE.md
   WORKFLOW_COMPATIBILITY_REPORT_TEMPLATE.md
   DECISION_RECORD_TEMPLATE.md
-  EXTERNAL_REFERENCES.md
-  COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
   RUNTIME_VALIDATION_RESULT.md
   BLOCKERS_AFTER_CLAUDE.md
   NEXT_PHASE_PLAN.md
-```
-
-## 未決定TODO / 改善記録
-
-仕様検討が必要な項目は `OPEN_TODOS.md` に記録する。
-
-今後の問題点、課題点、改善点は以下に記録する。
-
-```text
-docs/mobile-system/FUTURE_ISSUES_AND_IMPROVEMENTS.md
-```
-
-将来機能の仕様準備は以下に記録する。
-
-```text
-docs/mobile-system/FUTURE_FEATURE_PREP.md
-docs/mobile-system/APP_PROFILE_EVOLUTION_PLAN.md
-docs/mobile-system/UX_FLOW_PREP.md
-docs/mobile-system/POST_VALIDATION_ISSUE_DRAFTS.md
-docs/mobile-system/ADDITIONAL_FEATURE_CANDIDATES.md
-```
-
-参考にすべき外部/公式情報は以下に記録する。
-
-```text
-docs/mobile-system/REFERENCE_STUDY_BACKLOG.md
-docs/mobile-system/REFERENCE_TO_FEATURE_MAP.md
-docs/mobile-system/REFERENCE_STUDY_CHECKLIST.md
-docs/mobile-system/EXTERNAL_REFERENCES.md
-docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
-```
-
-検証・報告・判断記録は以下に記録する。
-
-```text
-docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md
-docs/mobile-system/DEBUG_REPORT_TEMPLATE.md
-docs/mobile-system/WORKFLOW_COMPATIBILITY_REPORT_TEMPLATE.md
-docs/mobile-system/DECISION_RECORD_TEMPLATE.md
-```
-
-現在のシステム、外部参考、公式参考の棚卸しは以下に記録する。
-
-```text
-docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
-docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
-```
-
-現在の主な未決定項目:
-
-```text
-- workflowノード色とアプリ側ノード色の同期
-- 解析後workflowのアプリ側保存・読み込み
-- 保存済みworkflowの再生成
-- bypassノードの一時解除と復元
-- subgraphの扱い
-- /object_info を使ったfield detection改善
-- /models を使ったmodel existence check
+  TEST_PLAN.md
+  REVIEW_CHECKLIST.md
 ```
 
 ## 最重要ルール
@@ -347,4 +228,7 @@ docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
 - 公式ComfyUI APIで解決できる部分は優先して使う
 - 外部リポジトリを参考にしても方向性は変えない
 - PR #1はRunPod + Android検証が終わるまでマージしない
+- 自動model downloadしない
+- 自動custom node installしない
+- Androidアプリをfull workflow editorにしない
 ```
