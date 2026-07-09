@@ -61,6 +61,10 @@ lib/services/comfy_api_client.dart
 lib/services/profile_zip_service.dart
 lib/services/local_profile_store.dart
 lib/services/comfy_progress_client.dart
+lib/screens/setup_screen.dart
+lib/screens/remote_profiles_screen.dart
+lib/screens/local_profiles_screen.dart
+lib/screens/generate_screen.dart
 ```
 
 ### app_profile.dart
@@ -129,14 +133,34 @@ It exposes a stream of `ComfyProgressEvent` values for:
 - execution_error
 - socket open/close/error
 
+## Screen scaffolds
+
+### setup_screen.dart
+
+Initial entry screen for entering the ComfyUI URL.
+
+### remote_profiles_screen.dart
+
+Placeholder for fetching remote profiles from the Analyzer API.
+
+### local_profiles_screen.dart
+
+Placeholder for saved local profiles.
+
+### generate_screen.dart
+
+Initial screen that reads `LocalProfile.appProfile.simpleFields` and lists fields.
+
+Later this screen should render editable widgets and call `WorkflowPatcher`.
+
 ## Initial screens
 
 - SetupScreen
 - RemoteProfilesScreen
 - LocalProfilesScreen
 - GenerateScreen
-- HistoryScreen
-- SettingsScreen
+- HistoryScreen later
+- SettingsScreen later
 
 ## Initial Dart structure
 
