@@ -2,13 +2,51 @@
 
 ## Purpose
 
-This document defines the first checks needed before merging the mobile system design and skeleton into `main`.
+This document defines the checks needed before merging the mobile system design and skeleton into `main`.
 
-The goal is not full production validation. The goal is to confirm that the architecture can work end-to-end.
+The goal is not full production validation. The goal is to confirm that the architecture can work end-to-end in the intended RunPod + Android path.
+
+## Current validation status
+
+Claude already completed architecture review and a limited CPU-only runtime pass.
+
+See:
+
+```text
+docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
+docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
+docs/mobile-system/NEXT_PHASE_PLAN.md
+```
+
+Already confirmed:
+
+```text
+- Architecture alignment review passed.
+- ComfyUI can load the Analyzer in a CPU-only sandbox.
+- Mobile Profile Exporter appears via /object_info.
+- Profile zip export works after OUTPUT_NODE fix.
+- /mobile_analyzer/profiles works.
+- /mobile_analyzer/profiles/{id}/download works.
+- Flutter pub get passed.
+- Flutter analyze passed for PR lib/ source.
+```
+
+Still required before merge:
+
+```text
+- RunPod GPU validation with real checkpoint.
+- Android device/emulator validation.
+- End-to-end generated image display in the Android app.
+```
 
 ## Phase 1: Documentation review
 
-Reviewer: Claude or another AI/code reviewer.
+Status:
+
+```text
+Complete for initial PR direction.
+Keep docs updated when real validation results change.
+```
 
 Check:
 
@@ -26,6 +64,12 @@ Pass condition:
 - Any blocking issues are fixed in the PR branch.
 
 ## Phase 2: Static code review
+
+Status:
+
+```text
+Complete for first pass. Re-check after any new code changes.
+```
 
 Check analyzer skeleton files:
 
@@ -49,7 +93,7 @@ Check:
 - Width, height, and batch are detected from EmptyLatentImage.
 - LoadImage creates an image field.
 - Detected model names are reported as unverified references.
-- Local profile storage uses browser localStorage only.
+- Local profile storage uses browser localStorage only in the prototype.
 - Local profile storage can upsert, delete, and clear profiles.
 - Stored profile UI can save, load, delete, and clear profiles.
 - WebSocket helper uses a generated client_id.
@@ -62,6 +106,13 @@ Pass condition:
 
 ## Phase 3: ComfyUI runtime smoke test
 
+Status:
+
+```text
+Passed in CPU-only sandbox.
+Must be repeated on RunPod after latest PR branch changes.
+```
+
 Install draft custom node folder into ComfyUI custom_nodes.
 
 Expected location:
@@ -73,7 +124,8 @@ ComfyUI/custom_nodes/ComfyUI-Mobile-Analyzer/
 Check:
 
 - ComfyUI starts.
-- `MobileProfileExporter` appears in node menu.
+- No import error after WEB_DIRECTORY cleanup.
+- `MobileProfileExporter` appears in node menu or /object_info.
 - Node accepts pasted API-format workflow JSON.
 - Node creates a zip under `output/mobile_profiles/`.
 - Zip can be opened.
@@ -90,7 +142,14 @@ Pass condition:
 - One valid zip is created without crashing ComfyUI.
 - app_profile.json contains the expected simple fields.
 
-## Phase 4: API smoke test
+## Phase 4: Analyzer API smoke test
+
+Status:
+
+```text
+Passed in CPU-only sandbox.
+Must be repeated on RunPod.
+```
 
 After a zip exists, check:
 
@@ -104,43 +163,87 @@ Pass condition:
 - Profile list returns at least one profile.
 - Download endpoint returns the zip.
 
-## Phase 5: Mobile app prototype test
+## Phase 5: RunPod real model generation test
 
-Use `mobile-app/prototype/index.html`.
+Status:
+
+```text
+Not completed yet.
+Required before merge.
+```
 
 Check:
 
+- Use a RunPod ComfyUI environment with an existing approved checkpoint model.
+- Do not auto-download models.
+- Export or load a profile that references an actually installed model.
+- Submit a workflow through `/prompt`.
+- Monitor `/ws`.
+- Read `/history/{prompt_id}`.
+- Fetch result image through `/view`.
+
+Pass condition:
+
+```text
+At least one image is generated with a real model and can be fetched through /view.
+```
+
+## Phase 6: Flutter Android app test
+
+Status:
+
+```text
+Not completed yet.
+Required before merge.
+```
+
+Use `mobile-app/flutter_mvp` as the source scaffold.
+
+Check:
+
+- Create a real Flutter Android project shell if platform folders are missing.
+- Copy `lib/` and `pubspec.yaml` from `mobile-app/flutter_mvp`.
+- Add Android INTERNET permission.
+- Run `flutter pub get`.
+- Run `flutter analyze`.
+- Run on Android device or emulator.
 - Register ComfyUI URL.
-- WebSocket connects to `/ws`.
-- `/prompt` is submitted with matching `client_id`.
-- Basic progress or executing messages appear during generation.
+- Check `/system_stats`.
 - Fetch profile list.
 - Download selected remote profile zip.
-- Import local profile zip.
-- Extract `app_profile.json` and `workflow.json` from zip.
-- Save imported profile to browser storage.
-- Reload saved profile from saved profile list.
-- Delete saved profile from saved profile list.
+- Save local profile.
+- Reload saved profile from local profile list.
 - Render simple fields.
 - Render image fields as file pickers.
-- Upload selected image to `/upload/image`.
-- Patch `LoadImage.image` with uploaded filename.
+- Upload selected image to `/upload/image` if the workflow needs it.
 - Patch prompt / negative / seed / steps / cfg / width / height / batch.
 - Submit patched workflow to `/prompt`.
 - Poll `/history/{prompt_id}`.
 - Display output image with `/view`.
 
+Required Android permission:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
 Pass condition:
 
-- One profile zip can be imported without manual JSON paste.
-- One imported profile can be saved and reloaded.
+- One profile zip can be downloaded without manual JSON paste.
+- One downloaded profile can be saved and reloaded.
 - One image can be generated from a profile imported through the new flow.
 - Progress messages appear while generation is running.
 - If the workflow uses LoadImage, one selected smartphone image can be uploaded and used.
 
-## Phase 6: Local storage helper test
+## Phase 7: Local storage helper test
 
-Use the Saved Profiles section in the prototype.
+Status:
+
+```text
+Prototype helper test still useful, but Android validation is now higher priority.
+```
+
+Use the Saved Profiles section in the prototype if browser-based prototype validation is needed.
 
 Check:
 
@@ -157,6 +260,14 @@ Pass condition:
 
 ## Merge rule
 
-Do not merge to `main` until at least documentation review and static code review are complete.
+Do not merge to `main` until:
 
-Runtime smoke test should be completed before treating the skeleton as usable.
+```text
+1. Architecture review remains valid.
+2. CPU-only runtime blocker fixes remain in place.
+3. RunPod ComfyUI validation passes.
+4. Real checkpoint image generation passes.
+5. Android device/emulator validation passes.
+6. HANDOFF.md is updated with final validation results.
+7. PR body is updated with final validation results.
+```
