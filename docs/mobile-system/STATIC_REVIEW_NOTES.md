@@ -25,6 +25,7 @@ Result:
 Static cross-file review completed.
 Low-risk issues were fixed on branch docs/mobile-system-spec.
 Legacy HTML behavior was reviewed and useful app-side behavior was reused.
+Generated UI collapsible grouping was implemented in Flutter MVP.
 PR remains Draft.
 Runtime validation is still required.
 ```
@@ -69,12 +70,25 @@ Fixed in this pass:
 9. mobile-app/flutter_mvp/lib/screens/generate_screen.dart
    - Reused proven legacy HTML behavior: open generated images in a larger preview.
    - Uses a dialog with InteractiveViewer.
+
+10. mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+   - Implements generated field grouping from analyzed profile fields.
+   - Core Inputs remain visible.
+   - Basic Generation Settings, Size / Output, Advanced Workflow Features, and Expert / Debug are collapsed with ExpansionTile.
+   - If no core field is detected, the first editable field is shown as a fallback core field.
 ```
 
 Legacy HTML reference:
 
 ```text
 docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
+```
+
+Generated UI layout rules:
+
+```text
+docs/mobile-system/UI_VISIBILITY_RULES.md
+docs/mobile-system/MOBILE_APP_SPEC.md
 ```
 
 Still not proven by static review:
@@ -87,6 +101,7 @@ Still not proven by static review:
 - Real Android image picker / upload / display path.
 - Real Android session history rendering.
 - Real Android preview dialog interaction.
+- Real Android generated field grouping layout.
 ```
 
 ## Reviewed areas
@@ -137,6 +152,29 @@ larger generated image preview
 The new Flutter MVP now follows the same safety idea more closely.
 
 Do not copy legacy prompt/profile content directly into the dynamic app. Only reuse behavior patterns.
+
+## Generated UI grouping implemented
+
+The Flutter MVP now applies the current generated UI rule:
+
+```text
+Core Inputs: open
+Basic Generation Settings: collapsed
+Size / Output: collapsed
+Advanced Workflow Features: collapsed
+Expert / Debug: collapsed
+```
+
+Grouping is currently an app-side fallback based on:
+
+```text
+field_id
+label
+type
+section
+```
+
+When Analyzer later emits explicit section metadata, that metadata should replace or refine the fallback grouping.
 
 ## Previously fixed during static review
 
@@ -320,6 +358,7 @@ history snapshots
 10. /history polling and /view image display
 11. session history strip
 12. larger generated image preview dialog
+13. generated field grouping layout
 ```
 
 ## Known caveats
