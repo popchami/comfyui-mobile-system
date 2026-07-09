@@ -58,6 +58,7 @@ Examples:
 - FLUX image workflow
 - SDXL image workflow
 - img2img workflow
+- inpaint / mask workflow
 - ControlNet workflow
 - LoRA workflow
 - video generation workflow
@@ -98,13 +99,14 @@ Its job:
 2. Parse the workflow safely.
 3. Detect editable inputs.
 4. Detect output nodes and output types.
-5. Detect model references.
-6. Detect custom node dependencies.
-7. Detect warnings and unknown nodes.
-8. Produce app_profile.json.
-9. Preserve workflow.json.
-10. Export profile zip.
-11. Expose profile list/download routes.
+5. Detect image, mask, img2img, and inpaint inputs.
+6. Detect model references.
+7. Detect custom node dependencies.
+8. Detect warnings and unknown nodes.
+9. Produce app_profile.json.
+10. Preserve workflow.json.
+11. Export profile zip.
+12. Expose profile list/download routes.
 ```
 
 ## Non-negotiable correctness goal
@@ -118,6 +120,18 @@ Do not replace the user's workflow with an app-owned workflow.
 Do not assume every workflow produces images.
 Do not assume every output is fetched through /view as an image.
 Do not assume every workflow has prompt, seed, width, or height.
+Do not assume every image workflow is text-to-image.
+Do not ignore image input, mask input, img2img, or inpaint paths.
+```
+
+## Related focused design docs
+
+Read these together with this roadmap:
+
+```text
+docs/mobile-system/I2I_MASK_INPAINT_REUSE_AND_API_PLAN.md
+docs/mobile-system/SUBGRAPH_AND_BYPASS_ANALYSIS.md
+docs/mobile-system/LLM_ASSISTED_WORKFLOW_ANALYSIS.md
 ```
 
 ## Phase 0: Concept lock
@@ -134,6 +148,7 @@ Deliverables:
 - USER_PROVIDED_WORKFLOW_CONCEPT.md
 - ANALYZER_EXPORT_WORKFLOW_CONCEPT.md
 - ANALYZER_WORKFLOW_AND_NODE_ROADMAP.md
+- I2I_MASK_INPAINT_REUSE_AND_API_PLAN.md
 ```
 
 Acceptance criteria:
@@ -143,6 +158,7 @@ Acceptance criteria:
 - Docs clearly say the project prepares the Analyzer export workflow.
 - Docs clearly separate user generation workflow from Analyzer export workflow.
 - Docs explicitly state that output is not image-only.
+- Docs explicitly state that image input / mask / img2img / inpaint workflows are first-class cases.
 ```
 
 Status:
@@ -328,9 +344,59 @@ Acceptance criteria:
 
 ```text
 - Image, video, and audio workflows can expose different appropriate fields.
+- Image input, mask, img2img, and inpaint workflows expose correct upload fields.
 - Missing fields are allowed.
 - The app does not assume prompt/seed/size always exist.
 - patch_targets remain the only app-editable graph locations.
+```
+
+## Phase 3A: Image input / mask / img2img / inpaint support
+
+Goal:
+
+```text
+Carry forward full HTML i2i/mask/inpaint behavior into the workflow-driven app architecture.
+```
+
+Reference:
+
+```text
+docs/mobile-system/I2I_MASK_INPAINT_REUSE_AND_API_PLAN.md
+```
+
+Analyzer must detect:
+
+```text
+- image input fields
+- LoadImage or equivalent nodes
+- img2img paths such as LoadImage -> VAEEncode
+- mask input fields
+- inpaint paths such as LoadImage + mask + InpaintModelConditioning
+- denoise fields related to img2img/inpaint
+- image/mask fields inside subgraphs
+- image/mask fields behind bypass-OFF branches
+```
+
+Smartphone app must support:
+
+```text
+- image picker
+- selected image preview
+- /upload/image before /prompt
+- mask editor when profile requires mask
+- paint / erase / clear
+- brush size
+- mask upload before /prompt
+- patching returned filenames only through patch_targets
+```
+
+Acceptance criteria:
+
+```text
+- Full HTML behavior is used as a reference, not copied as fixed workflow construction.
+- Official ComfyUI upload APIs are used where possible.
+- App does not show image/mask inputs as active when their branch is bypass-OFF.
+- Inpaint generation can patch both original image and mask when workflow supports it.
 ```
 
 ## Phase 4: Analyzer export workflow input improvements
@@ -377,6 +443,7 @@ Analyzer should report:
 - ControlNet model references
 - custom node class types
 - missing/unknown node types
+- image/mask/inpaint support level
 - output type support level
 - app compatibility warnings
 ```
@@ -454,13 +521,15 @@ Required validation set:
 1. Simple image workflow
 2. Image workflow with LoRA
 3. Image workflow with ControlNet or image input
-4. Upscale workflow
-5. Background removal workflow
-6. Video workflow
-7. Audio workflow
-8. Workflow with custom nodes
-9. Workflow with missing model
-10. Workflow with unsupported output type
+4. img2img workflow
+5. inpaint / mask workflow
+6. Upscale workflow
+7. Background removal workflow
+8. Video workflow
+9. Audio workflow
+10. Workflow with custom nodes
+11. Workflow with missing model
+12. Workflow with unsupported output type
 ```
 
 For each workflow validate:
@@ -495,6 +564,7 @@ Only after validation:
 ```text
 - Do not make users use only project-provided generation workflows.
 - Do not assume output is always image.
+- Do not assume image workflows are always text-to-image.
 - Do not auto-download models.
 - Do not auto-install custom nodes.
 - Do not mutate unknown nodes.
@@ -512,6 +582,7 @@ A user can bring their own ComfyUI workflow,
 run it through the Analyzer export workflow,
 load the generated profile on a smartphone,
 edit only safe exposed controls,
+upload required images/masks when the workflow needs them,
 submit generation,
 and receive the correct output type without the workflow being corrupted.
 ```
