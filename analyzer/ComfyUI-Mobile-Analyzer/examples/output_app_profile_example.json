@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "profile_id": "minimal_api_workflow",
   "profile_name": "Minimal API Workflow",
-  "profile_version": "0.1.0",
+  "profile_version": "0.2.1",
   "workflow_id": "sha256_example",
   "workflow_format": "api",
   "created_at": "2026-07-09T00:00:00+0900",
@@ -18,7 +18,7 @@
     "missing_nodes_count": 0,
     "missing_models_count": 1,
     "attention_nodes_count": 0,
-    "warnings_count": 1
+    "warnings_count": 2
   },
   "ui": {
     "simple": [
@@ -31,7 +31,7 @@
         "node_id": "2",
         "input": "text",
         "default": "a cute pixel art cat",
-        "patch_target_id": "patch_prompt"
+        "patch_target_id": "patch_2_text_prompt"
       },
       {
         "field_id": "negative",
@@ -42,7 +42,40 @@
         "node_id": "3",
         "input": "text",
         "default": "low quality, blurry",
-        "patch_target_id": "patch_negative"
+        "patch_target_id": "patch_3_text_negative"
+      },
+      {
+        "field_id": "width",
+        "label": "Width",
+        "type": "number",
+        "section": "size",
+        "ui_visibility": "simple",
+        "node_id": "4",
+        "input": "width",
+        "default": 512,
+        "patch_target_id": "patch_4_width_width"
+      },
+      {
+        "field_id": "height",
+        "label": "Height",
+        "type": "number",
+        "section": "size",
+        "ui_visibility": "simple",
+        "node_id": "4",
+        "input": "height",
+        "default": 512,
+        "patch_target_id": "patch_4_height_height"
+      },
+      {
+        "field_id": "batch",
+        "label": "Batch",
+        "type": "number",
+        "section": "size",
+        "ui_visibility": "simple",
+        "node_id": "4",
+        "input": "batch_size",
+        "default": 1,
+        "patch_target_id": "patch_4_batch_size_batch"
       },
       {
         "field_id": "seed",
@@ -53,7 +86,7 @@
         "node_id": "5",
         "input": "seed",
         "default": 12345,
-        "patch_target_id": "patch_seed"
+        "patch_target_id": "patch_5_seed_seed"
       },
       {
         "field_id": "steps",
@@ -64,10 +97,7 @@
         "node_id": "5",
         "input": "steps",
         "default": 20,
-        "min": 1,
-        "max": 100,
-        "step": 1,
-        "patch_target_id": "patch_steps"
+        "patch_target_id": "patch_5_steps_steps"
       },
       {
         "field_id": "cfg",
@@ -78,10 +108,40 @@
         "node_id": "5",
         "input": "cfg",
         "default": 7.0,
-        "min": 1,
-        "max": 30,
-        "step": 0.5,
-        "patch_target_id": "patch_cfg"
+        "patch_target_id": "patch_5_cfg_cfg"
+      },
+      {
+        "field_id": "sampler_name",
+        "label": "Sampler",
+        "type": "select",
+        "section": "basic_sampling",
+        "ui_visibility": "simple",
+        "node_id": "5",
+        "input": "sampler_name",
+        "default": "euler",
+        "patch_target_id": "patch_5_sampler_name_sampler_name"
+      },
+      {
+        "field_id": "scheduler",
+        "label": "Scheduler",
+        "type": "select",
+        "section": "basic_sampling",
+        "ui_visibility": "simple",
+        "node_id": "5",
+        "input": "scheduler",
+        "default": "normal",
+        "patch_target_id": "patch_5_scheduler_scheduler"
+      },
+      {
+        "field_id": "denoise",
+        "label": "Denoise",
+        "type": "slider",
+        "section": "basic_sampling",
+        "ui_visibility": "simple",
+        "node_id": "5",
+        "input": "denoise",
+        "default": 1.0,
+        "patch_target_id": "patch_5_denoise_denoise"
       }
     ],
     "advanced": [],
@@ -89,38 +149,80 @@
   },
   "patch_targets": [
     {
-      "patch_target_id": "patch_prompt",
+      "patch_target_id": "patch_2_text_prompt",
       "field_id": "prompt",
       "node_id": "2",
       "input": "text",
       "value_type": "STRING"
     },
     {
-      "patch_target_id": "patch_negative",
+      "patch_target_id": "patch_3_text_negative",
       "field_id": "negative",
       "node_id": "3",
       "input": "text",
       "value_type": "STRING"
     },
     {
-      "patch_target_id": "patch_seed",
+      "patch_target_id": "patch_4_width_width",
+      "field_id": "width",
+      "node_id": "4",
+      "input": "width",
+      "value_type": "INT"
+    },
+    {
+      "patch_target_id": "patch_4_height_height",
+      "field_id": "height",
+      "node_id": "4",
+      "input": "height",
+      "value_type": "INT"
+    },
+    {
+      "patch_target_id": "patch_4_batch_size_batch",
+      "field_id": "batch",
+      "node_id": "4",
+      "input": "batch_size",
+      "value_type": "INT"
+    },
+    {
+      "patch_target_id": "patch_5_seed_seed",
       "field_id": "seed",
       "node_id": "5",
       "input": "seed",
       "value_type": "INT"
     },
     {
-      "patch_target_id": "patch_steps",
+      "patch_target_id": "patch_5_steps_steps",
       "field_id": "steps",
       "node_id": "5",
       "input": "steps",
       "value_type": "INT"
     },
     {
-      "patch_target_id": "patch_cfg",
+      "patch_target_id": "patch_5_cfg_cfg",
       "field_id": "cfg",
       "node_id": "5",
       "input": "cfg",
+      "value_type": "FLOAT"
+    },
+    {
+      "patch_target_id": "patch_5_sampler_name_sampler_name",
+      "field_id": "sampler_name",
+      "node_id": "5",
+      "input": "sampler_name",
+      "value_type": "COMBO"
+    },
+    {
+      "patch_target_id": "patch_5_scheduler_scheduler",
+      "field_id": "scheduler",
+      "node_id": "5",
+      "input": "scheduler",
+      "value_type": "COMBO"
+    },
+    {
+      "patch_target_id": "patch_5_denoise_denoise",
+      "field_id": "denoise",
+      "node_id": "5",
+      "input": "denoise",
       "value_type": "FLOAT"
     }
   ],
@@ -130,17 +232,47 @@
       "class_type": "CheckpointLoaderSimple",
       "category": "model_loader",
       "known": true,
-      "exists_in_comfyui": true,
+      "exists_in_comfyui": null,
       "ui_visibility": "expert",
       "editable": true,
       "role": "model_loader"
+    },
+    {
+      "node_id": "2",
+      "class_type": "CLIPTextEncode",
+      "category": "prompt",
+      "known": true,
+      "exists_in_comfyui": null,
+      "ui_visibility": "simple",
+      "editable": true,
+      "role": "prompt_encoder"
+    },
+    {
+      "node_id": "3",
+      "class_type": "CLIPTextEncode",
+      "category": "prompt",
+      "known": true,
+      "exists_in_comfyui": null,
+      "ui_visibility": "simple",
+      "editable": true,
+      "role": "prompt_encoder"
+    },
+    {
+      "node_id": "4",
+      "class_type": "EmptyLatentImage",
+      "category": "latent",
+      "known": true,
+      "exists_in_comfyui": null,
+      "ui_visibility": "simple",
+      "editable": true,
+      "role": "latent_source"
     },
     {
       "node_id": "5",
       "class_type": "KSampler",
       "category": "sampler",
       "known": true,
-      "exists_in_comfyui": true,
+      "exists_in_comfyui": null,
       "ui_visibility": "simple",
       "editable": true,
       "role": "main_sampler"
@@ -156,6 +288,7 @@
   ],
   "attention_nodes": [],
   "warnings": [
-    "This is an example profile. The checkpoint file is intentionally a placeholder."
+    "object_info and exact model existence checks are not implemented yet.",
+    "Detected model names are listed as unverified references."
   ]
 }
