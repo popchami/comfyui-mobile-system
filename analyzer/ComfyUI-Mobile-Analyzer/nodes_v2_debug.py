@@ -356,23 +356,22 @@ def detect_outputs(workflow: Dict[str, Any], runtime_node_defs: Dict[str, Any]) 
 
 
 def infer_output_type(class_type: str, runtime_def: Dict[str, Any]) -> str:
-    lower_class = class_type.lower()
     return_types = runtime_def.get("return_types") or []
     return_types_upper = {str(item).upper() for item in return_types} if isinstance(return_types, list) else set()
 
     if class_type in IMAGE_OUTPUT_NODE_TYPES or "IMAGE" in return_types_upper:
         return "image"
-    if "video" in lower_class or "VIDEO" in return_types_upper:
+    if class_type in VIDEO_OUTPUT_NODE_TYPES or "VIDEO" in return_types_upper:
         return "video"
-    if "audio" in lower_class or "AUDIO" in return_types_upper:
+    if class_type in AUDIO_OUTPUT_NODE_TYPES or "AUDIO" in return_types_upper:
         return "audio"
     if "STRING" in return_types_upper:
         return "text"
-    if "json" in lower_class or "JSON" in return_types_upper:
+    if "JSON" in return_types_upper:
         return "json"
-    if "svg" in lower_class or "SVG" in return_types_upper:
+    if "SVG" in return_types_upper:
         return "svg"
-    if "3d" in lower_class or "mesh" in lower_class or "model3d" in lower_class:
+    if "MESH" in return_types_upper:
         return "3d"
     if bool(runtime_def.get("output_node")):
         return "unknown"
@@ -888,6 +887,16 @@ KNOWN_NODE_TYPES = {
 }
 
 IMAGE_OUTPUT_NODE_TYPES = {"SaveImage", "PreviewImage"}
+
+# Exact class-type matches used only as a fallback when runtime node metadata
+# (RETURN_TYPES/output_node from /object_info) is unavailable for the node.
+# SaveVideo/SaveAudio*/PreviewAudio were confirmed via a live /object_info
+# query against a local ComfyUI 0.27.0 instance. VHS_VideoCombine
+# (ComfyUI-VideoHelperSuite) is a widely used community node but was not
+# installed in that verification environment, so its existence here is
+# unconfirmed locally even though it is a well-known third-party node.
+VIDEO_OUTPUT_NODE_TYPES = {"SaveVideo", "VHS_VideoCombine"}
+AUDIO_OUTPUT_NODE_TYPES = {"SaveAudio", "SaveAudioAdvanced", "SaveAudioMP3", "SaveAudioOpus", "PreviewAudio"}
 
 MODEL_PICKER_INPUT_NAMES = {
     "ckpt_name",
