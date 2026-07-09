@@ -138,7 +138,7 @@ def build_app_profile(workflow: Dict[str, Any], profile_id: str, profile_name: s
         "schema_version": "1.0",
         "profile_id": profile_id,
         "profile_name": profile_name,
-        "profile_version": "0.2.0",
+        "profile_version": "0.2.1",
         "workflow_id": workflow_id,
         "workflow_format": "api",
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
@@ -250,7 +250,9 @@ def dedupe(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def is_connection(value: Any) -> bool:
-    return isinstance(value, list) and len(value) == 2 and isinstance(value[0], str)
+    if not isinstance(value, list) or len(value) != 2:
+        return False
+    return isinstance(value[0], (str, int)) and isinstance(value[1], int)
 
 
 KNOWN_NODE_TYPES = {
