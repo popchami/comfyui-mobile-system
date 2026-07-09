@@ -35,6 +35,9 @@ It can currently:
 - Accept pasted `workflow.json`
 - Validate minimal profile shape
 - Render `ui.simple` fields
+- Render image fields as file pickers
+- Upload selected images to `/upload/image`
+- Patch `LoadImage.image` with the uploaded image name
 - Patch `workflow.json` using `patch_targets`
 - Submit patched workflow to `/prompt`
 - Poll `/history/{prompt_id}`
@@ -46,7 +49,6 @@ It can currently:
 
 - ZIP extraction in browser
 - Local persistent profile storage
-- Image upload patching
 - WebSocket progress
 - Flutter UI
 
