@@ -131,6 +131,162 @@ class V2ValidatedDebugTests(unittest.TestCase):
         self.assertTrue(patches)
         self.assertEqual(nodes_v2_validated_debug.summarize_validation_results(results)["editable"], len(fields))
 
+    def test_lora_inputs_become_model_and_strength_fields(self):
+        workflow = {
+            "1": {
+                "class_type": "LoraLoader",
+                "inputs": {
+                    "lora_name": "style.safetensors",
+                    "strength_model": 0.75,
+                    "strength_clip": 0.65,
+                    "model": ["2", 0],
+                    "clip": ["3", 0],
+                },
+            }
+        }
+        candidates = nodes_v2_debug.extract_operation_candidates(workflow, runtime_node_defs={})
+        results = nodes_v2_validated_debug.validate_operation_candidates(workflow, candidates)
+        fields, patches = nodes_v2_validated_debug.build_validated_fields(results)
+        field_by_input = {field["source"]["input"]: field for field in fields}
+
+        self.assertEqual(field_by_input["lora_name"]["control_type"], "model_picker")
+        self.assertEqual(field_by_input["lora_name"]["section"], "model")
+        self.assertIn("strength_model", field_by_input)
+        self.assertIn("strength_clip", field_by_input)
+        self.assertIn("pt_1_lora_name", patches)
+        self.assertNotIn("pt_1_model", patches)
+        self.assertNotIn("pt_1_clip", patches)
+
+    def test_controlnet_like_strength_is_advanced_field(self):
+        workflow = {
+            "1": {
+                "class_type": "ControlNetApplyAdvanced",
+                "inputs": {
+                    "strength": 0.8,
+                    "start_percent": 0.0,
+                    "end_percent": 1.0,
+                    "conditioning": ["2", 0],
+                },
+            }
+        }
+        candidates = nodes_v2_debug.extract_operation_candidates(workflow, runtime_node_defs={})
+        results = nodes_v2_validated_debug.validate_operation_candidates(workflow, candidates)
+        fields, _ = nodes_v2_validated_debug.build_validated_fields(results)
+        field_inputs = {field["source"]["input"]: field for field in fields}
+
+        self.assertIn("strength", field_inputs)
+        self.assertEqual(field_inputs["strength"]["section"], "advanced")
+        self.assertNotIn("conditioning", field_inputs)
+
+    def test_video_and_audio_outputs_are_detected(self):
+        workflow = {
+            "1": {"class_type": "VHS_VideoCombine", "inputs": {"frame_rate": 24.0}},
+            "2": {"class_type": "SaveAudio", "inputs": {"filename_prefix": "voice"}},
+        }
+        outputs = nodes_v2_debug.detect_outputs(workflow, runtime_node_defs={})
+        output_types = {output["output_type"] for output in outputs}
+        viewers = {output["viewer"] for output in outputs}
+
+        self.assertIn("video", output_types)
+        self.assertIn("audio", output_types)
+        self.assertIn("video_viewer", viewers)
+        self.assertIn("audio_player", viewers)
+
+    def test_external_api_warning_is_emitted(self):
+        workflow = {
+            "1": {"class_type": "OpenAIImageNode", "inputs": {"prompt": "a cat", "api_key": "secret"}},
+            "2": {"class_type": "SaveImage", "inputs": {"images": ["1", 0]}},
+        }
+        candidates = nodes_v2_debug.extract_operation_candidates(workflow, runtime_node_defs={})
+        outputs = nodes_v2_debug.detect_outputs(workflow, runtime_node_defs={})
+        results = nodes_v2_validated_debug.validate_operation_candidates(workflow, candidates)
+        warnings = nodes_v2_validated_debug.build_validated_warnings(
+            workflow=workflow,
+            runtime_node_defs={},
+            candidates=candidates,
+            validation_results=results,
+            outputs=outputs,
+        )
+        warning_types = {warning["type"] for warning in warnings}
+
+        self.assertIn("external_api", warning_types)
+        self.assertIn("validator_blocked_candidate", warning_types)
+
+    def test_missing_runtime_definition_warning_is_emitted(self):
+        workflow = {
+            "1": {"class_type": "UnknownCustomNode", "inputs": {"style_text": "cinematic"}},
+            "2": {"class_type": "SaveImage", "inputs": {"images": ["1", 0]}},
+        }
+        candidates = nodes_v2_debug.extract_operation_candidates(workflow, runtime_node_defs={})
+        outputs = nodes_v2_debug.detect_outputs(workflow, runtime_node_defs={})
+        results = nodes_v2_validated_debug.validate_operation_candidates(workflow, candidates)
+        warnings = nodes_v2_validated_debug.build_validated_warnings(
+            workflow=workflow,
+            runtime_node_defs={},
+            candidates=candidates,
+            validation_results=results,
+            outputs=outputs,
+        )
+        missing_defs = [warning for warning in warnings if warning["type"] == "missing_runtime_definition"]
+
+        self.assertTrue(missing_defs)
+        self.assertTrue(any(warning.get("related_class_type") == "UnknownCustomNode" for warning in missing_defs))
+
+    def test_runtime_definition_metadata_sets_required_and_confidence(self):
+        workflow = {
+            "1": {"class_type": "CustomTextNode", "inputs": {"text": "hello"}},
+        }
+        runtime_node_defs = {
+            "CustomTextNode": {
+                "inputs": {
+                    "required": {
+                        "text": {
+                            "raw_type": "STRING",
+                            "normalized_value_type": "string",
+                            "candidate_control_type": "textarea",
+                            "config": {"multiline": True},
+                            "options": None,
+                        }
+                    }
+                }
+            }
+        }
+        candidates = nodes_v2_debug.extract_operation_candidates(workflow, runtime_node_defs=runtime_node_defs)
+        results = nodes_v2_validated_debug.validate_operation_candidates(workflow, candidates)
+        fields, patches = nodes_v2_validated_debug.build_validated_fields(results)
+
+        self.assertEqual(candidates[0]["source_confidence"], "runtime_definition")
+        self.assertEqual(candidates[0]["input_group"], "required")
+        self.assertEqual(fields[0]["control_type"], "textarea")
+        self.assertTrue(patches["pt_1_text"]["validator"]["required"])
+
+    def test_no_output_makes_compatibility_unsupported(self):
+        workflow = {
+            "1": {"class_type": "CLIPTextEncode", "inputs": {"text": "a cat"}},
+        }
+        candidates = nodes_v2_debug.extract_operation_candidates(workflow, runtime_node_defs={})
+        outputs = nodes_v2_debug.detect_outputs(workflow, runtime_node_defs={})
+        runtime_requirements = nodes_v2_debug.detect_runtime_requirements(workflow)
+        results = nodes_v2_validated_debug.validate_operation_candidates(workflow, candidates)
+        fields, patches = nodes_v2_validated_debug.build_validated_fields(results)
+        warnings = nodes_v2_validated_debug.build_validated_warnings(
+            workflow=workflow,
+            runtime_node_defs={},
+            candidates=candidates,
+            validation_results=results,
+            outputs=outputs,
+        )
+        compatibility = nodes_v2_validated_debug.decide_validated_compatibility(
+            fields=fields,
+            patch_targets=patches,
+            outputs=outputs,
+            warnings=warnings,
+            runtime_requirements=runtime_requirements,
+        )
+
+        self.assertEqual(compatibility["level"], "unsupported")
+        self.assertFalse(compatibility["safe_to_generate"])
+
 
 if __name__ == "__main__":
     unittest.main()
