@@ -59,6 +59,7 @@ class _RemoteProfilesScreenState extends State<RemoteProfilesScreen> {
       final local = LocalProfile.fromBundle(
         appProfileJson: bundle.rawAppProfileJson,
         workflowJson: bundle.rawWorkflowJson,
+        comfyUrl: widget.comfyUrl,
       );
       await LocalProfileStore().upsertProfile(local);
       setState(() => _status = 'Saved local profile: ${local.name}');
