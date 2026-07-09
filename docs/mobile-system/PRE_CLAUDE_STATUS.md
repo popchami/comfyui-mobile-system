@@ -2,13 +2,32 @@
 
 ## Purpose
 
-This file summarizes the current PR state before handing it to Claude for runtime validation.
+This file summarizes the current PR state before handing it to Claude.
+
+The handoff goal changed after reviewing existing ComfyUI/RunPod capabilities and the external `comfy-portal-endpoint` reference.
 
 The user cannot use a PC right now, so the current goal is:
 
 ```text
-Make the PR clear enough that Claude can review it, install it, run checks, fix blockers, and confirm install readiness.
+Make the PR clear enough that Claude can first perform architecture alignment,
+then install it, run checks, fix blockers, and confirm install readiness.
 ```
+
+## Important handoff change
+
+This is no longer only a runtime validation handoff.
+
+Claude should first review:
+
+```text
+- current system design
+- external reference review
+- official ComfyUI API overlap
+- official RunPod capability overlap
+- whether /object_info and /models should move earlier
+```
+
+Then Claude should run runtime validation.
 
 ## PR state
 
@@ -36,8 +55,8 @@ Current state observed before this update:
 state: open
 merged: false
 draft: true
-changed files: 50
-commits: 116+
+changed files: 50+
+commits: 120+
 reviews: none yet
 ```
 
@@ -45,17 +64,19 @@ Important:
 
 ```text
 Do not merge yet.
-Claude should run install/runtime checks first.
+Claude should run architecture alignment and install/runtime checks first.
 The PR is intentionally kept as Draft until runtime validation passes.
 ```
 
 ## Completion marker
 
-Pre-Claude preparation is marked complete here:
+Pre-Claude preparation was previously marked complete here:
 
 ```text
 docs/mobile-system/PRE_CLAUDE_DONE.md
 ```
+
+After later platform/reference review, the handoff has been expanded, but the PR remains in a pre-Claude handoff state.
 
 ## Claude handoff prompt
 
@@ -71,6 +92,10 @@ Read in this order:
 
 ```text
 docs/mobile-system/PRE_CLAUDE_STATUS.md
+docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
+docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
+docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
+docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 docs/mobile-system/PRIORITY_CONFLICT_REVIEW.md
 docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
 docs/mobile-system/STATIC_REVIEW_NOTES.md
@@ -95,6 +120,10 @@ UI_VISIBILITY_RULES.md
 MVP_SCOPE.md
 ANALYZER_SPEC.md
 MOBILE_APP_SPEC.md
+PROJECT_DIRECTION_GUARDRAILS.md
+SYSTEM_INVENTORY_BEFORE_CLAUDE.md
+EXISTING_PLATFORMS_REVIEW.md
+COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 PRE_CLAUDE_DONE.md
 PRE_CLAUDE_STATUS.md
 PRIORITY_CONFLICT_REVIEW.md
@@ -102,6 +131,8 @@ CLAUDE_COPYPASTE_PROMPT.md
 CLAUDE_FINAL_REVIEW_AND_INSTALL.md
 STATIC_REVIEW_NOTES.md
 OPEN_TODOS.md
+FUTURE_ISSUES_AND_IMPROVEMENTS.md
+EXTERNAL_REFERENCES.md
 ```
 
 ### 2. ComfyUI-Mobile-Analyzer scaffold
@@ -235,6 +266,20 @@ Current Flutter MVP behavior:
 7. Analyzer does not yet confirm actual model file existence.
 8. UI workflow to API workflow conversion is not done yet.
 9. ComfyUI route registration in server.py still needs real runtime validation.
+10. Existing ComfyUI official APIs may replace some planned custom logic.
+```
+
+## Architecture alignment questions before runtime validation
+
+Claude should answer:
+
+```text
+1. Which current custom logic duplicates official ComfyUI APIs?
+2. Should /object_info be implemented before deeper field detection?
+3. Should /models be implemented before model warning logic expands?
+4. Which /mobile_analyzer custom routes are still necessary?
+5. Should UI workflow conversion remain optional for now?
+6. What is the minimum blocker-free path to validate the current MVP?
 ```
 
 ## Runtime pass condition
@@ -261,7 +306,8 @@ Claude should consider this install-ready only when:
 - Do not add automatic custom node installation.
 - Do not add automatic model downloads.
 - Do not turn the app into a full ComfyUI workflow editor.
-- Do not prioritize future TODOs until install path is confirmed.
+- Do not add Playwright/Chromium as a required MVP dependency.
+- Do not prioritize future TODOs until architecture alignment and runtime path are confirmed.
 ```
 
 ## After Claude confirms install readiness
@@ -270,6 +316,7 @@ Then revisit:
 
 ```text
 docs/mobile-system/OPEN_TODOS.md
+docs/mobile-system/FUTURE_ISSUES_AND_IMPROVEMENTS.md
 ```
 
 and reorder future work by priority.
