@@ -74,11 +74,18 @@ docs/mobile-system/
   CLAUDE_FINAL_REVIEW_AND_INSTALL.md
   STATIC_REVIEW_NOTES.md
   OPEN_TODOS.md
+  FUTURE_ISSUES_AND_IMPROVEMENTS.md
 ```
 
-## 未決定TODO
+## 未決定TODO / 改善記録
 
 仕様検討が必要な項目は `OPEN_TODOS.md` に記録する。
+
+今後の問題点、課題点、改善点は以下に記録する。
+
+```text
+docs/mobile-system/FUTURE_ISSUES_AND_IMPROVEMENTS.md
+```
 
 現在の主な未決定項目:
 
