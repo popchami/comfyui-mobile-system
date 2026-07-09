@@ -69,6 +69,12 @@ EXTERNAL_REFERENCES.md
 COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 ```
 
+PR body support:
+
+```text
+PR_BODY_UPDATE_DRAFT.md
+```
+
 ## What is complete
 
 ```text
@@ -83,6 +89,7 @@ COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 - Future feature preparation is documented.
 - Reference study plan is documented.
 - Minimal AI handoff prompts are documented.
+- PR body update draft is documented.
 - README is updated as a document index.
 - HANDOFF is updated as the main source of truth.
 ```
@@ -120,6 +127,9 @@ When Android validation is available:
 
 When handing to another AI:
   Use AI_MINIMAL_HANDOFF_PROMPTS.md.
+
+When PR body editing is available:
+  Use PR_BODY_UPDATE_DRAFT.md.
 ```
 
 ## Audit conclusion
