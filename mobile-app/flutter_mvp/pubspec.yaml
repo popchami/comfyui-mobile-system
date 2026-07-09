@@ -1,0 +1,23 @@
+name: comfy_mobile_mvp
+version: 0.1.0+1
+publish_to: none
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  web_socket_channel: ^3.0.0
+  archive: ^3.6.0
+  shared_preferences: ^2.3.0
+  file_picker: ^8.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
