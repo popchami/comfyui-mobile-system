@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Comfy Mobile Prototype</title>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
     body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #f5f5f5; }
     header { padding: 16px; background: #191919; position: sticky; top: 0; z-index: 1; }
@@ -15,7 +16,6 @@
     textarea { min-height: 90px; resize: vertical; }
     button { background: #ff7a00; color: #111; border: none; font-weight: 700; margin-top: 8px; }
     button.secondary { background: #333; color: #f5f5f5; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .field { margin-bottom: 12px; }
     .hint { font-size: 12px; color: #888; margin-top: 4px; }
     .status { font-size: 13px; color: #ccc; white-space: pre-wrap; }
@@ -43,8 +43,10 @@
       <h2>2. Profile</h2>
       <label>Remote Profiles</label>
       <select id="profileSelect"></select>
-      <button onclick="downloadSelectedProfile()">選択Profileを取得</button>
-      <p class="status warn">注意: ZIP展開はまだ未実装。MVP検証では下のJSON欄に app_profile.json と workflow.json を貼り付ける。</p>
+      <button onclick="downloadSelectedProfile()">選択Profileを取得して読み込む</button>
+      <label>Local profile zip</label>
+      <input id="profileZipInput" type="file" accept=".zip" onchange="importLocalZip()" />
+      <p class="status warn">ZIP内に workflow.json と app_profile.json が必要。</p>
     </section>
 
     <section>
@@ -88,18 +90,9 @@ let lastPromptId = null;
 function baseUrl() {
   return document.getElementById('comfyUrl').value.replace(/\/$/, '');
 }
-
-function setStatus(text) {
-  document.getElementById('status').textContent = text;
-}
-
-function setResult(text) {
-  document.getElementById('resultStatus').textContent = text;
-}
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+function setStatus(text) { document.getElementById('status').textContent = text; }
+function setResult(text) { document.getElementById('resultStatus').textContent = text; }
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 async function checkConnection() {
   try {
@@ -131,10 +124,46 @@ async function fetchProfiles() {
 }
 
 async function downloadSelectedProfile() {
-  const selected = profiles[document.getElementById('profileSelect').value];
-  if (!selected) return setStatus('Profile未選択');
-  const downloadUrl = baseUrl() + '/mobile_analyzer/profiles/' + selected.id + '/download';
-  setStatus('ZIP取得はこのHTMLでは未展開。URL確認: ' + downloadUrl);
+  try {
+    const selected = profiles[document.getElementById('profileSelect').value];
+    if (!selected) return setStatus('Profile未選択');
+    const downloadUrl = baseUrl() + '/mobile_analyzer/profiles/' + selected.id + '/download';
+    setStatus('Profile ZIP取得中...');
+    const res = await fetch(downloadUrl);
+    if (!res.ok) throw new Error('/download ' + res.status);
+    const blob = await res.blob();
+    await importProfileZipBlob(blob);
+  } catch (e) {
+    setStatus('Profile ZIP取得失敗: ' + e.message);
+  }
+}
+
+async function importLocalZip() {
+  try {
+    const input = document.getElementById('profileZipInput');
+    if (!input.files || input.files.length === 0) return;
+    await importProfileZipBlob(input.files[0]);
+  } catch (e) {
+    setStatus('ZIP読み込み失敗: ' + e.message);
+  }
+}
+
+async function importProfileZipBlob(blob) {
+  if (typeof JSZip === 'undefined') throw new Error('JSZipが読み込まれていません');
+  const zip = await JSZip.loadAsync(blob);
+  const appProfileFile = zip.file('app_profile.json');
+  const workflowFile = zip.file('workflow.json');
+  if (!appProfileFile) throw new Error('zip内に app_profile.json がありません');
+  if (!workflowFile) throw new Error('zip内に workflow.json がありません');
+  const appProfileText = await appProfileFile.async('string');
+  const workflowText = await workflowFile.async('string');
+  document.getElementById('appProfileText').value = appProfileText;
+  document.getElementById('workflowText').value = workflowText;
+  appProfile = JSON.parse(appProfileText);
+  workflow = JSON.parse(workflowText);
+  validateProfile(appProfile, workflow);
+  renderSimpleUi();
+  setStatus('Profile ZIP読み込みOK: ' + (appProfile.profile_name || appProfile.profile_id || 'profile'));
 }
 
 function loadManualProfile() {
@@ -166,7 +195,6 @@ function renderSimpleUi() {
     const label = document.createElement('label');
     label.textContent = field.label || field.field_id;
     wrap.appendChild(label);
-
     let input;
     if (field.type === 'textarea') {
       input = document.createElement('textarea');
@@ -174,18 +202,12 @@ function renderSimpleUi() {
       input = document.createElement('select');
       const options = field.options && field.options.length ? field.options : [field.default].filter(v => v !== undefined);
       options.forEach(v => {
-        const opt = document.createElement('option');
-        opt.value = v;
-        opt.textContent = v;
-        input.appendChild(opt);
+        const opt = document.createElement('option'); opt.value = v; opt.textContent = v; input.appendChild(opt);
       });
     } else if (field.type === 'switch') {
       input = document.createElement('select');
       ['true', 'false'].forEach(v => {
-        const opt = document.createElement('option');
-        opt.value = v;
-        opt.textContent = v;
-        input.appendChild(opt);
+        const opt = document.createElement('option'); opt.value = v; opt.textContent = v; input.appendChild(opt);
       });
     } else if (field.type === 'image') {
       input = document.createElement('input');
@@ -212,18 +234,11 @@ function renderSimpleUi() {
 }
 
 async function previewPatch() {
-  try {
-    await buildPatchedWorkflow();
-  } catch (e) {
-    setStatus('Patch失敗: ' + e.message);
-  }
+  try { await buildPatchedWorkflow(); } catch (e) { setStatus('Patch失敗: ' + e.message); }
 }
 
 async function buildPatchedWorkflow() {
-  if (!appProfile || !workflow) {
-    setStatus('Profile未読み込み');
-    return null;
-  }
+  if (!appProfile || !workflow) { setStatus('Profile未読み込み'); return null; }
   patchedWorkflow = JSON.parse(JSON.stringify(workflow));
   const targets = appProfile.patch_targets || [];
   for (const target of targets) {
@@ -233,7 +248,6 @@ async function buildPatchedWorkflow() {
     if (!node || !node.inputs || !(target.input in node.inputs)) {
       throw new Error('patch先が存在しません: node ' + target.node_id + ' input ' + target.input);
     }
-
     if (target.value_type === 'IMAGE') {
       node.inputs[target.input] = await resolveImageValue(el);
     } else {
@@ -261,10 +275,7 @@ async function uploadImage(file) {
   form.append('image', file, file.name);
   form.append('type', 'input');
   form.append('overwrite', 'true');
-  const res = await fetch(baseUrl() + '/upload/image', {
-    method: 'POST',
-    body: form
-  });
+  const res = await fetch(baseUrl() + '/upload/image', { method: 'POST', body: form });
   if (!res.ok) throw new Error('/upload/image ' + res.status);
   const data = await res.json();
   setStatus('画像アップロードOK: ' + (data.name || data.filename || file.name));
@@ -285,11 +296,8 @@ async function submitPrompt() {
     setResult('生成送信中...');
     document.getElementById('images').innerHTML = '';
     document.getElementById('historyOutput').textContent = '';
-
     const res = await fetch(baseUrl() + '/prompt', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: wf })
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: wf })
     });
     if (!res.ok) throw new Error('/prompt ' + res.status);
     const data = await res.json();
@@ -309,11 +317,7 @@ async function waitForHistory(promptId) {
     if (history && history[promptId]) {
       document.getElementById('historyOutput').textContent = JSON.stringify(history[promptId], null, 2);
       const imageUrls = extractImageUrls(history[promptId]);
-      if (imageUrls.length > 0) {
-        renderImages(imageUrls);
-        setResult('生成完了: ' + imageUrls.length + '枚');
-        return;
-      }
+      if (imageUrls.length > 0) { renderImages(imageUrls); setResult('生成完了: ' + imageUrls.length + '枚'); return; }
       setResult('履歴取得OK。画像出力待ち... ' + (i + 1) + '/' + maxTries);
     } else {
       setResult('生成待ち... ' + (i + 1) + '/' + maxTries);
@@ -349,13 +353,9 @@ function renderImages(urls) {
   const root = document.getElementById('images');
   root.innerHTML = '';
   urls.forEach(url => {
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    const img = document.createElement('img');
-    img.src = url;
-    a.appendChild(img);
-    root.appendChild(a);
+    const a = document.createElement('a'); a.href = url; a.target = '_blank';
+    const img = document.createElement('img'); img.src = url;
+    a.appendChild(img); root.appendChild(a);
   });
 }
 </script>
