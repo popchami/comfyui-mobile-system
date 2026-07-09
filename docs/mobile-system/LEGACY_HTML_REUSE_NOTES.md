@@ -142,6 +142,46 @@ Changes:
 - Keep uploaded filename display after /upload/image.
 ```
 
+### 5. Session generated image history
+
+Existing HTML adds generated images to an in-session history grid.
+
+Flutter GenerateScreen now keeps an in-session generated image strip for the current screen session.
+
+Fixed:
+
+```text
+mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+```
+
+Changes:
+
+```text
+- Add generated images to _sessionHistory after /history result is found.
+- Deduplicate by type/subfolder/filename.
+- Display a horizontal Session history strip.
+```
+
+### 6. Larger image preview
+
+Existing HTML opens generated images in a larger preview.
+
+Flutter GenerateScreen now opens generated images in a dialog with InteractiveViewer.
+
+Fixed:
+
+```text
+mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+```
+
+Changes:
+
+```text
+- Tap generated image to open preview dialog.
+- Tap session history thumbnail to open preview dialog.
+- Show filename and selectable image URL in the preview.
+```
+
 ## App-prepared components from legacy HTML
 
 These are useful as app-side components because they are UI/UX or client behavior, not workflow-specific model content:
@@ -156,10 +196,10 @@ S: Already reused or should be app core
 - /upload/image handling
 - selected image preview
 - generated image display
-
-A: Useful after MVP validation
 - local generated history list
 - larger image preview screen
+
+A: Useful after MVP validation
 - seed copy/reuse
 - last-used field values per profile
 - visual selected-state markers
@@ -259,4 +299,6 @@ During RunPod/Android validation, compare the new MVP against the existing HTML 
 - Can still finish via /history polling if /ws is not available.
 - Can upload and preview input images.
 - Can fetch/display images through /view.
+- Can add generated images to session history.
+- Can open generated images in larger preview.
 ```
