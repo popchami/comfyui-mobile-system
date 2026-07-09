@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Comfy Mobile Prototype</title>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="./profile-storage.js"></script>
+  <script src="./stored-profile-ui.js"></script>
   <style>
     body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #f5f5f5; }
     header { padding: 16px; background: #191919; position: sticky; top: 0; z-index: 1; }
@@ -87,9 +89,7 @@ let patchedWorkflow = null;
 let profiles = [];
 let lastPromptId = null;
 
-function baseUrl() {
-  return document.getElementById('comfyUrl').value.replace(/\/$/, '');
-}
+function baseUrl() { return document.getElementById('comfyUrl').value.replace(/\/$/, ''); }
 function setStatus(text) { document.getElementById('status').textContent = text; }
 function setResult(text) { document.getElementById('resultStatus').textContent = text; }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
@@ -99,9 +99,7 @@ async function checkConnection() {
     const res = await fetch(baseUrl() + '/system_stats');
     if (!res.ok) throw new Error(res.status);
     setStatus('接続OK');
-  } catch (e) {
-    setStatus('接続失敗: ' + e.message);
-  }
+  } catch (e) { setStatus('接続失敗: ' + e.message); }
 }
 
 async function fetchProfiles() {
@@ -118,9 +116,7 @@ async function fetchProfiles() {
       select.appendChild(opt);
     });
     setStatus('Profile一覧取得OK: ' + profiles.length + '件');
-  } catch (e) {
-    setStatus('Profile一覧取得失敗: ' + e.message);
-  }
+  } catch (e) { setStatus('Profile一覧取得失敗: ' + e.message); }
 }
 
 async function downloadSelectedProfile() {
@@ -133,9 +129,7 @@ async function downloadSelectedProfile() {
     if (!res.ok) throw new Error('/download ' + res.status);
     const blob = await res.blob();
     await importProfileZipBlob(blob);
-  } catch (e) {
-    setStatus('Profile ZIP取得失敗: ' + e.message);
-  }
+  } catch (e) { setStatus('Profile ZIP取得失敗: ' + e.message); }
 }
 
 async function importLocalZip() {
@@ -143,9 +137,7 @@ async function importLocalZip() {
     const input = document.getElementById('profileZipInput');
     if (!input.files || input.files.length === 0) return;
     await importProfileZipBlob(input.files[0]);
-  } catch (e) {
-    setStatus('ZIP読み込み失敗: ' + e.message);
-  }
+  } catch (e) { setStatus('ZIP読み込み失敗: ' + e.message); }
 }
 
 async function importProfileZipBlob(blob) {
@@ -173,9 +165,7 @@ function loadManualProfile() {
     validateProfile(appProfile, workflow);
     renderSimpleUi();
     setStatus('手動Profile読み込みOK: ' + (appProfile.profile_name || appProfile.profile_id || 'profile'));
-  } catch (e) {
-    setStatus('JSON読み込み失敗: ' + e.message);
-  }
+  } catch (e) { setStatus('JSON読み込み失敗: ' + e.message); }
 }
 
 function validateProfile(profile, wf) {
@@ -248,11 +238,8 @@ async function buildPatchedWorkflow() {
     if (!node || !node.inputs || !(target.input in node.inputs)) {
       throw new Error('patch先が存在しません: node ' + target.node_id + ' input ' + target.input);
     }
-    if (target.value_type === 'IMAGE') {
-      node.inputs[target.input] = await resolveImageValue(el);
-    } else {
-      node.inputs[target.input] = castValue(el.value, target.value_type);
-    }
+    if (target.value_type === 'IMAGE') node.inputs[target.input] = await resolveImageValue(el);
+    else node.inputs[target.input] = castValue(el.value, target.value_type);
   }
   document.getElementById('patchedOutput').textContent = JSON.stringify(patchedWorkflow, null, 2);
   setStatus('Patch作成OK');
@@ -304,9 +291,7 @@ async function submitPrompt() {
     lastPromptId = data.prompt_id;
     setResult('送信OK prompt_id: ' + lastPromptId + '\n生成完了待ち...');
     await waitForHistory(lastPromptId);
-  } catch (e) {
-    setResult('生成失敗: ' + e.message);
-  }
+  } catch (e) { setResult('生成失敗: ' + e.message); }
 }
 
 async function waitForHistory(promptId) {
@@ -319,9 +304,7 @@ async function waitForHistory(promptId) {
       const imageUrls = extractImageUrls(history[promptId]);
       if (imageUrls.length > 0) { renderImages(imageUrls); setResult('生成完了: ' + imageUrls.length + '枚'); return; }
       setResult('履歴取得OK。画像出力待ち... ' + (i + 1) + '/' + maxTries);
-    } else {
-      setResult('生成待ち... ' + (i + 1) + '/' + maxTries);
-    }
+    } else setResult('生成待ち... ' + (i + 1) + '/' + maxTries);
   }
   throw new Error('生成結果の取得がタイムアウトしました');
 }
@@ -336,8 +319,7 @@ function extractImageUrls(historyItem) {
   const urls = [];
   const outputs = historyItem.outputs || {};
   Object.keys(outputs).forEach(nodeId => {
-    const output = outputs[nodeId];
-    const images = output.images || [];
+    const images = outputs[nodeId].images || [];
     images.forEach(img => {
       const params = new URLSearchParams();
       params.set('filename', img.filename);
