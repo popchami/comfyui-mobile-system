@@ -261,7 +261,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
   bool _containsAny(String value, List<String> needles) {
     final normalized = value.toLowerCase();
-    return needles.any(normalized.contains);
+    return needles.any((needle) => normalized.contains(needle));
   }
 
   String _fieldSearchText(UiField field) {
@@ -336,47 +336,32 @@ class _GenerateScreenState extends State<GenerateScreen> {
       }
     }
 
-    return [
-      if (core.isNotEmpty) ...[
-        Text('Core Inputs', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        ...core.map(_buildField),
-      ],
-      _buildFieldSectionTile(
-        title: 'Basic Generation Settings',
-        fields: basic,
-        initiallyExpanded: false,
-      ),
-      _buildFieldSectionTile(
-        title: 'Size / Output',
-        fields: size,
-        initiallyExpanded: false,
-      ),
-      _buildFieldSectionTile(
-        title: 'Advanced Workflow Features',
-        fields: advanced,
-        initiallyExpanded: false,
-      ),
-      _buildFieldSectionTile(
-        title: 'Expert / Debug',
-        fields: expert,
-        initiallyExpanded: false,
-      ),
-    ].where((widget) => widget is! SizedBox || widget.key != _emptySectionKey).toList();
+    final widgets = <Widget>[];
+    if (core.isNotEmpty) {
+      widgets.add(Text('Core Inputs', style: Theme.of(context).textTheme.titleMedium));
+      widgets.add(const SizedBox(height: 8));
+      widgets.addAll(core.map(_buildField));
+    }
+    _addFieldSectionTile(widgets, 'Basic Generation Settings', basic);
+    _addFieldSectionTile(widgets, 'Size / Output', size);
+    _addFieldSectionTile(widgets, 'Advanced Workflow Features', advanced);
+    _addFieldSectionTile(widgets, 'Expert / Debug', expert);
+    return widgets;
   }
 
-  static const ValueKey<String> _emptySectionKey = ValueKey<String>('empty_section');
+  void _addFieldSectionTile(List<Widget> widgets, String title, List<UiField> fields) {
+    if (fields.isEmpty) return;
+    widgets.add(_buildFieldSectionTile(title: title, fields: fields));
+  }
 
   Widget _buildFieldSectionTile({
     required String title,
     required List<UiField> fields,
-    required bool initiallyExpanded,
   }) {
-    if (fields.isEmpty) return const SizedBox(key: _emptySectionKey);
     return Card(
       child: ExpansionTile(
         title: Text(title),
-        initiallyExpanded: initiallyExpanded,
+        initiallyExpanded: false,
         childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         children: fields.map(_buildField).toList(),
       ),
