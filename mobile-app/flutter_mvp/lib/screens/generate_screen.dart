@@ -328,7 +328,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
             Text('Patched workflow', style: Theme.of(context).textTheme.titleMedium),
             SelectableText(
               _patchedPreview,
-              style: Theme.of(context).textTheme.bodySmall),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
         ],
       ),
