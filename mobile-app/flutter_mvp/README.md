@@ -55,9 +55,12 @@ Package versions should be refreshed before actual Flutter implementation.
 
 ```text
 lib/models/app_profile.dart
+lib/models/local_profile.dart
 lib/services/workflow_patcher.dart
 lib/services/comfy_api_client.dart
 lib/services/profile_zip_service.dart
+lib/services/local_profile_store.dart
+lib/services/comfy_progress_client.dart
 ```
 
 ### app_profile.dart
@@ -67,6 +70,18 @@ Contains initial Dart models for:
 - AppProfile
 - UiField
 - PatchTarget
+
+### local_profile.dart
+
+Contains the local saved profile model:
+
+- profile id
+- profile name
+- profile version
+- workflow id
+- saved timestamp
+- raw app_profile JSON
+- raw workflow JSON
 
 ### workflow_patcher.dart
 
@@ -92,6 +107,27 @@ Extracts and validates:
 - `workflow.json`
 
 from `mobile_profile_export.zip`.
+
+### local_profile_store.dart
+
+Uses `shared_preferences` to:
+
+- load saved profiles
+- save profiles
+- upsert by profile id
+- delete one profile
+- clear all profiles
+
+### comfy_progress_client.dart
+
+Uses `web_socket_channel` to connect to ComfyUI `/ws` with a generated `clientId`.
+
+It exposes a stream of `ComfyProgressEvent` values for:
+
+- progress
+- executing
+- execution_error
+- socket open/close/error
 
 ## Initial screens
 
