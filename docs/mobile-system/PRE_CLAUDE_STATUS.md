@@ -2,34 +2,29 @@
 
 ## Purpose
 
-This file summarizes the current PR state before handing it to Claude.
+This file originally summarized the PR state before handing it to Claude.
 
-The handoff goal changed after reviewing existing ComfyUI/RunPod capabilities and the external `comfy-portal-endpoint` reference.
-
-The user cannot use a PC right now, so the current goal is:
+Claude has now completed the architecture alignment review and a limited CPU-only runtime validation pass. This file is kept for history, but the current source of truth is now:
 
 ```text
-Make the PR clear enough that Claude can first review edited pre-implementation decisions,
-then perform architecture alignment,
-then install it, run checks, fix blockers, and confirm install readiness.
+docs/mobile-system/HANDOFF.md
+docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
+docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
+docs/mobile-system/NEXT_PHASE_PLAN.md
 ```
 
-## Important handoff change
-
-This is no longer only a runtime validation handoff.
-
-Claude should first review:
+## Current status after Claude validation
 
 ```text
-- edited pre-implementation alignment decisions
-- current system design
-- external reference review
-- official ComfyUI API overlap
-- official RunPod capability overlap
-- whether /object_info and /models should move earlier
+Architecture alignment review: complete
+Limited CPU-only runtime validation: complete
+OUTPUT_NODE blocker: fixed
+WEB_DIRECTORY cleanup: committed after GitHub sanity check
+RunPod GPU validation: not complete
+Android device/emulator validation: not complete
+PR state: Draft
+Merge status: do not merge
 ```
-
-Then Claude should run runtime validation.
 
 ## Current edited decision
 
@@ -39,7 +34,7 @@ The inventory has been edited into a decision file:
 docs/mobile-system/PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
 ```
 
-Current decision summary:
+Current decision summary remains valid:
 
 ```text
 - Do not discard the current system.
@@ -71,46 +66,18 @@ Branch:
 docs/mobile-system-spec
 ```
 
-Current state observed before this update:
+Current state:
 
 ```text
 state: open
-merged: false
 draft: true
-changed files: 50+
-commits: 130+
-reviews: none yet
-```
-
-Important:
-
-```text
+merged: false
 Do not merge yet.
-Claude should run architecture alignment and install/runtime checks first.
-The PR is intentionally kept as Draft until runtime validation passes.
 ```
 
-## Completion marker
+## What Claude already did
 
-Pre-Claude preparation was previously marked complete here:
-
-```text
-docs/mobile-system/PRE_CLAUDE_DONE.md
-```
-
-After later platform/reference review, the handoff has been expanded, but the PR remains in a pre-Claude handoff state.
-
-## Claude handoff prompt
-
-Copy-paste prompt for Claude:
-
-```text
-docs/mobile-system/CLAUDE_COPYPASTE_PROMPT.md
-```
-
-## Claude should start here
-
-Read in this order:
+Claude previously read these files in order:
 
 ```text
 docs/mobile-system/PRE_CLAUDE_STATUS.md
@@ -122,6 +89,46 @@ docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 docs/mobile-system/PRIORITY_CONFLICT_REVIEW.md
 docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
 docs/mobile-system/STATIC_REVIEW_NOTES.md
+```
+
+Claude then performed the first limited runtime validation in a CPU-only aarch64 sandbox.
+
+## Runtime validation result summary
+
+Already passed in the limited validation pass:
+
+```text
+1. ComfyUI starts with ComfyUI-Mobile-Analyzer installed.
+2. Mobile Profile Exporter appears via /object_info.
+3. Mobile Profile Exporter creates a zip after OUTPUT_NODE fix.
+4. Zip contains workflow.json and app_profile.json.
+5. /mobile_analyzer/profiles returns profile metadata.
+6. /mobile_analyzer/profiles/{id}/download downloads the zip.
+7. Flutter MVP passes flutter pub get.
+8. Flutter MVP passes flutter analyze for PR lib/ source.
+```
+
+Partial / still unverified:
+
+```text
+9. Flutter Android app can connect to ComfyUI.
+10. Flutter Android app can download, save, open, patch, submit, and display at least one generated image.
+```
+
+Reason:
+
+```text
+The validation sandbox had no RunPod GPU, no real checkpoint model, and no Android emulator/device.
+```
+
+## Important fixes already included
+
+```text
+analyzer/ComfyUI-Mobile-Analyzer/nodes.py
+- Added OUTPUT_NODE = True to MobileProfileExporter.
+
+analyzer/ComfyUI-Mobile-Analyzer/__init__.py
+- Removed unused WEB_DIRECTORY = "web" declaration.
 ```
 
 ## Main components in this PR
@@ -157,6 +164,9 @@ STATIC_REVIEW_NOTES.md
 OPEN_TODOS.md
 FUTURE_ISSUES_AND_IMPROVEMENTS.md
 EXTERNAL_REFERENCES.md
+RUNTIME_VALIDATION_RESULT.md
+BLOCKERS_AFTER_CLAUDE.md
+NEXT_PHASE_PLAN.md
 ```
 
 ### 2. ComfyUI-Mobile-Analyzer scaffold
@@ -185,32 +195,13 @@ Current Analyzer behavior:
 - Detects prompt / negative / width / height / batch / seed / steps / cfg / sampler / scheduler / denoise
 - Detects basic model references as unverified
 - Preserves unknown workflow nodes
-- Provides planned profile list/download routes
-```
-
-Static fixes already made:
-
-```text
-- is_connection supports string and numeric node ids
-- profile_version bumped to 0.2.1
-- server profile list returns id/name/file/status/size_bytes/modified_at/download_url
-- download lookup tolerates ids with or without .zip
-- output_app_profile_example.json updated to match current output shape
+- Provides profile list/download routes
 ```
 
 ### 3. HTML prototype
 
 ```text
 mobile-app/prototype/
-```
-
-Important files:
-
-```text
-index.html
-profile-storage.js
-stored-profile-ui.js
-comfy-progress.js
 ```
 
 Current prototype behavior:
@@ -238,28 +229,6 @@ Current prototype behavior:
 mobile-app/flutter_mvp/
 ```
 
-Important files:
-
-```text
-pubspec.yaml
-RUN_CHECKLIST.md
-lib/main.dart
-lib/models/app_profile.dart
-lib/models/local_profile.dart
-lib/models/remote_profile.dart
-lib/models/generated_image.dart
-lib/services/comfy_api_client.dart
-lib/services/profile_zip_service.dart
-lib/services/local_profile_store.dart
-lib/services/workflow_patcher.dart
-lib/services/comfy_progress_client.dart
-lib/services/history_image_extractor.dart
-lib/screens/setup_screen.dart
-lib/screens/remote_profiles_screen.dart
-lib/screens/local_profiles_screen.dart
-lib/screens/generate_screen.dart
-```
-
 Current Flutter MVP behavior:
 
 ```text
@@ -278,49 +247,28 @@ Current Flutter MVP behavior:
 - Extracts and displays /view images
 ```
 
-## Known caveats before Claude runtime check
+## Remaining caveats
 
 ```text
-1. mobile-app/flutter_mvp may be a scaffold, not a full generated Flutter project shell.
-2. If platform folders are missing, Claude should run flutter create and copy lib/ + pubspec.yaml.
+1. mobile-app/flutter_mvp is still a scaffold, not a full generated Flutter project shell.
+2. If platform folders are missing, create a real Flutter shell and copy lib/ + pubspec.yaml.
 3. Android INTERNET permission must be present in the generated Android manifest.
 4. Flutter Web is not required for MVP because GenerateScreen uses dart:io File.
 5. shared_preferences is acceptable for MVP, but large workflows may need file storage later.
-6. Analyzer does not yet inspect object_info.
-7. Analyzer does not yet confirm actual model file existence.
+6. Analyzer does not yet inspect /object_info for field metadata.
+7. Analyzer does not yet confirm actual model file existence through /models.
 8. UI workflow to API workflow conversion is not done yet.
-9. ComfyUI route registration in server.py still needs real runtime validation.
-10. Existing ComfyUI official APIs may replace some planned custom logic.
+9. Real RunPod GPU validation still needs to happen.
+10. Real Android app runtime validation still needs to happen.
 ```
 
-## Architecture alignment questions before runtime validation
-
-Claude should answer:
+## Next reviewer should start here
 
 ```text
-1. Which current custom logic duplicates official ComfyUI APIs?
-2. Should /object_info be the first post-validation Analyzer improvement?
-3. Should /models be the first post-validation model-check improvement?
-4. Which /mobile_analyzer custom routes are still necessary?
-5. Should UI workflow conversion remain optional for now?
-6. What is the minimum blocker-free path to validate the current MVP?
-```
-
-## Runtime pass condition
-
-Claude should consider this install-ready only when:
-
-```text
-1. ComfyUI starts with ComfyUI-Mobile-Analyzer installed.
-2. Mobile Profile Exporter appears in ComfyUI.
-3. Mobile Profile Exporter creates a zip under output/mobile_profiles.
-4. Zip contains workflow.json and app_profile.json.
-5. /mobile_analyzer/profiles returns profile metadata.
-6. /mobile_analyzer/profiles/{id}/download downloads the zip.
-7. Flutter MVP passes flutter pub get.
-8. Flutter MVP passes flutter analyze or only has documented non-blocking warnings.
-9. Flutter Android app can connect to ComfyUI.
-10. Flutter Android app can download, save, open, patch, submit, and display at least one generated image.
+docs/mobile-system/HANDOFF.md
+docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
+docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
+docs/mobile-system/NEXT_PHASE_PLAN.md
 ```
 
 ## Do not do yet
@@ -331,16 +279,6 @@ Claude should consider this install-ready only when:
 - Do not add automatic model downloads.
 - Do not turn the app into a full ComfyUI workflow editor.
 - Do not add Playwright/Chromium as a required MVP dependency.
-- Do not prioritize future TODOs until architecture alignment and runtime path are confirmed.
+- Do not add Google Drive/cloud sync.
+- Do not add payment/monetization.
 ```
-
-## After Claude confirms install readiness
-
-Then revisit:
-
-```text
-docs/mobile-system/OPEN_TODOS.md
-docs/mobile-system/FUTURE_ISSUES_AND_IMPROVEMENTS.md
-```
-
-and reorder future work by priority.
