@@ -50,7 +50,11 @@ Claude should run install/runtime checks first.
 
 ## Claude should start here
 
+Read in this order:
+
 ```text
+docs/mobile-system/PRE_CLAUDE_STATUS.md
+docs/mobile-system/PRIORITY_CONFLICT_REVIEW.md
 docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
 docs/mobile-system/STATIC_REVIEW_NOTES.md
 ```
@@ -74,6 +78,8 @@ UI_VISIBILITY_RULES.md
 MVP_SCOPE.md
 ANALYZER_SPEC.md
 MOBILE_APP_SPEC.md
+PRE_CLAUDE_STATUS.md
+PRIORITY_CONFLICT_REVIEW.md
 CLAUDE_FINAL_REVIEW_AND_INSTALL.md
 STATIC_REVIEW_NOTES.md
 OPEN_TODOS.md
