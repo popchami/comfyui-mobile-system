@@ -86,6 +86,7 @@ Contains the local saved profile model:
 - saved timestamp
 - raw app_profile JSON
 - raw workflow JSON
+- source ComfyUI URL
 
 ### workflow_patcher.dart
 
@@ -155,6 +156,7 @@ Current behavior:
 - downloads selected profile zip
 - parses zip with `ProfileZipService`
 - saves profile with `LocalProfileStore`
+- stores the source ComfyUI URL on the saved profile
 
 ### local_profiles_screen.dart
 
@@ -173,8 +175,13 @@ Current behavior:
 - collects field values
 - calls `WorkflowPatcher`
 - shows patched workflow JSON as a preview
+- submits patched workflow to `/prompt`
+- connects to `/ws` with matching `clientId`
+- shows basic progress/executing status
+- polls `/history/{prompt_id}` until history is available
+- shows history JSON preview
 
-Later this screen should submit to ComfyUI and display images.
+Later this screen should extract `/view` image URLs and display generated images.
 
 ## Initial screens
 
