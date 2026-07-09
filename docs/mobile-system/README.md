@@ -75,6 +75,7 @@ docs/mobile-system/
   STATIC_REVIEW_NOTES.md
   OPEN_TODOS.md
   FUTURE_ISSUES_AND_IMPROVEMENTS.md
+  EXTERNAL_REFERENCES.md
 ```
 
 ## 未決定TODO / 改善記録
@@ -85,6 +86,12 @@ docs/mobile-system/
 
 ```text
 docs/mobile-system/FUTURE_ISSUES_AND_IMPROVEMENTS.md
+```
+
+外部プロジェクトを参考にする場合の方針は以下に記録する。
+
+```text
+docs/mobile-system/EXTERNAL_REFERENCES.md
 ```
 
 現在の主な未決定項目:
