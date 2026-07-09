@@ -30,6 +30,18 @@ docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
 
 PCでの実行確認はClaudeに引き継ぐ。
 
+ただし、Claudeに渡す内容は更新済み。
+
+現在は単なる runtime validation ではなく、先に以下を行う。
+
+```text
+1. 現在のシステムを棚卸し
+2. comfy-portal-endpoint の参考範囲を確認
+3. ComfyUI / RunPod 公式機能との重複を確認
+4. 必要なら実装前に設計を調整
+5. その後に runtime validation
+```
+
 渡す前の作業完了メモ:
 
 ```text
@@ -46,6 +58,10 @@ Claudeは最初にこの順番で見る:
 
 ```text
 docs/mobile-system/PRE_CLAUDE_STATUS.md
+docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
+docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
+docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
+docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 docs/mobile-system/PRIORITY_CONFLICT_REVIEW.md
 docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
 docs/mobile-system/STATIC_REVIEW_NOTES.md
@@ -55,6 +71,9 @@ docs/mobile-system/STATIC_REVIEW_NOTES.md
 
 ```text
 - PR全体レビュー
+- 公式ComfyUI APIと重複する自作部分の確認
+- /object_info と /models を早めるべきか確認
+- comfy-portal-endpoint を参考にする範囲の確認
 - インストール前にやるべきこと/後回し/今やらないことの確認
 - ComfyUI custom node install確認
 - Flutter MVP install/run確認
@@ -76,6 +95,8 @@ docs/mobile-system/
   MOBILE_APP_SPEC.md
   HANDOFF.md
   PROJECT_DIRECTION_GUARDRAILS.md
+  SYSTEM_INVENTORY_BEFORE_CLAUDE.md
+  EXISTING_PLATFORMS_REVIEW.md
   PRE_CLAUDE_DONE.md
   PRE_CLAUDE_STATUS.md
   PRIORITY_CONFLICT_REVIEW.md
@@ -110,6 +131,13 @@ docs/mobile-system/EXTERNAL_REFERENCES.md
 docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 ```
 
+現在のシステム、外部参考、公式参考の棚卸しは以下に記録する。
+
+```text
+docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
+docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
+```
+
 現在の主な未決定項目:
 
 ```text
@@ -118,6 +146,8 @@ docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 - 保存済みworkflowの再生成
 - bypassノードの一時解除と復元
 - subgraphの扱い
+- /object_info を使ったfield detection改善
+- /models を使ったmodel existence check
 ```
 
 ## 最重要ルール
@@ -131,4 +161,6 @@ docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 - dangerousではなくneeds_attentionを使う
 - スマホへ手動でファイル移動しない
 - ComfyUI側からprofile zipを直接ダウンロードする
+- 公式ComfyUI APIで解決できる部分は優先して使う
+- 外部リポジトリを参考にしても方向性は変えない
 ```
