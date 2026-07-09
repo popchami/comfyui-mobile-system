@@ -23,7 +23,8 @@ Result:
 
 ```text
 Static cross-file review completed.
-Four low-risk issues were fixed on branch docs/mobile-system-spec.
+Low-risk issues were fixed on branch docs/mobile-system-spec.
+Legacy HTML behavior was reviewed and useful fallback behavior was reused.
 PR remains Draft.
 Runtime validation is still required.
 ```
@@ -45,6 +46,17 @@ Fixed in this pass:
 4. docs/mobile-system/PR_BODY_UPDATE_DRAFT.md
    - Fixed nested Markdown code fences by using a four-backtick outer fence.
    - Added SMARTPHONE_ONLY_COMPLETION_REPORT.md to the suggested PR source-of-truth list.
+
+5. mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+   - Reused proven legacy HTML behavior: keep /history polling as the completion fallback after /prompt.
+   - Temporary /history errors no longer immediately fail the generation flow.
+   - WebSocket executing null now reports that execution is complete and history is loading.
+```
+
+Legacy HTML reference:
+
+```text
+docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 ```
 
 Still not proven by static review:
@@ -64,6 +76,13 @@ analyzer/ComfyUI-Mobile-Analyzer/nodes.py
 analyzer/ComfyUI-Mobile-Analyzer/server.py
 analyzer/ComfyUI-Mobile-Analyzer/__init__.py
 analyzer/ComfyUI-Mobile-Analyzer/examples/output_app_profile_example.json
+profiles/flux1_dev/normal/comfyui_mobile.html
+profiles/flux2_klein/normal/comfyui_mobile.html
+profiles/flux_full/comfyui_mobile.html
+profiles/flux1_dev/pixelart/comfyui_pixelart.html
+profiles/flux1_dev/icon/comfyui_icon_mobile.html
+profiles/sdxl/chibi/comfyui_sdxl_chibi.html
+profiles/sdxl/pixelart/comfyui_sdxl_pixelart.html
 mobile-app/flutter_mvp/lib/main.dart
 mobile-app/flutter_mvp/lib/models/local_profile.dart
 mobile-app/flutter_mvp/lib/models/remote_profile.dart
@@ -77,6 +96,21 @@ mobile-app/flutter_mvp/lib/screens/generate_screen.dart
 mobile-app/prototype/comfy-progress.js
 docs/mobile-system/PR_BODY_UPDATE_DRAFT.md
 ```
+
+## Legacy HTML behavior reused
+
+The existing normal HTML flow already used the practical pattern:
+
+```text
+/prompt with client_id
+/ws for progress when available
+/history/{prompt_id} as the reliable completion/result fallback
+/view for generated images
+```
+
+The new Flutter MVP now follows the same safety idea more closely.
+
+Do not copy legacy prompt/profile content directly into the dynamic app. Only reuse behavior patterns.
 
 ## Previously fixed during static review
 
