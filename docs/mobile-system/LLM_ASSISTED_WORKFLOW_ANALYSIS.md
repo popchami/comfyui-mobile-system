@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file records the concern that the dedicated custom node analysis is the hardest part of the project.
+This file records the concern that the dedicated custom node analysis is likely the hardest part of the project.
 
 The Analyzer must read a user-provided ComfyUI workflow, understand enough of it, and write a smartphone-app-readable profile without corrupting the workflow.
 
@@ -24,6 +24,10 @@ Package for the smartphone app
 Allow generation without breaking the original workflow
 ```
 
+This analysis step is the core of the whole product.
+
+If this is wrong, the smartphone app can show the wrong controls, patch the wrong values, misunderstand the output type, or fail generation.
+
 ## Can Ollama / Gemma / local LLMs be used?
 
 Yes, they can be considered as optional helper tools for analysis.
@@ -34,7 +38,7 @@ Possible candidates:
 - Ollama running local models
 - Gemma-family models
 - other local LLMs
-- remote LLMs later if allowed
+- remote LLMs later if explicitly allowed
 ```
 
 But they must not be the only source of truth.
@@ -104,6 +108,8 @@ They may misread node roles.
 They may infer editable fields that are not safe.
 They may produce invalid JSON.
 They may miss edge cases.
+
+Structured-output research also shows that generating valid schema-conforming JSON is a real reliability problem for language models, so even JSON-looking LLM output must be validated strictly.
 
 So the project must treat LLM output as:
 
@@ -225,21 +231,9 @@ After MVP validation, consider adding:
 - LLM-generated warning explanations
 ```
 
-## Safety guardrails
+## Safe analysis modes
 
-```text
-- LLM is optional.
-- Rule-based analysis always runs first.
-- LLM cannot directly modify workflow.json.
-- LLM cannot directly write final patch_targets without validation.
-- LLM cannot auto-download models.
-- LLM cannot auto-install custom nodes.
-- User must be able to export without LLM.
-```
-
-## Product direction
-
-The final product may eventually have two analysis modes:
+Potential future modes:
 
 ```text
 Safe Mode
@@ -251,4 +245,46 @@ Assist Mode
 - rule-based + optional LLM help
 - better explanations and unknown node guesses
 - still validated before export
+
+Debug Mode
+- LLM produces a human-readable analysis report
+- app_profile behavior remains deterministic
+```
+
+## Safety guardrails
+
+```text
+- LLM is optional.
+- Rule-based analysis always runs first.
+- LLM cannot directly modify workflow.json.
+- LLM cannot directly write final patch_targets without validation.
+- LLM cannot auto-download models.
+- LLM cannot auto-install custom nodes.
+- User must be able to export without LLM.
+- LLM suggestions must refer only to node ids and fields already found by deterministic parsing.
+```
+
+## Product direction
+
+The final product may eventually have two user-facing analysis paths:
+
+```text
+Reliable export
+- deterministic rule-based analysis
+- creates the profile
+- required path
+
+Optional AI assist
+- explains ambiguous workflows
+- suggests labels/groups/warnings
+- never required
+- never allowed to corrupt the workflow
+```
+
+## Product guardrail
+
+```text
+The dedicated custom node's analysis is the hardest and most important part.
+LLM tools such as Ollama/Gemma can assist, but the core system must not depend on them.
+Correctness beats convenience.
 ```
