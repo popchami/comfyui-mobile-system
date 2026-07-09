@@ -31,6 +31,9 @@ It can currently:
 - Check `/system_stats`
 - Fetch `/mobile_analyzer/profiles`
 - Show remote profile names
+- Download selected remote profile zip
+- Import local profile zip
+- Extract `app_profile.json` and `workflow.json` from zip using JSZip
 - Accept pasted `app_profile.json`
 - Accept pasted `workflow.json`
 - Validate minimal profile shape
@@ -47,7 +50,6 @@ It can currently:
 
 ## Not implemented in prototype yet
 
-- ZIP extraction in browser
 - Local persistent profile storage
 - WebSocket progress
 - Flutter UI
