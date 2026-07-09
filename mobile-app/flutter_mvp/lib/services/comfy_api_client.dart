@@ -75,6 +75,18 @@ class ComfyApiClient {
     throw ComfyApiException('prompt_id missing from /prompt response');
   }
 
+  Future<Map<String, dynamic>> getQueue() async {
+    final response = await http.get(_uri('/queue'));
+    return _decodeJsonResponse(response);
+  }
+
+  Future<void> interrupt() async {
+    final response = await http.post(_uri('/interrupt'));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ComfyApiException('Interrupt failed: HTTP ${response.statusCode}: ${response.body}');
+    }
+  }
+
   Future<Map<String, dynamic>> getHistory(String promptId) async {
     final response = await http.get(_uri('/history/$promptId'));
     return _decodeJsonResponse(response);
