@@ -4,7 +4,7 @@
 
 This file is the single source of truth for "what is done / in progress / blocked" on this PR.
 
-Last updated by: ChatGPT, after adding i2i / mask / inpaint reuse and API planning on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
+Last updated by: ChatGPT, after recording full HTML and official ComfyUI API conflict notes on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
 
 ## Current decision
 
@@ -159,6 +159,7 @@ Existing HTML profiles under `profiles/` were reviewed as proven behavior refere
 ```text
 docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 docs/mobile-system/I2I_MASK_INPAINT_REUSE_AND_API_PLAN.md
+docs/mobile-system/HTML_AND_OFFICIAL_API_CONFLICT_NOTES.md
 ```
 
 ## Legacy HTML visual UI decision
@@ -235,6 +236,7 @@ docs/mobile-system/DOCS_AUDIT_RESULT.md
 docs/mobile-system/STATIC_REVIEW_NOTES.md
 docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 docs/mobile-system/I2I_MASK_INPAINT_REUSE_AND_API_PLAN.md
+docs/mobile-system/HTML_AND_OFFICIAL_API_CONFLICT_NOTES.md
 docs/mobile-system/SUBGRAPH_AND_BYPASS_ANALYSIS.md
 docs/mobile-system/LLM_ASSISTED_WORKFLOW_ANALYSIS.md
 docs/mobile-system/UI_VISIBILITY_RULES.md
@@ -286,6 +288,8 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 6. User-provided workflow import must be validated with at least one real user workflow.
 
 7. Image input / mask / img2img / inpaint support must be validated against real workflows and ComfyUI upload endpoints.
+
+8. Full HTML, smartphone app, and Analyzer routes must be validated to coexist without official API route conflicts.
 ```
 
 ## Do next when RunPod is available
@@ -303,9 +307,10 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 10. Validate /queue and /interrupt.
 11. Validate /object_info and /models/{folder} behavior.
 12. Validate image input / mask / img2img / inpaint workflows when available.
-13. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
-14. Compare with existing HTML behavior where useful.
-15. Update this HANDOFF.md.
+13. Confirm full HTML and smartphone app only call official APIs and do not replace them.
+14. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
+15. Compare with existing HTML behavior where useful.
+16. Update this HANDOFF.md.
 ```
 
 ## Do next when Android validation is available
@@ -367,6 +372,7 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 - Do not add more smartphone-only features before real validation.
 - Do not copy legacy HTML visual layout before Android validation.
 - Do not narrow the product into a fixed set of app-owned workflows.
+- Do not create custom routes that collide with official ComfyUI routes.
 ```
 
 ## Merge readiness rule
@@ -383,6 +389,7 @@ Do not move toward merge until:
 - Check environment is validated against real ComfyUI.
 - Generated image metadata display is validated on Android.
 - Image input / mask / img2img / inpaint behavior is validated where profiles require it.
+- Full HTML / smartphone app / Analyzer route coexistence is validated.
 - HANDOFF.md is updated with final validation results.
 - PR body is updated with final validation results.
 - User explicitly approves moving forward.
@@ -397,4 +404,5 @@ The next meaningful work is RunPod/Android real validation unless a new source-l
 Legacy HTML visual UI review is a post-validation issue, not a pre-validation change.
 User-provided workflow import is the correct product concept.
 Image input / mask / img2img / inpaint must be workflow-driven, not fixed-HTML-workflow-driven.
+Full HTML is a behavior reference and client, not a competing API layer.
 ```
