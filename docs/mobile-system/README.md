@@ -31,6 +31,21 @@ docs/mobile-system/
   ANALYZER_SPEC.md
   MOBILE_APP_SPEC.md
   HANDOFF.md
+  OPEN_TODOS.md
+```
+
+## 未決定TODO
+
+仕様検討が必要な項目は `OPEN_TODOS.md` に記録する。
+
+現在の主な未決定項目:
+
+```text
+- workflowノード色とアプリ側ノード色の同期
+- 解析後workflowのアプリ側保存・読み込み
+- 保存済みworkflowの再生成
+- bypassノードの一時解除と復元
+- subgraphの扱い
 ```
 
 ## 最重要ルール
