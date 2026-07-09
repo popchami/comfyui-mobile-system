@@ -157,7 +157,29 @@ RunPod + Android検証前に実装はしないが、将来機能の目的・リ�
 docs/mobile-system/FUTURE_FEATURE_PREP.md
 ```
 
-この文書は、検証後にGitHub Issueや実装チケットへ分解するための下書き。
+さらに、あとで実装に移す時に迷わないように、以下も準備済み。
+
+```text
+docs/mobile-system/APP_PROFILE_EVOLUTION_PLAN.md
+docs/mobile-system/UX_FLOW_PREP.md
+docs/mobile-system/POST_VALIDATION_ISSUE_DRAFTS.md
+```
+
+役割:
+
+```text
+FUTURE_FEATURE_PREP.md
+  = 将来機能の目的・リスク・受け入れ条件
+
+APP_PROFILE_EVOLUTION_PLAN.md
+  = app_profile.json の将来拡張案
+
+UX_FLOW_PREP.md
+  = Androidアプリの将来画面・エラー文言・UX方針
+
+POST_VALIDATION_ISSUE_DRAFTS.md
+  = RunPod + Android検証後にIssue化するための下書き
+```
 
 ## ドキュメント構成
 
@@ -185,6 +207,9 @@ docs/mobile-system/
   OPEN_TODOS.md
   FUTURE_ISSUES_AND_IMPROVEMENTS.md
   FUTURE_FEATURE_PREP.md
+  APP_PROFILE_EVOLUTION_PLAN.md
+  UX_FLOW_PREP.md
+  POST_VALIDATION_ISSUE_DRAFTS.md
   EXTERNAL_REFERENCES.md
   COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
   RUNTIME_VALIDATION_RESULT.md
@@ -206,6 +231,9 @@ docs/mobile-system/FUTURE_ISSUES_AND_IMPROVEMENTS.md
 
 ```text
 docs/mobile-system/FUTURE_FEATURE_PREP.md
+docs/mobile-system/APP_PROFILE_EVOLUTION_PLAN.md
+docs/mobile-system/UX_FLOW_PREP.md
+docs/mobile-system/POST_VALIDATION_ISSUE_DRAFTS.md
 ```
 
 外部プロジェクトを参考にする場合の方針は以下に記録する。
