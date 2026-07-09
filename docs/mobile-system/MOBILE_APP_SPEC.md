@@ -4,6 +4,10 @@
 
 The smartphone app reads exported mobile profiles, builds a simple UI, patches safe workflow values, submits to ComfyUI, and displays results.
 
+The app is a safe control surface for completed user-owned workflows.
+
+It should not pretend that every imported workflow is fully supported.
+
 ## Initial setup
 
 The app should support:
@@ -33,8 +37,9 @@ The app should support:
 4. Extract zip
 5. Validate app_profile.json
 6. Validate workflow.json
-7. Save to app local storage
-8. Register as local profile
+7. Read compatibility level
+8. Save to app local storage if valid
+9. Register as local profile
 ```
 
 ## Local storage
@@ -62,6 +67,42 @@ Before registering a profile, check:
 - compatibility status is valid
 - missing nodes and models are shown to user
 
+## Compatibility handling
+
+The app must respect Analyzer compatibility levels.
+
+```text
+supported
+- Show normal generation UI.
+- Allow editing of validated controls.
+- Allow generation if environment checks pass.
+
+partial
+- Show usable safe controls.
+- Show warnings prominently.
+- Hide or disable risky controls.
+- Allow generation only if safe_to_generate is true.
+
+unsupported
+- Preserve/display profile metadata.
+- Do not expose unsafe editing.
+- Do not generate unless a later validation explicitly marks it safe.
+- Explain why unsupported.
+```
+
+Potential app behavior:
+
+```text
+Supported profile
+  -> normal Generate screen
+
+Partial profile
+  -> Generate screen with warning card and disabled risky sections
+
+Unsupported profile
+  -> Profile details / analysis report only
+```
+
 ## Screens
 
 Initial screens:
@@ -74,6 +115,13 @@ Initial screens:
 - History screen
 - Settings screen
 
+Additional/detail screens may exist:
+
+- Profile analysis report screen
+- Graph / node detail screen
+- Subgraph detail screen
+- Compatibility warning screen
+
 ## Generation screen layout
 
 The generation screen should be generated from `app_profile.json`, but the app should control the screen structure.
@@ -82,13 +130,14 @@ Default layout:
 
 ```text
 1. Status / connection / current profile
-2. Core Inputs                       open
-3. Basic Generation Settings         collapsed
-4. Size / Output                     collapsed
-5. Advanced Workflow Features        collapsed
-6. Expert / Debug                    collapsed
-7. Generate action
-8. Session history / generated images
+2. Compatibility / warning card
+3. Core Inputs                       open
+4. Basic Generation Settings         collapsed
+5. Size / Output                     collapsed
+6. Advanced Workflow Features        collapsed
+7. Expert / Debug                    collapsed
+8. Generate action
+9. Session history / generated outputs
 ```
 
 Core Inputs should remain visible by default:
@@ -97,6 +146,8 @@ Core Inputs should remain visible by default:
 - prompt
 - negative prompt
 - required image input
+- mask / paint controls when required
+- wildcard controls when profile exposes them as primary controls
 ```
 
 Detailed settings should be collapsible by default:
@@ -119,6 +170,7 @@ Detailed settings should be collapsible by default:
 - RemBG
 - Inpaint
 - Mask
+- wildcard controls when optional/large
 - unknown editable inputs
 - debug/raw workflow information
 ```
@@ -128,6 +180,7 @@ Important:
 ```text
 Do not collapse every usable field.
 The user should immediately see where to enter the main creative input.
+A control being on another page does not mean it is disconnected from the workflow graph.
 ```
 
 If Analyzer provides explicit section metadata, use it.
@@ -137,21 +190,23 @@ If not, use app-side fallback grouping based on `field_id`, `label`, `type`, and
 
 ```text
 1. User opens local profile
-2. App renders simple UI from app_profile.json
-3. User edits supported fields
-4. App patches workflow.json using patch_targets
-5. App submits patched workflow to /prompt
-6. App tracks progress
-7. App reads result from /history
-8. App displays images via /view
-9. App saves generation history
+2. App reads compatibility level
+3. App renders only safe UI from app_profile.json
+4. User edits supported fields
+5. App patches workflow.json using patch_targets only
+6. App submits patched workflow to /prompt only when safe_to_generate is true
+7. App tracks progress
+8. App reads result from /history
+9. App displays output according to output type
+10. App saves generation history
 ```
 
 ## Generation history
 
 Save:
 
-- image reference or local thumbnail
+- output reference or local thumbnail when available
+- output type
 - profile_id
 - prompt
 - seed
@@ -199,4 +254,13 @@ show simple controls
 patch safe values
 submit workflow
 show result
+```
+
+## Product guardrail
+
+```text
+The app UI may be simple, but it must respect Analyzer compatibility.
+Supported means safe controls and generation.
+Partial means warning-first and only safe controls.
+Unsupported means preserve and explain, not unsafe generation.
 ```
