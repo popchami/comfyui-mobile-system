@@ -185,6 +185,29 @@ ADDITIONAL_FEATURE_CANDIDATES.md
   = 運用・管理・便利機能など追加候補の一覧
 ```
 
+## 参考にすべき内容
+
+外部/公式の参考情報は、機能候補とは別に以下へ整理する。
+
+```text
+docs/mobile-system/REFERENCE_STUDY_BACKLOG.md
+```
+
+主な参考対象:
+
+```text
+- Official ComfyUI server/API behavior
+- Official ComfyUI API workflow examples
+- comfy-portal-endpoint
+- RunPod Pods behavior
+- RunPod Serverless
+- ComfyUI Manager / custom node management patterns
+- Civitai workflow/model sharing behavior
+- GitHub workflow/profile storage patterns
+- Android local storage and backup patterns
+- Prompt/style preset patterns
+```
+
 ## ドキュメント構成
 
 ```text
@@ -215,6 +238,7 @@ docs/mobile-system/
   UX_FLOW_PREP.md
   POST_VALIDATION_ISSUE_DRAFTS.md
   ADDITIONAL_FEATURE_CANDIDATES.md
+  REFERENCE_STUDY_BACKLOG.md
   EXTERNAL_REFERENCES.md
   COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
   RUNTIME_VALIDATION_RESULT.md
@@ -242,15 +266,11 @@ docs/mobile-system/POST_VALIDATION_ISSUE_DRAFTS.md
 docs/mobile-system/ADDITIONAL_FEATURE_CANDIDATES.md
 ```
 
-外部プロジェクトを参考にする場合の方針は以下に記録する。
+参考にすべき外部/公式情報は以下に記録する。
 
 ```text
+docs/mobile-system/REFERENCE_STUDY_BACKLOG.md
 docs/mobile-system/EXTERNAL_REFERENCES.md
-```
-
-`comfy-portal-endpoint` の実用度レビューは以下に記録する。
-
-```text
 docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 ```
 
