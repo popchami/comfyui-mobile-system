@@ -22,6 +22,12 @@ Smartphone App
 
 PCでの実行確認はClaudeに引き継ぐ。
 
+渡す前の作業完了メモ:
+
+```text
+docs/mobile-system/PRE_CLAUDE_DONE.md
+```
+
 Claudeに渡すコピペ文:
 
 ```text
@@ -61,6 +67,7 @@ docs/mobile-system/
   ANALYZER_SPEC.md
   MOBILE_APP_SPEC.md
   HANDOFF.md
+  PRE_CLAUDE_DONE.md
   PRE_CLAUDE_STATUS.md
   PRIORITY_CONFLICT_REVIEW.md
   CLAUDE_COPYPASTE_PROMPT.md
