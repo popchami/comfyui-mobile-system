@@ -4,9 +4,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../models/app_profile.dart';
+import '../models/generated_image.dart';
 import '../models/local_profile.dart';
 import '../services/comfy_api_client.dart';
 import '../services/comfy_progress_client.dart';
+import '../services/history_image_extractor.dart';
 import '../services/workflow_patcher.dart';
 
 class GenerateScreen extends StatefulWidget {
@@ -24,6 +26,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
   String _patchedPreview = '';
   String _promptId = '';
   String _historyPreview = '';
+  List<GeneratedImage> _images = const [];
   bool _submitting = false;
   ComfyProgressClient? _progressClient;
   StreamSubscription<ComfyProgressEvent>? _progressSub;
@@ -110,6 +113,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
       _status = 'Submitting prompt...';
       _promptId = '';
       _historyPreview = '';
+      _images = const [];
     });
 
     try {
@@ -138,9 +142,16 @@ class _GenerateScreenState extends State<GenerateScreen> {
       await Future<void>.delayed(const Duration(seconds: 1));
       final history = await client.getHistory(promptId);
       if (history.containsKey(promptId)) {
+        final historyItem = history[promptId];
+        final itemMap = historyItem is Map<String, dynamic> ? historyItem : <String, dynamic>{};
+        final images = HistoryImageExtractor.extractImages(
+          historyItem: itemMap,
+          client: client,
+        );
         setState(() {
-          _status = 'History loaded';
-          _historyPreview = const JsonEncoder.withIndent('  ').convert(history[promptId]);
+          _status = images.isEmpty ? 'History loaded' : 'Generated ${images.length} images';
+          _historyPreview = const JsonEncoder.withIndent('  ').convert(historyItem);
+          _images = images;
         });
         return;
       }
@@ -170,6 +181,20 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
+  Widget _buildImage(GeneratedImage image) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(image.filename),
+          const SizedBox(height: 6),
+          Image.network(image.url.toString()),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final fields = _appProfile.simpleFields;
@@ -193,6 +218,11 @@ class _GenerateScreenState extends State<GenerateScreen> {
             child: Text(_submitting ? 'Submitting...' : 'Submit /prompt'),
           ),
           const SizedBox(height: 12),
+          if (_images.isNotEmpty) ...[
+            Text('Generated images', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            ..._images.map(_buildImage),
+          ],
           if (_historyPreview.isNotEmpty) ...[
             Text('History', style: Theme.of(context).textTheme.titleMedium),
             SelectableText(
