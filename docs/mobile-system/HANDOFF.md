@@ -4,7 +4,7 @@
 
 This file is the single source of truth for "what is done / in progress / blocked" on this PR. It is fully rewritten at the end of each work session.
 
-Last updated by: ChatGPT, after smartphone-only GitHub documentation, planning, runbook, and handoff-prep cleanup on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, and Flutter runtime were not used in this update.
+Last updated by: ChatGPT, after smartphone-only GitHub documentation, planning, runbook, handoff-prep, final audit, and completion-report cleanup on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, and Flutter runtime were not used in this update.
 
 ## Current decision (unchanged)
 
@@ -34,6 +34,7 @@ PR: #1
 Branch: docs/mobile-system-spec
 State: Draft
 Merge: do not merge
+Smartphone-only preparation: complete
 RunPod GPU validation: not complete
 Android real-device/emulator validation: not complete
 Implementation: paused except for minimal blocker fixes
@@ -87,6 +88,12 @@ Runtime note: still needs natural confirmation during the next real RunPod Comfy
 
 ## Completed: smartphone-only preparation
 
+Smartphone-only preparation is now complete and recorded in:
+
+```text
+docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
+```
+
 The following was completed without RunPod, Termux, Claude Code, ComfyUI runtime, or Flutter runtime:
 
 ```text
@@ -109,6 +116,9 @@ The following was completed without RunPod, Termux, Claude Code, ComfyUI runtime
 - Android validation runbook added.
 - AI minimal handoff prompts added.
 - Next action queue added.
+- PR body update draft added.
+- Docs audit result added.
+- Smartphone-only completion report added.
 - README updated as the docs index.
 ```
 
@@ -118,10 +128,12 @@ Read these first for status:
 
 ```text
 docs/mobile-system/HANDOFF.md
+docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
 docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
 docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
 docs/mobile-system/NEXT_PHASE_PLAN.md
 docs/mobile-system/NEXT_ACTION_QUEUE.md
+docs/mobile-system/DOCS_AUDIT_RESULT.md
 ```
 
 Use these for the next validation pass:
@@ -223,4 +235,12 @@ Do not move toward merge until:
 - HANDOFF.md is updated with final validation results.
 - PR body is updated with final validation results.
 - User explicitly approves moving forward.
+```
+
+## Smartphone-only stop condition
+
+```text
+Smartphone-only work is complete.
+Do not continue adding documentation unless a new non-runtime planning topic appears.
+The next meaningful work is RunPod/Android real validation.
 ```
