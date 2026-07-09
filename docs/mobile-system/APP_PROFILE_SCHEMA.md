@@ -78,6 +78,10 @@ A UI field should contain:
 - optional `step`
 - optional `options`
 - optional `patch_target_id`
+- optional `node_color`
+- optional `node_bgcolor`
+
+`node_color` and `node_bgcolor` are copied from the source workflow node metadata when available. They let the app tint the field or node card to match the original ComfyUI workflow.
 
 ## UI types for MVP
 
@@ -102,6 +106,50 @@ Each node entry should include:
 - `ui_visibility`
 - `editable`
 - `role`
+- optional `color`
+- optional `bgcolor`
+
+`color` and `bgcolor` should preserve ComfyUI node colors when the source workflow contains them.
+
+Example:
+
+```json
+{
+  "node_id": "10",
+  "class_type": "KSampler",
+  "category": "sampler",
+  "known": true,
+  "exists_in_comfyui": true,
+  "ui_visibility": "simple",
+  "editable": true,
+  "role": "main_sampler",
+  "color": "#223344",
+  "bgcolor": "#334455"
+}
+```
+
+## node color handling
+
+The Analyzer should copy node color metadata when it can access a UI-format workflow.
+
+Rules:
+
+- Preserve original ComfyUI node color values when available.
+- Do not invent exact colors when the source does not include them.
+- If color is missing, app should use a fallback color by node category.
+- API-format workflows may not contain UI node color data. In that case `color` and `bgcolor` may be omitted.
+- App-side node cards may use `bgcolor` as the card tint and `color` as a border or accent.
+- Color metadata is visual only. It must not affect workflow patching.
+
+Fallback category examples:
+
+```text
+sampler -> orange accent
+prompt -> blue/purple accent
+image -> green accent
+model -> gray accent
+unknown -> neutral accent
+```
 
 ## ui_visibility
 
