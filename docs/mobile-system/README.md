@@ -27,10 +27,13 @@ Merge: しない
 Architecture alignment: 完了
 Claude limited runtime validation: 完了
 Smartphone-only preparation: 完了
+Smartphone-only implementation: 完了
+Smartphone-only documentation: 完了
 Cross-file static review fixes: 完了
 Legacy HTML reuse notes: 完了
 RunPod GPU validation: 未完了
 Android real-device/emulator validation: 未完了
+次の意味ある作業: RunPod + Android 実検証のみ
 ```
 
 最新状況は以下を見る。
@@ -49,21 +52,65 @@ docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 
 ## スマホ作業完了
 
-スマホだけでできる準備は以下に完了報告として記録済み。
+スマホだけでできる準備・実装・文書整理は完了。
 
 ```text
 docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
 ```
 
-次の意味で完了扱いにする。
+完了扱いの意味:
 
 ```text
 - RunPod検証はまだ
 - Android実機検証はまだ
-- 文書整理、手順書、引き継ぎ、将来準備は完了
+- スマホ側の設計整理、手順書、引き継ぎ、将来準備は完了
 - 横断静的レビューで見つけた小さい修正は完了
-- 既存HTMLの実績コードから流用できる挙動は記録・一部反映済み
+- 既存HTMLの実績コードから流用できる挙動は記録・反映済み
+- Flutter MVPにスマホ側で準備できる主要機能は入れた
 - 次の意味ある作業はRunPod/Androidの実検証
+- 実検証前にスマホ側機能を増やさない
+```
+
+## スマホ側で実装済みの主な機能
+
+```text
+- ComfyUI URL保存・復元
+- /system_stats 接続確認
+- /object_info 能力確認
+- /models/{folder} 読み取りhelper
+- /queue helper + Check queue
+- /interrupt helper + Interrupt
+- friendly error handling
+- profile warning display
+- missing model / missing custom node warning
+- Check environment
+- ModelFolderResolver
+- EnvironmentModelChecker
+- profileごとの前回入力値保存・復元
+- Reset to profile defaults
+- Random seed
+- Use last seed
+- selected image preview
+- /prompt + client_id
+- /ws progress
+- /history fallback
+- /view image display
+- session history
+- generated image large preview
+- generated image metadata
+- collapsible generated UI sections
+```
+
+関連ドキュメント:
+
+```text
+docs/mobile-system/APP_INPUT_STATE_CONTROLS.md
+docs/mobile-system/APP_QUEUE_AND_ERROR_CONTROLS.md
+docs/mobile-system/APP_CAPABILITY_CHECKS.md
+docs/mobile-system/APP_PROFILE_WARNING_DISPLAY.md
+docs/mobile-system/APP_MODEL_FOLDER_RESOLVER.md
+docs/mobile-system/APP_ENVIRONMENT_MODEL_CHECKER.md
+docs/mobile-system/APP_GENERATED_IMAGE_METADATA.md
 ```
 
 ## 既存HTMLの扱い
@@ -119,7 +166,7 @@ docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 
 ## 次フェーズ
 
-RunPodが使えるようになったら以下へ進む。
+RunPodまたはAndroid検証ができる状態になったら以下へ進む。
 
 ```text
 docs/mobile-system/RUNPOD_VALIDATION_RUNBOOK.md
@@ -180,25 +227,6 @@ docs/mobile-system/UX_FLOW_PREP.md
 docs/mobile-system/POST_VALIDATION_ISSUE_DRAFTS.md
 ```
 
-役割:
-
-```text
-FUTURE_FEATURE_PREP.md
-  = 将来機能の目的・リスク・受け入れ条件
-
-ADDITIONAL_FEATURE_CANDIDATES.md
-  = 運用・管理・便利機能など追加候補の一覧
-
-APP_PROFILE_EVOLUTION_PLAN.md
-  = app_profile.json の将来拡張案
-
-UX_FLOW_PREP.md
-  = Androidアプリの将来画面・エラー文言・UX方針
-
-POST_VALIDATION_ISSUE_DRAFTS.md
-  = RunPod + Android検証後にIssue化するための下書き
-```
-
 ## 参考にすべき内容
 
 外部/公式の参考情報は、機能候補とは別に以下へ整理する。
@@ -211,21 +239,6 @@ docs/mobile-system/EXTERNAL_REFERENCES.md
 docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 ```
 
-主な参考対象:
-
-```text
-- Official ComfyUI server/API behavior
-- Official ComfyUI API workflow examples
-- comfy-portal-endpoint
-- RunPod Pods behavior
-- RunPod Serverless
-- ComfyUI Manager / custom node management patterns
-- Civitai workflow/model sharing behavior
-- GitHub workflow/profile storage patterns
-- Android local storage and backup patterns
-- Prompt/style preset patterns
-```
-
 ## 検証・報告テンプレート
 
 RunPod検証、Android検証、失敗報告、workflow互換性、重要判断の記録は以下を使う。
@@ -235,60 +248,6 @@ docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md
 docs/mobile-system/DEBUG_REPORT_TEMPLATE.md
 docs/mobile-system/WORKFLOW_COMPATIBILITY_REPORT_TEMPLATE.md
 docs/mobile-system/DECISION_RECORD_TEMPLATE.md
-```
-
-## ドキュメント構成
-
-```text
-docs/mobile-system/
-  README.md
-  ARCHITECTURE.md
-  APP_PROFILE_SCHEMA.md
-  WORKFLOW_PATCH_RULES.md
-  UI_VISIBILITY_RULES.md
-  MVP_SCOPE.md
-  ANALYZER_SPEC.md
-  MOBILE_APP_SPEC.md
-  HANDOFF.md
-  SMARTPHONE_ONLY_COMPLETION_REPORT.md
-  NEXT_ACTION_QUEUE.md
-  DOCS_AUDIT_RESULT.md
-  PR_BODY_UPDATE_DRAFT.md
-  RUNPOD_VALIDATION_RUNBOOK.md
-  ANDROID_VALIDATION_RUNBOOK.md
-  AI_MINIMAL_HANDOFF_PROMPTS.md
-  PROJECT_DIRECTION_GUARDRAILS.md
-  PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
-  SYSTEM_INVENTORY_BEFORE_CLAUDE.md
-  EXISTING_PLATFORMS_REVIEW.md
-  PRE_CLAUDE_DONE.md
-  PRE_CLAUDE_STATUS.md
-  PRIORITY_CONFLICT_REVIEW.md
-  CLAUDE_COPYPASTE_PROMPT.md
-  CLAUDE_FINAL_REVIEW_AND_INSTALL.md
-  STATIC_REVIEW_NOTES.md
-  LEGACY_HTML_REUSE_NOTES.md
-  OPEN_TODOS.md
-  FUTURE_ISSUES_AND_IMPROVEMENTS.md
-  FUTURE_FEATURE_PREP.md
-  ADDITIONAL_FEATURE_CANDIDATES.md
-  APP_PROFILE_EVOLUTION_PLAN.md
-  UX_FLOW_PREP.md
-  POST_VALIDATION_ISSUE_DRAFTS.md
-  REFERENCE_STUDY_BACKLOG.md
-  REFERENCE_TO_FEATURE_MAP.md
-  REFERENCE_STUDY_CHECKLIST.md
-  EXTERNAL_REFERENCES.md
-  COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
-  VALIDATION_RESULT_TEMPLATES.md
-  DEBUG_REPORT_TEMPLATE.md
-  WORKFLOW_COMPATIBILITY_REPORT_TEMPLATE.md
-  DECISION_RECORD_TEMPLATE.md
-  RUNTIME_VALIDATION_RESULT.md
-  BLOCKERS_AFTER_CLAUDE.md
-  NEXT_PHASE_PLAN.md
-  TEST_PLAN.md
-  REVIEW_CHECKLIST.md
 ```
 
 ## 最重要ルール
@@ -308,4 +267,5 @@ docs/mobile-system/
 - 自動model downloadしない
 - 自動custom node installしない
 - Androidアプリをfull workflow editorにしない
+- スマホだけの追加機能はここで止める
 ```
