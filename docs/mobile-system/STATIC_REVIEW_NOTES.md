@@ -12,6 +12,7 @@ The user cannot use a PC right now, so this review focuses on obvious source-lev
 analyzer/ComfyUI-Mobile-Analyzer/nodes.py
 analyzer/ComfyUI-Mobile-Analyzer/server.py
 analyzer/ComfyUI-Mobile-Analyzer/__init__.py
+analyzer/ComfyUI-Mobile-Analyzer/examples/output_app_profile_example.json
 mobile-app/flutter_mvp/lib/main.dart
 mobile-app/flutter_mvp/lib/models/local_profile.dart
 mobile-app/flutter_mvp/lib/services/comfy_api_client.dart
@@ -99,6 +100,26 @@ download_url
 ```
 
 Download lookup is now more tolerant if a caller accidentally passes an id with `.zip` included.
+
+### 6. Example app_profile updated
+
+Updated:
+
+```text
+analyzer/ComfyUI-Mobile-Analyzer/examples/output_app_profile_example.json
+```
+
+The example now matches current Analyzer output shape more closely:
+
+```text
+profile_version 0.2.1
+prompt / negative
+width / height / batch
+seed / steps / cfg / sampler / scheduler / denoise
+current patch_target_id format
+unverified model warnings
+exists_in_comfyui null
+```
 
 ## Flutter target clarification
 
