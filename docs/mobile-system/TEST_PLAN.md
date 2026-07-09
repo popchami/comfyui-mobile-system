@@ -42,6 +42,10 @@ Check:
 - Zip contains `workflow.json` and `app_profile.json`.
 - Unknown nodes are not removed.
 - Generated profile uses `schema_version`.
+- Positive and negative prompt detection uses KSampler connections.
+- Width, height, and batch are detected from EmptyLatentImage.
+- LoadImage creates an image field.
+- Detected model names are reported as unverified references.
 
 Pass condition:
 
@@ -67,10 +71,15 @@ Check:
 - Zip can be opened.
 - Zip contains `workflow.json`.
 - Zip contains `app_profile.json`.
+- `app_profile.json.ui.simple` contains prompt.
+- `app_profile.json.ui.simple` contains negative when workflow has KSampler negative connection.
+- `app_profile.json.ui.simple` contains seed / steps / cfg.
+- `app_profile.json.ui.simple` contains width / height / batch when EmptyLatentImage exists.
 
 Pass condition:
 
 - One valid zip is created without crashing ComfyUI.
+- app_profile.json contains the expected simple fields.
 
 ## Phase 4: API smoke test
 
@@ -88,19 +97,19 @@ Pass condition:
 
 ## Phase 5: Mobile app prototype test
 
-Use any simple app prototype or HTML/PWA test harness.
+Use `mobile-app/prototype/index.html`.
 
 Check:
 
 - Register ComfyUI URL.
 - Fetch profile list.
-- Download zip.
-- Extract zip.
-- Read `app_profile.json`.
+- Read pasted `app_profile.json`.
+- Read pasted `workflow.json`.
 - Render simple fields.
-- Patch prompt / seed / steps / cfg.
+- Patch prompt / negative / seed / steps / cfg / width / height / batch.
 - Submit patched workflow to `/prompt`.
-- Show output image.
+- Poll `/history/{prompt_id}`.
+- Display output image with `/view`.
 
 Pass condition:
 
