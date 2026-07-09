@@ -11,6 +11,7 @@ class LocalProfile {
     required this.savedAt,
     required this.rawAppProfileJson,
     required this.rawWorkflowJson,
+    this.comfyUrl = '',
   });
 
   final String id;
@@ -20,12 +21,14 @@ class LocalProfile {
   final DateTime savedAt;
   final Map<String, dynamic> rawAppProfileJson;
   final Map<String, dynamic> rawWorkflowJson;
+  final String comfyUrl;
 
   AppProfile get appProfile => AppProfile.fromJson(rawAppProfileJson);
 
   factory LocalProfile.fromBundle({
     required Map<String, dynamic> appProfileJson,
     required Map<String, dynamic> workflowJson,
+    String comfyUrl = '',
   }) {
     final id = appProfileJson['profile_id'] as String? ?? 'profile_${DateTime.now().millisecondsSinceEpoch}';
     return LocalProfile(
@@ -36,6 +39,7 @@ class LocalProfile {
       savedAt: DateTime.now(),
       rawAppProfileJson: appProfileJson,
       rawWorkflowJson: workflowJson,
+      comfyUrl: comfyUrl,
     );
   }
 
@@ -48,6 +52,7 @@ class LocalProfile {
       savedAt: DateTime.tryParse(json['savedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
       rawAppProfileJson: _decodeMap(json['rawAppProfileJson']),
       rawWorkflowJson: _decodeMap(json['rawWorkflowJson']),
+      comfyUrl: json['comfyUrl'] as String? ?? '',
     );
   }
 
@@ -60,6 +65,7 @@ class LocalProfile {
       'savedAt': savedAt.toIso8601String(),
       'rawAppProfileJson': rawAppProfileJson,
       'rawWorkflowJson': rawWorkflowJson,
+      'comfyUrl': comfyUrl,
     };
   }
 
