@@ -22,6 +22,12 @@ Smartphone App
 
 PCでの実行確認はClaudeに引き継ぐ。
 
+Claudeに渡すコピペ文:
+
+```text
+docs/mobile-system/CLAUDE_COPYPASTE_PROMPT.md
+```
+
 Claudeは最初にこの順番で見る:
 
 ```text
@@ -57,6 +63,7 @@ docs/mobile-system/
   HANDOFF.md
   PRE_CLAUDE_STATUS.md
   PRIORITY_CONFLICT_REVIEW.md
+  CLAUDE_COPYPASTE_PROMPT.md
   CLAUDE_FINAL_REVIEW_AND_INSTALL.md
   STATIC_REVIEW_NOTES.md
   OPEN_TODOS.md
