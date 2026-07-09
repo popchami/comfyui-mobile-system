@@ -4,7 +4,7 @@
 
 This file is the single source of truth for "what is done / in progress / blocked" on this PR. It is fully rewritten at the end of each work session.
 
-Last updated by: ChatGPT, after generated UI collapsible grouping implementation on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
+Last updated by: ChatGPT, after seed reuse implementation on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
 
 ## Current decision (unchanged)
 
@@ -105,6 +105,29 @@ Implementation behavior:
 - If no core field is detected, the first editable field is shown as Core fallback.
 ```
 
+## Current app-side reused behaviors from legacy HTML
+
+```text
+- Saved ComfyUI URL restore.
+- /prompt + /ws + /history + /view flow.
+- /history fallback when /ws is unavailable or unstable.
+- Selected image preview.
+- Session generated image history.
+- Larger generated image preview.
+- Current-session seed reuse.
+```
+
+Seed reuse scope:
+
+```text
+- Current generation screen session only.
+- Detects seed fields from field_id / label / section / type.
+- Captures seed before /prompt submission.
+- Shows Use last seed button when a last seed exists.
+- Does not bypass patch_targets.
+- Not persisted across app restarts yet.
+```
+
 ## Current PR status
 
 ```text
@@ -118,6 +141,7 @@ Cross-file static review fixes: complete
 Legacy HTML behavior review/reuse: complete
 Generated UI collapsible section decision: complete
 Generated UI collapsible grouping implementation: complete
+Seed reuse implementation: complete
 RunPod GPU validation: not complete
 Android real-device/emulator validation: not complete
 Implementation: paused except for minimal blocker fixes
@@ -343,7 +367,8 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 10. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
 11. Compare /prompt -> /ws -> /history -> /view behavior against existing HTML.
 12. Confirm generated UI layout: core inputs open, detailed settings collapsed.
-13. Update this HANDOFF.md.
+13. Confirm seed reuse interaction.
+14. Update this HANDOFF.md.
 ```
 
 ## Do next if something fails
@@ -383,6 +408,7 @@ Do not move toward merge until:
 - Real checkpoint image generation passes.
 - Android device/emulator validation passes.
 - Generated UI layout is validated on Android.
+- Seed reuse interaction is validated on Android.
 - HANDOFF.md is updated with final validation results.
 - PR body is updated with final validation results.
 - User explicitly approves moving forward.
@@ -391,6 +417,6 @@ Do not move toward merge until:
 ## Static review stop condition
 
 ```text
-Cross-file static review fixes, legacy HTML reuse pass, collapsible generated UI decision, and Flutter generated UI grouping implementation are complete for the issues found in this pass.
+Cross-file static review fixes, legacy HTML reuse pass, collapsible generated UI decision, Flutter generated UI grouping implementation, and seed reuse are complete for the issues found in this pass.
 The next meaningful work is RunPod/Android real validation unless a new source-level issue is discovered.
 ```
