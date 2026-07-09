@@ -49,6 +49,14 @@ Claude should run install/runtime checks first.
 The PR is intentionally kept as Draft until runtime validation passes.
 ```
 
+## Claude handoff prompt
+
+Copy-paste prompt for Claude:
+
+```text
+docs/mobile-system/CLAUDE_COPYPASTE_PROMPT.md
+```
+
 ## Claude should start here
 
 Read in this order:
@@ -81,6 +89,7 @@ ANALYZER_SPEC.md
 MOBILE_APP_SPEC.md
 PRE_CLAUDE_STATUS.md
 PRIORITY_CONFLICT_REVIEW.md
+CLAUDE_COPYPASTE_PROMPT.md
 CLAUDE_FINAL_REVIEW_AND_INSTALL.md
 STATIC_REVIEW_NOTES.md
 OPEN_TODOS.md
