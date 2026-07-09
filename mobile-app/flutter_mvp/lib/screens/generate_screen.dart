@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/app_profile.dart';
 import '../models/generated_image.dart';
@@ -39,13 +41,16 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
   AppProfile get _appProfile => widget.profile.appProfile;
 
+  String get _fieldValuesPrefsKey => 'profile_field_values_${widget.profile.id}';
+
   @override
   void initState() {
     super.initState();
     for (final field in _appProfile.simpleFields) {
       if (field.type == 'image') continue;
-      _controllers[field.fieldId] = TextEditingController(text: field.defaultValue?.toString() ?? '');
+      _controllers[field.fieldId] = TextEditingController(text: _defaultValueForField(field));
     }
+    _restoreSavedFieldValues();
   }
 
   @override
@@ -56,6 +61,55 @@ class _GenerateScreenState extends State<GenerateScreen> {
     _progressSub?.cancel();
     _progressClient?.dispose();
     super.dispose();
+  }
+
+  String _defaultValueForField(UiField field) {
+    return field.defaultValue?.toString() ?? '';
+  }
+
+  Future<void> _restoreSavedFieldValues() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = prefs.getString(_fieldValuesPrefsKey);
+    if (encoded == null || encoded.isEmpty) return;
+    try {
+      final decoded = jsonDecode(encoded);
+      if (decoded is! Map) return;
+      if (!mounted) return;
+      setState(() {
+        for (final entry in decoded.entries) {
+          final controller = _controllers[entry.key.toString()];
+          if (controller == null) continue;
+          controller.text = entry.value?.toString() ?? '';
+        }
+        _captureLastUsedSeed();
+        _status = 'Restored previous values';
+      });
+    } catch (_) {
+      // Ignore broken saved values. They can be overwritten on the next successful submit.
+    }
+  }
+
+  Future<void> _saveFieldValues() async {
+    final prefs = await SharedPreferences.getInstance();
+    final values = <String, String>{};
+    for (final entry in _controllers.entries) {
+      values[entry.key] = entry.value.text;
+    }
+    await prefs.setString(_fieldValuesPrefsKey, jsonEncode(values));
+  }
+
+  void _resetFieldsToDefault() {
+    setState(() {
+      for (final field in _appProfile.simpleFields) {
+        final controller = _controllers[field.fieldId];
+        if (controller == null) continue;
+        controller.text = _defaultValueForField(field);
+      }
+      _uploadedImageNames.clear();
+      _selectedImages.clear();
+      _captureLastUsedSeed();
+      _status = 'Reset fields to profile defaults';
+    });
   }
 
   Map<String, dynamic> _fieldValues() {
@@ -157,6 +211,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
       }
       final patched = _patchedWorkflow();
       _captureLastUsedSeed();
+      await _saveFieldValues();
       setState(() => _status = 'Submitting prompt...');
       final promptId = await client.queuePrompt(
         workflow: patched,
@@ -331,6 +386,16 @@ class _GenerateScreenState extends State<GenerateScreen> {
     });
   }
 
+  void _randomizeSeed(UiField field) {
+    final controller = _controllers[field.fieldId];
+    if (controller == null) return;
+    final seed = Random().nextInt(0x7fffffff).toString();
+    setState(() {
+      controller.text = seed;
+      _status = 'Random seed set';
+    });
+  }
+
   List<Widget> _buildGeneratedFieldSections(List<UiField> fields) {
     final core = <UiField>[];
     final basic = <UiField>[];
@@ -425,14 +490,23 @@ class _GenerateScreenState extends State<GenerateScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           textField,
-          if (_isSeedField(field) && _lastUsedSeed.isNotEmpty) ...[
+          if (_isSeedField(field)) ...[
             const SizedBox(height: 6),
-            Align(
-              alignment: Alignment.centerRight,
-              child: OutlinedButton(
-                onPressed: () => _reuseLastSeed(field),
-                child: const Text('Use last seed'),
-              ),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (_lastUsedSeed.isNotEmpty)
+                  OutlinedButton(
+                    onPressed: () => _reuseLastSeed(field),
+                    child: const Text('Use last seed'),
+                  ),
+                OutlinedButton(
+                  onPressed: () => _randomizeSeed(field),
+                  child: const Text('Random seed'),
+                ),
+              ],
             ),
           ],
         ],
@@ -565,6 +639,11 @@ class _GenerateScreenState extends State<GenerateScreen> {
           FilledButton(
             onPressed: _submitting ? null : _submitPrompt,
             child: Text(_submitting ? 'Submitting...' : 'Submit /prompt'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: _resetFieldsToDefault,
+            child: const Text('Reset to profile defaults'),
           ),
           const SizedBox(height: 12),
           _buildHistoryStrip(),
