@@ -14,10 +14,16 @@ class ComfyApiClient {
     return value.endsWith('/') ? value.substring(0, value.length - 1) : value;
   }
 
+  static String _joinPaths(String basePath, String childPath) {
+    final left = basePath.endsWith('/') ? basePath.substring(0, basePath.length - 1) : basePath;
+    final right = childPath.startsWith('/') ? childPath.substring(1) : childPath;
+    if (left.isEmpty || left == '/') return '/$right';
+    return '$left/$right';
+  }
+
   Uri _uri(String path, [Map<String, String>? query]) {
-    final normalizedPath = path.startsWith('/') ? path : '/$path';
     return baseUri.replace(
-      path: normalizedPath,
+      path: _joinPaths(baseUri.path, path),
       queryParameters: query,
     );
   }
