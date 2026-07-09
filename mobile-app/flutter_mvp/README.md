@@ -81,6 +81,7 @@ pubspec.yaml
 RUN_CHECKLIST.md
 lib/models/app_profile.dart
 lib/models/local_profile.dart
+lib/models/remote_profile.dart
 lib/models/generated_image.dart
 lib/services/workflow_patcher.dart
 lib/services/comfy_api_client.dart
@@ -115,6 +116,18 @@ Contains the local saved profile model:
 - raw workflow JSON
 - source ComfyUI URL
 
+### remote_profile.dart
+
+Contains the remote profile list item returned by `/mobile_analyzer/profiles`:
+
+- id
+- name
+- file
+- status
+- size_bytes
+- modified_at
+- download_url
+
 ### generated_image.dart
 
 Contains a generated image model with:
@@ -139,6 +152,8 @@ Contains initial HTTP methods for:
 - GET `/history/{prompt_id}`
 - build `/view` image URLs
 - POST `/upload/image`
+
+`getRemoteProfiles()` returns typed `List<RemoteProfile>` values.
 
 ### profile_zip_service.dart
 
@@ -191,8 +206,8 @@ Current behavior:
 
 Current behavior:
 
-- fetches `/mobile_analyzer/profiles`
-- displays remote profiles
+- fetches typed remote profiles from `/mobile_analyzer/profiles`
+- displays remote profile name, file, size, and modified time
 - downloads selected profile zip
 - parses zip with `ProfileZipService`
 - saves profile with `LocalProfileStore`
@@ -245,6 +260,7 @@ lib/
   models/
     app_profile.dart
     local_profile.dart
+    remote_profile.dart
     generated_image.dart
   services/
     comfy_api_client.dart
