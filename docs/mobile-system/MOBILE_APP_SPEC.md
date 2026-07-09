@@ -74,6 +74,65 @@ Initial screens:
 - History screen
 - Settings screen
 
+## Generation screen layout
+
+The generation screen should be generated from `app_profile.json`, but the app should control the screen structure.
+
+Default layout:
+
+```text
+1. Status / connection / current profile
+2. Core Inputs                       open
+3. Basic Generation Settings         collapsed
+4. Size / Output                     collapsed
+5. Advanced Workflow Features        collapsed
+6. Expert / Debug                    collapsed
+7. Generate action
+8. Session history / generated images
+```
+
+Core Inputs should remain visible by default:
+
+```text
+- prompt
+- negative prompt
+- required image input
+```
+
+Detailed settings should be collapsible by default:
+
+```text
+- seed
+- steps
+- cfg
+- sampler
+- scheduler
+- denoise
+- width
+- height
+- batch
+- LoRA
+- ControlNet
+- IPAdapter
+- FaceDetailer
+- Upscale
+- RemBG
+- Inpaint
+- Mask
+- unknown editable inputs
+- debug/raw workflow information
+```
+
+Important:
+
+```text
+Do not collapse every usable field.
+The user should immediately see where to enter the main creative input.
+```
+
+If Analyzer provides explicit section metadata, use it.
+If not, use app-side fallback grouping based on `field_id`, `label`, `type`, and `section`.
+
 ## Generation flow
 
 ```text
@@ -99,6 +158,8 @@ Save:
 - created_at
 - ComfyUI URL
 - patched workflow snapshot
+
+MVP may keep only session history in the generation screen until persistent storage is finalized.
 
 ## Profile update rule
 
