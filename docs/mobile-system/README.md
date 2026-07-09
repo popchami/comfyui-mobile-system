@@ -28,6 +28,7 @@ Architecture alignment: 完了
 Claude limited runtime validation: 完了
 Smartphone-only preparation: 完了
 Cross-file static review fixes: 完了
+Legacy HTML reuse notes: 完了
 RunPod GPU validation: 未完了
 Android real-device/emulator validation: 未完了
 ```
@@ -43,6 +44,7 @@ docs/mobile-system/NEXT_PHASE_PLAN.md
 docs/mobile-system/NEXT_ACTION_QUEUE.md
 docs/mobile-system/DOCS_AUDIT_RESULT.md
 docs/mobile-system/STATIC_REVIEW_NOTES.md
+docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 ```
 
 ## スマホ作業完了
@@ -60,7 +62,25 @@ docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
 - Android実機検証はまだ
 - 文書整理、手順書、引き継ぎ、将来準備は完了
 - 横断静的レビューで見つけた小さい修正は完了
+- 既存HTMLの実績コードから流用できる挙動は記録・一部反映済み
 - 次の意味ある作業はRunPod/Androidの実検証
+```
+
+## 既存HTMLの扱い
+
+既存の `profiles/` 配下HTMLは、動作確認済みの実績コードとして参照する。
+
+```text
+docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
+```
+
+扱い:
+
+```text
+- 挙動・接続フロー・fallbackロジックは参考にする
+- 固定HTMLの構成そのものは最終アーキテクチャにしない
+- プロンプト内容やモデル固定値は直接コピーしない
+- 新方式は app_profile.json + patch_targets を中心にする
 ```
 
 ## 重要修正済み
@@ -80,6 +100,9 @@ mobile-app/flutter_mvp/lib/services/comfy_api_client.dart
 mobile-app/flutter_mvp/lib/services/comfy_progress_client.dart
 - パス付きComfyUI URLを壊さないようにWebSocket URL結合を修正
 
+mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+- 既存HTMLの実績に合わせて、/history polling fallbackを強化
+
 mobile-app/prototype/comfy-progress.js
 - prototype側もWebSocket URL結合を修正
 
@@ -91,6 +114,7 @@ docs/mobile-system/PR_BODY_UPDATE_DRAFT.md
 
 ```text
 docs/mobile-system/STATIC_REVIEW_NOTES.md
+docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 ```
 
 ## 次フェーズ
@@ -243,6 +267,7 @@ docs/mobile-system/
   CLAUDE_COPYPASTE_PROMPT.md
   CLAUDE_FINAL_REVIEW_AND_INSTALL.md
   STATIC_REVIEW_NOTES.md
+  LEGACY_HTML_REUSE_NOTES.md
   OPEN_TODOS.md
   FUTURE_ISSUES_AND_IMPROVEMENTS.md
   FUTURE_FEATURE_PREP.md
