@@ -92,20 +92,42 @@ instruction.
 ### Items needing the user's judgment before proceeding
 
 ```text
-1. Whether/when to push the 4 commits above.
+1. Whether/when to push commits (the 4 from this session were pushed by user
+   instruction; see "Decisions (user, 2026-07-10)" below for what was resolved
+   after that push).
 2. Review and approve/reject/edit IMAGE_GENERATION_FIRST_MODEL_BRANCHING_PLAN.md
-   (it is a draft; nothing in it has been implemented as code yet).
-3. Where model_strategy should live in the v2 debug profile schema
-   (inside runtime_requirements vs. a new top-level key) — see the draft's
-   "Open questions" section.
-4. Whether fp8_checkpoint detection should return "unknown" permanently,
-   or wait for a separate model-registry mechanism outside the workflow JSON.
-5. Whether to implement gguf_quantized detection now against an assumed
-   (locally unconfirmed) GGUF loader class name, or wait for a RunPod
-   environment with ComfyUI-GGUF installed to confirm the real name first.
-6. Whether the VHS_VideoCombine entry in VIDEO_OUTPUT_NODE_TYPES (task 1 fix)
-   is acceptable given it could not be confirmed in this session's
-   environment, or should be removed until confirmed elsewhere.
+   (it is a draft; nothing in it has been implemented as code yet). Items 3-5
+   below are now resolved in that draft; the draft itself is still pending
+   full review/approval.
+```
+
+## Decisions (user, 2026-07-10) — resolves items 3-6 above
+
+```text
+3. model_strategy placement: DECIDED — new top-level key in the v2 profile
+   schema (sibling of runtime_requirements/capabilities/outputs/warnings),
+   not nested inside runtime_requirements. Reflected in
+   IMAGE_GENERATION_FIRST_MODEL_BRANCHING_PLAN.md.
+
+4. fp8_checkpoint detection: DECIDED — stays "unknown" for now
+   (判定保留・RunPod実機確認待ち). Do not implement until a RunPod
+   environment can confirm whether a reliable node-level or model-registry
+   signal exists. Reflected in the draft.
+
+5. gguf_quantized detection: DECIDED — implementation deferred. Do not
+   implement against an assumed/unconfirmed GGUF loader class name.
+   Wait for a RunPod environment with ComfyUI-GGUF installed to confirm
+   the real node class name via /object_info first. Reflected in the draft.
+
+6. VHS_VideoCombine in VIDEO_OUTPUT_NODE_TYPES (analyzer/ComfyUI-Mobile-Analyzer/
+   nodes_v2_debug.py): DECIDED — keep as-is (accepted as a test-compatibility
+   reference). Still needs real-environment confirmation eventually:
+
+   TODO (RunPod real-environment check): once ComfyUI-VideoHelperSuite is
+   installed on a real RunPod ComfyUI instance, query /object_info for
+   "VHS_VideoCombine" and confirm it actually exists with output type VIDEO.
+   If it does not exist or has a different output type, update
+   VIDEO_OUTPUT_NODE_TYPES in nodes_v2_debug.py accordingly.
 ```
 
 ## Session paused — quick resume summary (Claude、2026-07-09 13:22 JST 時点)

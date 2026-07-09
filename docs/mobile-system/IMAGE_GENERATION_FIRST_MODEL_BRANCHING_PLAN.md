@@ -85,8 +85,8 @@ unknown
 | `checkpoint_single_file` | `class_type == "CheckpointLoaderSimple"` (confirmed; `RETURN_TYPES = (MODEL, CLIP, VAE)`, single `ckpt_name` input) |
 | `diffusion_model_plus_text_encoders_plus_vae` | `class_type == "UNETLoader"` (confirmed, `RETURN_TYPES = (MODEL,)`) feeding a sampler, alongside a CLIP loader (`DualCLIPLoader`/`CLIPLoader`/`TripleCLIPLoader`/`QuadrupleCLIPLoader`, all confirmed to exist) and a `VAELoader` (confirmed) |
 | `fp8_diffusion_model` | `class_type == "UNETLoader"` whose `weight_dtype` input value starts with `"fp8"` — confirmed real combo options: `["default", "fp8_e4m3fn", "fp8_e4m3fn_fast", "fp8_e5m2"]` |
-| `gguf_quantized` | Would require a GGUF-loader node class (e.g. the ComfyUI-GGUF custom pack). **Unconfirmed**: no such node was present in this session's `/object_info` dump. Do not hardcode a specific GGUF loader class name until it is confirmed against a real environment that has that custom node pack installed. |
-| `fp8_checkpoint` | **Unresolved / needs further design**: `CheckpointLoaderSimple` has only a `ckpt_name` string input — there is no confirmed node-level field indicating fp8 vs bf16 quantization for a merged single-file checkpoint. Filename-substring guessing would repeat the exact class of bug just fixed in `infer_output_type()` and is not proposed here. This needs a decision from the user (e.g., accept "unknown" for this case, or rely on a separate, explicit model registry outside the workflow JSON). |
+| `gguf_quantized` | **Decided (user, 2026-07-10): implementation deferred.** Would require a GGUF-loader node class (e.g. the ComfyUI-GGUF custom pack). No such node was present in this session's `/object_info` dump, so its real class name is unconfirmed. Do not implement detection against an assumed/unconfirmed GGUF loader class name — wait until a RunPod environment with ComfyUI-GGUF installed can confirm the real class name via `/object_info`, then implement. |
+| `fp8_checkpoint` | **Decided (user, 2026-07-10):判定保留・RunPod実機確認待ち (detection deferred, pending RunPod hardware verification).** `CheckpointLoaderSimple` has only a `ckpt_name` string input — there is no confirmed node-level field indicating fp8 vs bf16 quantization for a merged single-file checkpoint. Filename-substring guessing would repeat the exact class of bug just fixed in `infer_output_type()` and is not proposed here. This stays `unknown` until a RunPod environment can confirm whether a reliable node-level or model-registry signal exists. |
 | `merged_checkpoint` | Same node signal as `checkpoint_single_file` (`CheckpointLoaderSimple`); the distinction from a "regular" checkpoint is semantic/model-registry information, not something derivable from the workflow graph alone. Likely folds into `checkpoint_single_file` unless a reliable graph-level signal is found. |
 | `custom_loader` | Any loader-shaped node (an `expert_unknown`-classified node whose output includes `MODEL` and/or `CLIP` and/or `VAE`) that is not one of the above confirmed classes |
 | `unknown` | No loader node found, or the loader class is not in the confirmed set above |
@@ -135,18 +135,23 @@ contract.**
 - Add a new pure function, e.g. `detect_model_strategy(workflow, runtime_node_defs)`,
   alongside the existing `detect_outputs` / `detect_runtime_requirements` functions
   in `nodes_v2_debug.py`.
-- Output is added as a new `model_strategy` key inside the existing
-  `runtime_requirements` block (or as a sibling key at the top level of the
-  v2-debug/v2-validated-debug profile — exact placement is a naming decision, not
-  a behavior decision, and is left open for user review).
+- **Decided (user, 2026-07-10): `model_strategy` is a new top-level key** in the
+  v2-debug/v2-validated-debug profile, a sibling of `runtime_requirements`,
+  `capabilities`, `outputs`, and `warnings` — it is not nested inside
+  `runtime_requirements`.
 - Follows the same safety posture already established in this codebase:
   read-only analysis, no patch_targets are generated from this, and any
   uncertain classification must surface as a `warnings` entry
   (`type: "model_strategy_uncertain"` or similar) rather than a silent guess.
-- Example shape (illustrative, not final):
+- Example shape (illustrative, not final) — `model_strategy` shown as a
+  top-level sibling of the existing v2 profile keys:
 
 ```json
 {
+  "runtime_requirements": { "...": "unchanged, existing key" },
+  "capabilities": { "...": "unchanged, existing key" },
+  "outputs": [ "...unchanged, existing key" ],
+  "warnings": [ "...unchanged, existing key" ],
   "model_strategy": {
     "model_family": "flux",
     "flux_generation": "flux2_klein",
@@ -181,16 +186,23 @@ No node class name in this document is invented. Where a signal is genuinely
 unresolved (`fp8_checkpoint`, `gguf_quantized`), that is stated plainly instead of
 guessing a plausible-sounding node name.
 
-## Open questions for user review
+## Decisions (user, 2026-07-10)
 
 ```text
-1. Where should model_strategy live in the v2 profile schema — inside
-   runtime_requirements, or as a new top-level key?
-2. Is "unknown" an acceptable terminal answer for fp8_checkpoint detection,
-   or should this wait for a separate model-registry mechanism outside the
-   workflow JSON?
-3. Should gguf_quantized detection be implemented now against an assumed
-   (but locally unconfirmed) GGUF loader node name, or deferred until a
-   RunPod environment with ComfyUI-GGUF installed can confirm the real
-   class name?
+1. model_strategy placement: new top-level key in the v2 profile schema,
+   a sibling of runtime_requirements/capabilities/outputs/warnings — not
+   nested inside runtime_requirements.
+2. fp8_checkpoint detection: stays "unknown" for now. Implementation is
+   deferred until a RunPod environment can confirm whether a reliable
+   node-level or model-registry signal exists for this case.
+3. gguf_quantized detection: implementation deferred. Do not implement
+   against an assumed/unconfirmed GGUF loader class name. Wait for a
+   RunPod environment with ComfyUI-GGUF installed to confirm the real
+   node class name via /object_info first.
 ```
+
+These three items are therefore explicitly out of scope for the first
+implementation pass of `detect_model_strategy()`; that first pass should cover
+`model_family` (including the Flux.1/Flux.2 Klein split), `checkpoint_single_file`,
+`diffusion_model_plus_text_encoders_plus_vae`, `fp8_diffusion_model`,
+`vae_strategy`, and `lora_family` only.
