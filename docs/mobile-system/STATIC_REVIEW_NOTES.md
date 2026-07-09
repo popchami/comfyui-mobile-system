@@ -2,9 +2,60 @@
 
 ## Purpose
 
-This file records the static review performed before handing the PR to Claude for runtime install checks.
+This file records static reviews performed before real RunPod and Android runtime validation.
 
 The user cannot use a PC right now, so this review focuses on obvious source-level mismatches that can be fixed without running ComfyUI or Flutter.
+
+## Latest static review follow-up
+
+Date: 2026-07-09
+
+Runtime used:
+
+```text
+RunPod: no
+Android runtime: no
+Flutter runtime: no
+Termux: no
+```
+
+Result:
+
+```text
+Static cross-file review completed.
+Four low-risk issues were fixed on branch docs/mobile-system-spec.
+PR remains Draft.
+Runtime validation is still required.
+```
+
+Fixed in this pass:
+
+```text
+1. mobile-app/flutter_mvp/lib/services/comfy_api_client.dart
+   - Fixed URL path joining so path-based ComfyUI URLs are preserved.
+   - Example: https://host/proxy/8188 + /system_stats -> https://host/proxy/8188/system_stats
+
+2. mobile-app/flutter_mvp/lib/services/comfy_progress_client.dart
+   - Fixed WebSocket URL path joining so path-based ComfyUI URLs are preserved.
+   - Example: https://host/proxy/8188 + /ws -> wss://host/proxy/8188/ws
+
+3. mobile-app/prototype/comfy-progress.js
+   - Fixed prototype WebSocket URL path joining for path-based proxy URLs.
+
+4. docs/mobile-system/PR_BODY_UPDATE_DRAFT.md
+   - Fixed nested Markdown code fences by using a four-backtick outer fence.
+   - Added SMARTPHONE_ONLY_COMPLETION_REPORT.md to the suggested PR source-of-truth list.
+```
+
+Still not proven by static review:
+
+```text
+- RunPod ComfyUI startup with Analyzer.
+- Real profile zip export on RunPod.
+- Real /prompt -> /ws -> /history -> /view generation path.
+- Real Android flutter run.
+- Real Android image picker / upload / display path.
+```
 
 ## Reviewed areas
 
@@ -23,9 +74,11 @@ mobile-app/flutter_mvp/lib/services/profile_zip_service.dart
 mobile-app/flutter_mvp/lib/services/workflow_patcher.dart
 mobile-app/flutter_mvp/lib/screens/remote_profiles_screen.dart
 mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+mobile-app/prototype/comfy-progress.js
+docs/mobile-system/PR_BODY_UPDATE_DRAFT.md
 ```
 
-## Fixed during static review
+## Previously fixed during static review
 
 ### 1. `nodes.py` connection detection
 
@@ -180,7 +233,7 @@ preview image
 history snapshots
 ```
 
-## Still needs runtime validation by Claude
+## Still needs runtime validation by Claude or another runtime environment
 
 ### ComfyUI side
 
@@ -242,12 +295,17 @@ Analyzer does not yet inspect ComfyUI `object_info`.
 
 Analyzer currently expects API-style workflow JSON pasted into `workflow_json_text`. UI workflow to API workflow conversion is not completed.
 
-## Next action for Claude
+## Next action for runtime validation
 
-Claude should start with:
+Use:
 
 ```text
-docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
+docs/mobile-system/RUNPOD_VALIDATION_RUNBOOK.md
+docs/mobile-system/ANDROID_VALIDATION_RUNBOOK.md
 ```
 
-Then use this file to understand what has already been statically reviewed.
+For short AI handoff, use:
+
+```text
+docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
+```
