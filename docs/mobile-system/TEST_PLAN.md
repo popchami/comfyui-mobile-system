@@ -75,6 +75,7 @@ Check:
 - `app_profile.json.ui.simple` contains negative when workflow has KSampler negative connection.
 - `app_profile.json.ui.simple` contains seed / steps / cfg.
 - `app_profile.json.ui.simple` contains width / height / batch when EmptyLatentImage exists.
+- `app_profile.json.ui.simple` contains image field when LoadImage exists.
 
 Pass condition:
 
@@ -106,6 +107,9 @@ Check:
 - Read pasted `app_profile.json`.
 - Read pasted `workflow.json`.
 - Render simple fields.
+- Render image fields as file pickers.
+- Upload selected image to `/upload/image`.
+- Patch `LoadImage.image` with uploaded filename.
 - Patch prompt / negative / seed / steps / cfg / width / height / batch.
 - Submit patched workflow to `/prompt`.
 - Poll `/history/{prompt_id}`.
@@ -114,6 +118,7 @@ Check:
 Pass condition:
 
 - One image can be generated from a profile imported through the new flow.
+- If the workflow uses LoadImage, one selected smartphone image can be uploaded and used.
 
 ## Merge rule
 
