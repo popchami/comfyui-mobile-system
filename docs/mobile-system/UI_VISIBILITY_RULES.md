@@ -130,6 +130,123 @@ Example:
 - `raw_inputs`
 - `debug`
 
+## Collapsible section rules
+
+The app should not put every field directly on the screen.
+
+After the workflow is analyzed, the app should render fields using this priority:
+
+```text
+Always visible:
+- prompt
+- negative prompt
+- required image input
+- connection/status messages
+- Generate button
+- generated result area
+
+Collapsed by default:
+- basic_sampling
+- size
+- advanced sections
+- expert sections
+
+Hidden:
+- hidden sections
+- fields outside patch_targets
+- internal workflow-only nodes
+```
+
+Important rule:
+
+```text
+Do not collapse everything.
+```
+
+Reason:
+
+```text
+If every usable field is collapsed, the user opens a profile and sees no obvious place to start.
+The app should show the core creative inputs first, then fold detailed settings below.
+```
+
+Recommended default layout:
+
+```text
+1. Core Inputs                 open
+   - prompt
+   - negative prompt
+   - required image input
+
+2. Basic Generation Settings   collapsed
+   - seed
+   - steps
+   - cfg
+   - sampler
+   - scheduler
+   - denoise
+
+3. Size / Output               collapsed
+   - width
+   - height
+   - batch
+   - output filename/prefix if editable
+
+4. Advanced Workflow Features  collapsed
+   - LoRA
+   - ControlNet
+   - IPAdapter
+   - FaceDetailer
+   - Upscale
+   - RemBG
+   - Inpaint
+   - Mask
+   - Wildcard
+   - LLM/Ollama
+
+5. Expert / Debug              collapsed
+   - unknown editable inputs
+   - custom node warnings
+   - raw analyzed node list
+   - raw workflow/debug info
+```
+
+If a workflow has no prompt-like field, the app should still show the first required editable input, then fold the remaining settings.
+
+## Collapsible metadata direction
+
+Future `app_profile.json` may include explicit section metadata:
+
+```json
+{
+  "sections": [
+    {
+      "section_id": "core_inputs",
+      "label": "Core Inputs",
+      "visibility": "simple",
+      "default_expanded": true,
+      "priority": 10
+    },
+    {
+      "section_id": "basic_sampling",
+      "label": "Basic Generation Settings",
+      "visibility": "simple",
+      "default_expanded": false,
+      "priority": 20
+    },
+    {
+      "section_id": "advanced_features",
+      "label": "Advanced Workflow Features",
+      "visibility": "advanced",
+      "default_expanded": false,
+      "priority": 30
+    }
+  ]
+}
+```
+
+Until Analyzer emits explicit section metadata, the app may use built-in fallback grouping based on `field_id`, `label`, `type`, and `section`.
+
 ## UI types
 
 MVP supports:
@@ -210,3 +327,6 @@ Expert display may show:
 - Expert UI is for inspection and troubleshooting.
 - Connection inputs are read-only by default.
 - Fields outside `patch_targets` are not editable.
+- Do not collapse every usable field.
+- Core creative inputs should remain visible by default.
+- Detailed settings should be collapsible by default.
