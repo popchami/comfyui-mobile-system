@@ -22,6 +22,7 @@ The app should:
 ```text
 mobile-app/prototype/index.html
 mobile-app/prototype/profile-storage.js
+mobile-app/prototype/stored-profile-ui.js
 ```
 
 This is a temporary HTML/PWA-style prototype for validating the app flow before building Flutter.
@@ -38,6 +39,11 @@ It can currently:
 - Accept pasted `app_profile.json`
 - Accept pasted `workflow.json`
 - Validate minimal profile shape
+- Save imported/current profiles to browser localStorage
+- Show stored profile list
+- Load stored profile back into the UI
+- Delete one stored profile
+- Clear all stored profiles
 - Render `ui.simple` fields
 - Render image fields as file pickers
 - Upload selected images to `/upload/image`
@@ -61,11 +67,12 @@ Supported helper actions:
 - delete profile
 - clear profiles
 
-This helper is prepared for the next prototype step where imported zip profiles are saved and reopened without importing again.
+`stored-profile-ui.js` connects the helper to the prototype screen.
+
+It injects a "Saved Profiles" section into the page and lets the user save, reload, delete, or clear stored profiles.
 
 ## Not implemented in prototype yet
 
-- Full UI wiring for stored profile list
 - WebSocket progress
 - Flutter UI
 
