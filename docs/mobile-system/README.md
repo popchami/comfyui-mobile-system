@@ -18,6 +18,14 @@ Smartphone App
   = zipをComfyUIから取得し、app_profile.jsonを読んでUI生成・workflow patch・生成実行を行う
 ```
 
+## 方向性ガードレール
+
+外部リポジトリを参考にしても、このプロジェクトの方向性は変えない。
+
+```text
+docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
+```
+
 ## Claude最終確認
 
 PCでの実行確認はClaudeに引き継ぐ。
@@ -67,6 +75,7 @@ docs/mobile-system/
   ANALYZER_SPEC.md
   MOBILE_APP_SPEC.md
   HANDOFF.md
+  PROJECT_DIRECTION_GUARDRAILS.md
   PRE_CLAUDE_DONE.md
   PRE_CLAUDE_STATUS.md
   PRIORITY_CONFLICT_REVIEW.md
