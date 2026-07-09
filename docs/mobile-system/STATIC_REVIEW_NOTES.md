@@ -13,8 +13,10 @@ analyzer/ComfyUI-Mobile-Analyzer/nodes.py
 analyzer/ComfyUI-Mobile-Analyzer/server.py
 analyzer/ComfyUI-Mobile-Analyzer/__init__.py
 mobile-app/flutter_mvp/lib/main.dart
+mobile-app/flutter_mvp/lib/models/local_profile.dart
 mobile-app/flutter_mvp/lib/services/comfy_api_client.dart
 mobile-app/flutter_mvp/lib/services/comfy_progress_client.dart
+mobile-app/flutter_mvp/lib/services/local_profile_store.dart
 mobile-app/flutter_mvp/lib/services/profile_zip_service.dart
 mobile-app/flutter_mvp/lib/services/workflow_patcher.dart
 mobile-app/flutter_mvp/lib/screens/generate_screen.dart
@@ -76,6 +78,34 @@ mobile-app/flutter_mvp/RUN_CHECKLIST.md
 
 Added Android Internet permission note and real Flutter project shell caveat.
 
+## Flutter target clarification
+
+The current Flutter MVP is Android-first.
+
+Reason:
+
+```text
+GenerateScreen uses file_picker + dart:io File for image upload.
+```
+
+Do not treat Web support as required for this MVP. If Claude tests Web and sees `dart:io` issues, that should not block Android MVP validation.
+
+## Local storage clarification
+
+`LocalProfileStore` currently uses `shared_preferences`.
+
+This is acceptable for MVP install validation because it proves save/load behavior. It is not the final production storage plan for large workflows.
+
+Future production storage should probably move to file-based local storage for:
+
+```text
+workflow.json
+app_profile.json
+source_info.json
+preview image
+history snapshots
+```
+
 ## Still needs runtime validation by Claude
 
 ### ComfyUI side
@@ -93,7 +123,7 @@ Added Android Internet permission note and real Flutter project shell caveat.
 ```text
 1. flutter pub get
 2. flutter analyze
-3. flutter run
+3. flutter run on Android target
 4. Android Internet permission in generated platform shell
 5. file_picker behavior on Android
 6. /ws connection with clientId
