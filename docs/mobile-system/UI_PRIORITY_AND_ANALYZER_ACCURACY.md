@@ -10,8 +10,11 @@ However, the most important user-facing operations are clear:
 
 ```text
 1. Enter or edit prompts.
-2. Review generated data.
-3. Change needed parameters.
+2. Upload required input data such as images.
+3. Use required image tools such as mask and paint when the workflow needs them.
+4. Use workflow helper controls such as wildcards when the workflow/profile exposes them.
+5. Review generated data.
+6. Change needed parameters.
 ```
 
 Everything else can be secondary, hidden, collapsed, or moved to another page if needed.
@@ -26,6 +29,9 @@ The main generation screen should focus on:
 - prompt input
 - negative prompt when available
 - required input files such as image/mask/video/audio
+- image upload when the workflow needs it
+- mask / paint controls when the workflow needs them
+- wildcard controls when the profile exposes them
 - essential generation parameters
 - generate button
 - generated result display
@@ -81,13 +87,15 @@ Preferred UX:
 ```text
 Main page:
 - prompt
-- important inputs
+- important input uploads
+- required mask / paint tools
 - important parameters
 - generated output
 
 Advanced page:
 - detailed parameter groups
 - LoRA / ControlNet / FaceDetailer / inpaint / mask controls
+- wildcard controls when they are optional or large
 
 Graph / Node page:
 - node list
@@ -96,6 +104,61 @@ Graph / Node page:
 - execution state
 - warnings
 - raw analyzer report
+```
+
+## Image upload / mask / paint UI implication
+
+When the workflow/profile needs image input, mask, or paint-like editing, those controls are primary user actions.
+
+They should not be treated as hidden debug-only features.
+
+Possible controls:
+
+```text
+- image upload
+- selected image preview
+- clear selected image
+- mask editor
+- paint brush
+- erase brush
+- clear mask
+- brush size
+- mask preview overlay
+```
+
+Rules:
+
+```text
+- Show image upload when the workflow has an active image input.
+- Show mask/paint tools when the workflow has an active mask or inpaint requirement.
+- If the image/mask branch is bypass-OFF, show it as inactive and do not treat it as an active input.
+- Do not expose mask/paint tools if Analyzer cannot produce safe upload strategy and patch_targets.
+```
+
+## Wildcard UI implication
+
+Wildcards are user-facing workflow helper controls when the workflow/profile exposes them.
+
+They may affect prompt construction, randomization, presets, or dynamic text expansion.
+
+Possible controls:
+
+```text
+- wildcard ON/OFF
+- wildcard category selector
+- random wildcard option
+- selected wildcard preview
+- generated/expanded prompt preview when available
+```
+
+Rules:
+
+```text
+- Wildcards should be shown only when Analyzer or profile metadata identifies them.
+- Wildcard expansion must not silently overwrite the user's prompt.
+- If wildcard expansion changes the prompt sent to ComfyUI, the app should make that clear.
+- If wildcard behavior depends on a custom node, missing-node warnings must be shown.
+- If wildcard branch is bypass-OFF, wildcard controls are inactive.
 ```
 
 ## Subgraph UI implication
@@ -125,6 +188,7 @@ Rules:
 ```text
 - OFF/bypassed branches must look inactive.
 - OFF/bypassed text or parameter fields are not active generation inputs.
+- OFF/bypassed image upload, mask, paint, or wildcard controls are not active generation inputs.
 - ON/OFF changes must update active/inactive controls immediately.
 ```
 
@@ -171,6 +235,9 @@ Analyzer must know or safely report:
 - what inputs are active
 - what inputs are bypass-OFF
 - what fields are inside subgraphs
+- what image uploads are required
+- what mask/paint controls are required
+- what wildcard controls exist
 - what parameters are safe to edit
 - what output type is produced
 - what dependencies are required
@@ -183,5 +250,5 @@ Analyzer must know or safely report:
 The app UI can stay simple.
 The node graph can be hidden or secondary.
 But Analyzer accuracy cannot be secondary.
-A simple UI must be backed by exact patch_targets, exact execution-state awareness, and clear warnings.
+A simple UI must be backed by exact patch_targets, exact execution-state awareness, correct upload/mask/wildcard handling, and clear warnings.
 ```
