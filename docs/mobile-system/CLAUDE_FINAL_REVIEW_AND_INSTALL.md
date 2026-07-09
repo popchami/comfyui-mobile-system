@@ -26,6 +26,17 @@ Branch:
 docs/mobile-system-spec
 ```
 
+## Read first
+
+Claude should read these two files first:
+
+```text
+docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
+docs/mobile-system/STATIC_REVIEW_NOTES.md
+```
+
+`STATIC_REVIEW_NOTES.md` records what was already checked and fixed before runtime validation.
+
 ## What was added
 
 This PR adds three main parts:
