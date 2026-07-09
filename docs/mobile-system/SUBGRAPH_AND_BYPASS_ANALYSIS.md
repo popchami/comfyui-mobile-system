@@ -23,6 +23,8 @@ The system must eventually support:
 - exposing editable text inputs and parameters inside a subgraph when safe
 - preserving nested patch targets exactly
 - allowing bypass ON/OFF when the bypass representation is validated
+- making bypass ON/OFF state visually obvious in the smartphone app
+- excluding bypass-OFF nodes/branches from normal text input and parameter editing
 ```
 
 ## Core risk
@@ -38,6 +40,7 @@ If the Analyzer ignores them, the smartphone app may:
 - misunderstand output nodes
 - misclassify output type
 - break a workflow by flattening or rewriting hidden structure
+- let the user edit text/parameters that will not affect generation because the node is OFF
 ```
 
 ## Main rule
@@ -57,6 +60,7 @@ The Analyzer should:
 - report uncertainty when not known
 - expose editable subgraph controls only when patch targets are safe
 - allow bypass ON/OFF only when representation and patching are validated
+- mark bypass-OFF fields as inactive/edit-excluded in app_profile.json
 ```
 
 ## Terms
@@ -87,6 +91,9 @@ subgraph output
 
 unknown execution state
 - Analyzer cannot prove whether the node runs or not
+
+bypass-OFF edit exclusion
+- text inputs and parameters inside a bypassed/OFF node or branch must not be treated as active editable generation controls
 ```
 
 ## Analysis stance
@@ -100,7 +107,7 @@ The Analyzer should separate two views:
 
 2. App execution/control view
    - the safer interpretation used to build app_profile.json
-   - includes subgraph metadata, editable fields, bypass toggles, warnings, and output info
+   - includes subgraph metadata, editable fields, bypass toggles, visual state, inactive edit rules, warnings, and output info
 ```
 
 ## Subgraph analysis strategy
@@ -115,6 +122,7 @@ When a workflow contains subgraph-like structures:
 - Mark internal nodes with a subgraph path.
 - Record what node types are used inside the subgraph.
 - Record editable text inputs and parameters inside the subgraph when patching is safe.
+- Record whether those editable fields are currently active or bypass-OFF/inactive.
 - Record outputs inside the subgraph.
 - Do not flatten it destructively.
 - If the Analyzer cannot inspect inside, mark it as unsupported/unknown with a clear warning.
@@ -131,10 +139,12 @@ App behavior should include:
 - label it as Subgraph
 - show subgraph name/id
 - show status: supported / partially supported / unsupported
+- show active/bypassed/OFF visual state when known
 - allow the user to expand it
 - show internal node list when expanded
 - show node class_type values used inside
-- show editable text fields and parameters when supported
+- show editable text fields and parameters when supported and active
+- visually disable or hide editable fields when their node/branch is bypass-OFF
 - show warnings for unsupported internal nodes or unsafe patch targets
 ```
 
@@ -152,16 +162,20 @@ Potential app_profile shape:
       "name": "Face Detail Pass",
       "node_id": "42",
       "status": "supported",
+      "execution_state": "active",
+      "visual_state": "on",
       "internal_nodes": [
         {
           "node_id": "42/internal/1",
           "class_type": "CLIPTextEncode",
-          "label": "Prompt encoder"
+          "label": "Prompt encoder",
+          "execution_state": "active"
         },
         {
           "node_id": "42/internal/2",
           "class_type": "KSampler",
-          "label": "Sampler"
+          "label": "Sampler",
+          "execution_state": "active"
         }
       ],
       "editable_fields": [
@@ -194,6 +208,9 @@ Potential patch target shape:
   "safety": {
     "patch_supported": true,
     "confidence": "high"
+  },
+  "active_when": {
+    "bypass_state": "on"
   }
 }
 ```
@@ -202,6 +219,7 @@ Important:
 
 ```text
 A subgraph field must not become editable unless the Analyzer can write a valid nested patch target.
+If its node/branch is bypass-OFF, it must not be shown as an active text/parameter input.
 ```
 
 ## Editable subgraph fields
@@ -230,6 +248,7 @@ Rules:
 - App labels should make it clear that the field belongs to a subgraph.
 - Patching must target the correct internal node.
 - The original subgraph must remain preserved.
+- If the editable field belongs to a bypass-OFF node/branch, it is inactive and must not be treated as an active input.
 ```
 
 ## Bypass analysis strategy
@@ -241,6 +260,8 @@ When a node or branch appears bypassed/disabled/muted:
 - Record its status in analysis_report.
 - Record whether bypass ON/OFF is supported.
 - If supported, create a bypass toggle field in app_profile.json.
+- Record visual state metadata so the app can make ON/OFF obvious.
+- If bypass is OFF, mark all text inputs and parameters under that node/branch as inactive/edit-excluded.
 - If unsupported, show it as read-only status with a warning.
 - Do not delete it.
 - Do not reconnect around it unless this is proven to match ComfyUI behavior.
@@ -253,7 +274,9 @@ Potential app_profile field:
   "node_states": {
     "12": {
       "execution_state": "bypassed",
+      "visual_state": "off",
       "bypass_toggle_supported": true,
+      "edit_exclusion": true,
       "confidence": "high",
       "reason": "validated bypass state path exists in source workflow"
     }
@@ -275,6 +298,9 @@ Rules:
 - Create an explicit patch_target for bypass state.
 - Mark the field as a graph-control field, not a normal generation parameter.
 - Show warning text in the app that bypass changes execution path.
+- Make ON/OFF visually obvious in the app.
+- When OFF, the node/branch must look inactive, dimmed, disabled, collapsed, or clearly marked OFF.
+- When OFF, any text input or parameter inside that node/branch is excluded from active editing.
 - Preserve original workflow structure.
 ```
 
@@ -294,6 +320,11 @@ Potential field:
     "patch_supported": true,
     "changes_execution_path": true,
     "confidence": "high"
+  },
+  "visual": {
+    "on_label": "ON / active",
+    "off_label": "OFF / bypassed",
+    "off_fields_behavior": "disabled"
   }
 }
 ```
@@ -304,6 +335,29 @@ If representation is not validated:
 - show bypass status
 - do not provide toggle
 - show warning that bypass editing is unsupported for this workflow format
+```
+
+## Bypass visual state requirements
+
+The smartphone app must make bypass state visible at a glance.
+
+Required behavior:
+
+```text
+- ON/active state should look usable.
+- OFF/bypassed state should look inactive.
+- OFF/bypassed nodes/sections should not look like normal editable controls.
+- OFF/bypassed sections should show a clear label such as OFF, Bypassed, Disabled, or Inactive.
+- OFF/bypassed fields should be disabled, dimmed, hidden behind an inactive section, or otherwise clearly not editable.
+- If the user turns bypass ON, eligible inputs become active again.
+- If the user turns bypass OFF, eligible inputs become inactive immediately.
+```
+
+Important:
+
+```text
+Even if a prompt/text field has saved text, it is not an active input while its node/branch is bypass-OFF.
+The app must not suggest that editing that text will affect generation until the branch is ON/active.
 ```
 
 ## Execution path analysis
@@ -318,6 +372,15 @@ bypassed
 muted
 inactive
 subgraph_internal
+unknown
+```
+
+Possible visual states:
+
+```text
+on
+off
+partial
 unknown
 ```
 
@@ -336,11 +399,12 @@ Candidate metadata:
 {
   "execution_map": {
     "nodes": {
-      "1": { "state": "active", "confidence": "high" },
-      "2": { "state": "bypassed", "confidence": "medium" },
+      "1": { "state": "active", "visual_state": "on", "confidence": "high" },
+      "2": { "state": "bypassed", "visual_state": "off", "confidence": "medium" },
       "42/internal/8": {
         "state": "subgraph_internal",
         "subgraph_id": "subgraph_1",
+        "visual_state": "on",
         "confidence": "high"
       }
     },
@@ -358,12 +422,13 @@ Expose fields in Core Inputs when:
 
 ```text
 - node is likely active
+- node/branch is not bypass-OFF
 - patch target is clear
 - output path uses that field
 - confidence is high enough
 ```
 
-Subgraph Core Inputs may be shown inside the subgraph card if they are safe.
+Subgraph Core Inputs may be shown inside the subgraph card if they are safe and active.
 
 ### Basic / Advanced
 
@@ -371,6 +436,7 @@ Expose when:
 
 ```text
 - node is likely active or clearly subgraph_internal
+- node/branch is not bypass-OFF
 - field is known and safe
 - patch target is explicit
 - confidence is medium or high
@@ -409,6 +475,7 @@ Do not expose when:
 - target path cannot be resolved
 - nested subgraph patching is unsupported for that field
 - node is inactive and irrelevant to output
+- node/branch is bypass-OFF and the field is a normal text/parameter input
 ```
 
 ## Output detection with bypass/subgraph
@@ -487,6 +554,8 @@ The validation matrix must include workflows with:
 - bypassed node
 - bypass ON/OFF supported node
 - bypass state present but unsupported for editing
+- bypass-OFF node with existing text input
+- bypass-OFF node with existing numeric parameter
 - muted/disabled node
 - inactive branch
 - multiple output nodes
@@ -501,8 +570,10 @@ For each case validate:
 - subgraph metadata is written
 - app shows subgraph as subgraph
 - app can expand subgraph and list internal node types when readable
-- safe subgraph fields can be edited and patched correctly
+- safe subgraph fields can be edited and patched correctly when active
 - bypass ON/OFF works only when validated
+- bypass state is visually obvious
+- bypass-OFF fields are not active text/parameter inputs
 - unsupported bypass states are read-only with warning
 - outputs are not misclassified
 - app does not crash
@@ -520,19 +591,23 @@ Stage 1: Preserve + detect
 - preserve subgraphs and bypassed areas
 - detect obvious subgraph/bypass states
 - show warnings
+- mark bypass visual state when known
 
 Stage 2: App awareness
 - app shows subgraph cards
 - app can expand readable subgraphs
 - app lists internal node types
+- app shows bypass ON/OFF visually
 
 Stage 3: Safe nested editing
 - expose editable text/parameters inside readable subgraphs
 - write validated nested patch_targets
+- exclude bypass-OFF fields from active editing
 
 Stage 4: Bypass controls
 - expose bypass ON/OFF when representation is validated
 - use explicit graph-control patch_targets
+- immediately update visual state and active/inactive inputs
 
 Stage 5: Advanced validation
 - test many workflow formats and custom-node subgraph styles
@@ -543,6 +618,8 @@ Stage 5: Advanced validation
 ```text
 Subgraphs are first-class workflow structures, not warnings only.
 Bypass ON/OFF is a desired graph-control feature, but only with validated patch targets.
+Bypass state must be visually obvious in the app.
+Bypass-OFF text inputs and parameters are not active editing targets.
 When the Analyzer is unsure, preserve and warn.
 When the Analyzer is sure, expose the correct app controls with explicit context.
 Correctness is more important than exposing every possible control early.
