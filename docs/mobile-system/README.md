@@ -26,6 +26,7 @@ Branch: docs/mobile-system-spec
 Merge: しない
 Architecture alignment: 完了
 Claude limited runtime validation: 完了
+Smartphone-only preparation: 完了
 RunPod GPU validation: 未完了
 Android real-device/emulator validation: 未完了
 ```
@@ -34,11 +35,30 @@ Android real-device/emulator validation: 未完了
 
 ```text
 docs/mobile-system/HANDOFF.md
+docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
 docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
 docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
 docs/mobile-system/NEXT_PHASE_PLAN.md
 docs/mobile-system/NEXT_ACTION_QUEUE.md
 docs/mobile-system/DOCS_AUDIT_RESULT.md
+```
+
+## スマホ作業完了
+
+スマホだけでできる準備は以下に完了報告として記録済み。
+
+```text
+docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
+```
+
+次の意味で完了扱いにする。
+
+```text
+- 実装はしない
+- RunPod検証はまだ
+- Android実機検証はまだ
+- 文書整理、手順書、引き継ぎ、将来準備は完了
+- 次の意味ある作業はRunPod/Androidの実検証
 ```
 
 ## 重要修正済み
@@ -186,6 +206,7 @@ docs/mobile-system/
   ANALYZER_SPEC.md
   MOBILE_APP_SPEC.md
   HANDOFF.md
+  SMARTPHONE_ONLY_COMPLETION_REPORT.md
   NEXT_ACTION_QUEUE.md
   DOCS_AUDIT_RESULT.md
   PR_BODY_UPDATE_DRAFT.md
