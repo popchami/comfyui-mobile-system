@@ -4,7 +4,7 @@
 
 This file is the single source of truth for "what is done / in progress / blocked" on this PR. It is fully rewritten at the end of each work session.
 
-Last updated by: ChatGPT, after legacy HTML behavior review and minimal Flutter reuse on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
+Last updated by: ChatGPT, after generated UI collapsible-section decision on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
 
 ## Current decision (unchanged)
 
@@ -26,6 +26,65 @@ Display generated result
 
 Do not discard this system. Use official ComfyUI APIs wherever possible; keep custom code focused on the missing mobile profile layer. Full decision record: `PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md`.
 
+## Current generated UI decision
+
+```text
+Do not collapse every usable field.
+Keep core creative inputs visible by default.
+Collapse detailed settings by default.
+```
+
+Default generation screen layout:
+
+```text
+1. Core Inputs                       open
+   - prompt
+   - negative prompt
+   - required image input
+
+2. Basic Generation Settings         collapsed
+   - seed
+   - steps
+   - cfg
+   - sampler
+   - scheduler
+   - denoise
+
+3. Size / Output                     collapsed
+   - width
+   - height
+   - batch
+
+4. Advanced Workflow Features        collapsed
+   - LoRA
+   - ControlNet
+   - IPAdapter
+   - FaceDetailer
+   - Upscale
+   - RemBG
+   - Inpaint
+   - Mask
+
+5. Expert / Debug                    collapsed
+   - unknown editable inputs
+   - custom node warnings
+   - raw workflow/debug info
+```
+
+Rationale:
+
+```text
+If every usable field is collapsed, the user opens a profile and sees no obvious place to start.
+The app should show the main creative inputs first, then fold detailed settings below.
+```
+
+Spec files updated:
+
+```text
+docs/mobile-system/UI_VISIBILITY_RULES.md
+docs/mobile-system/MOBILE_APP_SPEC.md
+```
+
 ## Current PR status
 
 ```text
@@ -37,6 +96,7 @@ Merge: do not merge
 Smartphone-only preparation: complete
 Cross-file static review fixes: complete
 Legacy HTML behavior review/reuse: complete
+Generated UI collapsible section decision: complete
 RunPod GPU validation: not complete
 Android real-device/emulator validation: not complete
 Implementation: paused except for minimal blocker fixes
@@ -195,6 +255,8 @@ docs/mobile-system/NEXT_ACTION_QUEUE.md
 docs/mobile-system/DOCS_AUDIT_RESULT.md
 docs/mobile-system/STATIC_REVIEW_NOTES.md
 docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
+docs/mobile-system/UI_VISIBILITY_RULES.md
+docs/mobile-system/MOBILE_APP_SPEC.md
 ```
 
 Use these for the next validation pass:
@@ -259,7 +321,8 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 9. Display generated image.
 10. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
 11. Compare /prompt -> /ws -> /history -> /view behavior against existing HTML.
-12. Update this HANDOFF.md.
+12. Confirm generated UI layout: core inputs open, detailed settings collapsed.
+13. Update this HANDOFF.md.
 ```
 
 ## Do next if something fails
@@ -287,6 +350,7 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 - Do not turn Android app into a full ComfyUI workflow editor.
 - Do not require Playwright/Chromium for MVP.
 - Do not copy legacy HTML prompt/content lists into the new dynamic app.
+- Do not collapse every usable generated UI field.
 ```
 
 ## Merge readiness rule
@@ -297,6 +361,7 @@ Do not move toward merge until:
 - RunPod ComfyUI validation passes.
 - Real checkpoint image generation passes.
 - Android device/emulator validation passes.
+- Generated UI layout is validated on Android.
 - HANDOFF.md is updated with final validation results.
 - PR body is updated with final validation results.
 - User explicitly approves moving forward.
@@ -305,6 +370,6 @@ Do not move toward merge until:
 ## Static review stop condition
 
 ```text
-Cross-file static review fixes and legacy HTML reuse pass are complete for the issues found in this pass.
+Cross-file static review fixes, legacy HTML reuse pass, and collapsible generated UI decision are complete for the issues found in this pass.
 The next meaningful work is RunPod/Android real validation unless a new source-level issue is discovered.
 ```
