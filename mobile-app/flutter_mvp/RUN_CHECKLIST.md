@@ -44,6 +44,18 @@ flutter analyze
 flutter run
 ```
 
+## Android permission note
+
+A real generated Flutter Android project must include Internet permission.
+
+Expected Android manifest permission:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+This scaffold folder does not yet contain a full Android shell. Add this when the actual Flutter project shell is generated.
+
 ## Expected first app flow
 
 ```text
@@ -65,12 +77,11 @@ SetupScreen
 
 ## Known issues to check
 
-- `main.dart` may need to be re-added if it was blocked by safety checks during earlier scaffold creation.
-- Android Internet permission may be required in the real app shell.
 - `file_picker` may need Android/iOS platform setup depending on final Flutter project generation.
-- `Image.network` may fail if RunPod/ComfyUI URL requires a session, has CORS/proxy issues, or expires.
+- `Image.network` may fail if RunPod/ComfyUI URL requires a session, has proxy issues, or expires.
 - `ComfyProgressClient` uses `/ws?clientId=...`; confirm ComfyUI version accepts this parameter name.
 - `LocalProfileStore` currently uses shared_preferences and stores JSON directly. This is acceptable for MVP, but large workflows may need file storage later.
+- This folder is a scaffold. If `flutter run` expects missing platform directories, generate a real Flutter project shell and copy the `lib/` files into it.
 
 ## Pass condition
 
