@@ -23,6 +23,7 @@ The app should:
 mobile-app/prototype/index.html
 mobile-app/prototype/profile-storage.js
 mobile-app/prototype/stored-profile-ui.js
+mobile-app/prototype/comfy-progress.js
 ```
 
 This is a temporary HTML/PWA-style prototype for validating the app flow before building Flutter.
@@ -31,6 +32,9 @@ It can currently:
 
 - Save a ComfyUI URL in the input field
 - Check `/system_stats`
+- Connect to ComfyUI `/ws` WebSocket
+- Send `/prompt` with `client_id`
+- Show basic executing/progress messages
 - Fetch `/mobile_analyzer/profiles`
 - Show remote profile names
 - Download selected remote profile zip
@@ -71,10 +75,17 @@ Supported helper actions:
 
 It injects a "Saved Profiles" section into the page and lets the user save, reload, delete, or clear stored profiles.
 
+## Progress helper
+
+`comfy-progress.js` connects to ComfyUI `/ws` using a generated `client_id`.
+
+The prototype uses that same `client_id` when submitting `/prompt`, allowing basic progress messages to appear while generation is running.
+
 ## Not implemented in prototype yet
 
-- WebSocket progress
-- Flutter UI
+- Production Flutter UI
+- Robust reconnection handling
+- Full progress event mapping for every ComfyUI node type
 
 ## MVP simple fields
 
