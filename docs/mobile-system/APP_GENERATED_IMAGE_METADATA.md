@@ -12,6 +12,7 @@ The goal is to make session history more useful without adding persistent storag
 Implemented in:
 mobile-app/flutter_mvp/lib/models/generated_image.dart
 mobile-app/flutter_mvp/lib/services/generated_image_metadata_service.dart
+mobile-app/flutter_mvp/lib/screens/generate_screen.dart
 ```
 
 ## Metadata fields
@@ -40,6 +41,37 @@ createdAt
 
 If `createdAt` is not supplied, it uses the current ISO-8601 timestamp.
 
+## GenerateScreen integration
+
+`GenerateScreen` now attaches metadata after `/history/{prompt_id}` returns generated images and before images are merged into `_sessionHistory`.
+
+Current metadata source:
+
+```text
+promptId    -> current prompt_id
+profileName -> local profile name
+seed        -> last used seed detected from seed field
+createdAt   -> ISO-8601 timestamp from GeneratedImageMetadataService
+```
+
+Session history thumbnails now show:
+
+```text
+filename
+seed
+profile name
+```
+
+Large image preview dialog now shows:
+
+```text
+image URL
+profile name
+seed
+prompt_id
+created_at
+```
+
 ## Safety rules
 
 ```text
@@ -49,21 +81,14 @@ If `createdAt` is not supplied, it uses the current ISO-8601 timestamp.
 - Keep metadata session-level until Android validation confirms UI behavior.
 ```
 
-## Future integration step
-
-Next safe step:
+## Deferred until Android validation
 
 ```text
-Use GeneratedImageMetadataService in GenerateScreen before merging new images into _sessionHistory.
-```
-
-Then the session history UI can optionally show:
-
-```text
-profile name
-prompt_id
-seed
-created_at
+- Persistent generated image history.
+- Exportable generation metadata.
+- Copy prompt_id / seed buttons.
+- Filter history by profile or seed.
+- Local image file caching.
 ```
 
 ## Runtime validation checklist
@@ -75,5 +100,7 @@ During Android validation, confirm:
 2. Session history still deduplicates by filename/subfolder/type.
 3. Metadata does not break image preview.
 4. Long prompt_id/profile names do not overflow UI.
-5. No persistent storage is added unintentionally.
+5. Session thumbnail height is enough for filename/seed/profile.
+6. Large preview metadata remains readable.
+7. No persistent storage is added unintentionally.
 ```
