@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This file is the single source of truth for "what is done / in progress / blocked" on this PR. It is fully rewritten (not diff-appended) at the end of each work session.
+This file is the single source of truth for "what is done / in progress / blocked" on this PR. It is fully rewritten at the end of each work session.
 
-Last updated by: ChatGPT, after GitHub PR branch sanity check on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, and Flutter runtime were not used in this update.
+Last updated by: ChatGPT, after smartphone-only GitHub documentation, planning, runbook, and handoff-prep cleanup on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, and Flutter runtime were not used in this update.
 
 ## Current decision (unchanged)
 
@@ -17,145 +17,210 @@ Smartphone app imports profile
   ↓
 Dynamic simple UI
   ↓
-Patch workflow
+Patch workflow using app_profile.json.patch_targets only
   ↓
-Submit to ComfyUI
+Submit to ComfyUI official APIs
+  ↓
+Display generated result
 ```
 
 Do not discard this system. Use official ComfyUI APIs wherever possible; keep custom code focused on the missing mobile profile layer. Full decision record: `PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md`.
 
-## Completed
-
-### Architecture alignment review (docs + code)
-
-Claude previously read all 9 handoff docs in order, then cross-checked the documented decisions against the actual code in `analyzer/ComfyUI-Mobile-Analyzer/` and `mobile-app/flutter_mvp/`. Findings:
+## Current PR status
 
 ```text
-1. No official-API route duplication. Flutter client calls /prompt, /ws, /history,
-   /view, /upload/image, /system_stats directly — no custom reimplementation.
-   The only functional "duplication" is nodes.py's classify_node()/build_app_profile(),
-   which hardcodes ~7 class_types instead of querying /object_info.
-2. /object_info should be the first post-validation Analyzer improvement. Confirmed:
-   not a blocker for current MVP (minimal_api_workflow.json works without it).
-3. /models should be the first post-validation model-check improvement. Confirmed:
-   detect_model_refs() only extracts names today, marked "unverified" honestly.
-4. Only 2 custom routes exist: /mobile_analyzer/profiles and
-   /mobile_analyzer/profiles/{id}/download. Both are load-bearing for Flutter
-   (RemoteProfilesScreen). Neither duplicates an official route. Nothing to trim.
-5. UI workflow -> API workflow conversion: confirmed still unimplemented and
-   optional. requirements.txt has zero heavy deps (no Playwright/Chromium).
-6. comfy-portal-endpoint: confirmed zero code/dependency footprint in this repo.
-   Reference-only status holds.
-7. Minimum blocker-free validation path executed successfully where the sandbox allowed it.
+Repository: popchami/comfyui-mobile-system
+PR: #1
+Branch: docs/mobile-system-spec
+State: Draft
+Merge: do not merge
+RunPod GPU validation: not complete
+Android real-device/emulator validation: not complete
+Implementation: paused except for minimal blocker fixes
 ```
 
-Conclusion: direction and decisions in `PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md` are still valid. No large rewrite needed.
+## Completed: architecture and limited runtime validation
 
-### Runtime validation already performed by Claude
+Claude previously completed architecture alignment review and limited CPU-only runtime validation.
 
-Claude previously installed ComfyUI + the custom node + Flutter tooling in a throwaway sandbox directory (outside the repo, CPU-only, aarch64, no GPU) and ran the real flow end-to-end as far as that environment allowed. Results against the 10-item pass condition in `CLAUDE_FINAL_REVIEW_AND_INSTALL.md`:
+Confirmed:
 
 ```text
-1. ComfyUI starts with ComfyUI-Mobile-Analyzer installed        -> PASS
-2. Mobile Profile Exporter appears (verified via /object_info)  -> PASS
-3. Mobile Profile Exporter creates a zip under output/mobile_profiles -> PASS (after OUTPUT_NODE fix)
-4. Zip contains workflow.json and app_profile.json               -> PASS
-5. /mobile_analyzer/profiles returns profile metadata             -> PASS
-6. /mobile_analyzer/profiles/{id}/download downloads the zip      -> PASS
-7. Flutter MVP passes flutter pub get                              -> PASS
-8. Flutter MVP passes flutter analyze                              -> PASS (0 errors in lib/;
-   2 info-level const-constructor suggestions; 1 unrelated error in the
-   flutter-create-generated default test/widget_test.dart, which is not
-   part of this PR's source and references the scaffold's placeholder MyApp)
-9. Flutter Android app can connect to ComfyUI                      -> PARTIAL (see Blocked)
-10. Flutter Android app can download/save/open/patch/submit/display -> PARTIAL (see Blocked)
+1. ComfyUI starts with ComfyUI-Mobile-Analyzer installed        -> PASS in CPU-only sandbox
+2. Mobile Profile Exporter appears via /object_info             -> PASS
+3. Mobile Profile Exporter creates a zip                        -> PASS after OUTPUT_NODE fix
+4. Zip contains workflow.json and app_profile.json              -> PASS
+5. /mobile_analyzer/profiles returns metadata                   -> PASS
+6. /mobile_analyzer/profiles/{id}/download downloads zip         -> PASS
+7. Flutter MVP passes flutter pub get                           -> PASS
+8. Flutter MVP passes flutter analyze                           -> PASS for PR lib/ source
+9. Flutter Android app can connect to ComfyUI                    -> PARTIAL / still needs device validation
+10. Flutter app can download/save/open/patch/submit/display      -> PARTIAL / still needs device + GPU validation
 ```
 
-For items 9-10, a full Android build/run was not possible in the sandbox (no Android emulator, no GPU/models). As a substitute, the actual Dart service classes (`ComfyApiClient`, `ProfileZipService`, `WorkflowPatcher`, `HistoryImageExtractor` — unmodified, straight from `mobile-app/flutter_mvp/lib/`) were exercised directly via `dart run` against the live ComfyUI instance:
+Important caveat:
 
 ```text
-system_stats                    -> ok
-getRemoteProfiles()             -> ok, found the exported profile
-downloadProfileZip()            -> ok, 2280 bytes
-ProfileZipService.parseProfileZip() -> ok, 11 fields / 11 patch_targets parsed
-WorkflowPatcher.patchWorkflow() -> ok, prompt/seed/etc. patched correctly
-queuePrompt() -> submitted correctly; ComfyUI correctly rejected it with
-  HTTP 400 "ckpt_name: 'example.safetensors' not in []" because no real
-  checkpoint model exists in the sandbox (expected — no models were
-  downloaded, per the no-auto-download rule)
+The validation sandbox had no RunPod GPU, no real checkpoint model, and no Android emulator/device.
 ```
 
-This confirms the client-side data flow (download -> parse -> patch -> submit) is correct end-to-end at the code level. What is NOT confirmed: actual Flutter widget rendering, `file_picker` native Android plugin behavior, and real image generation/display (needs a real GPU + real checkpoint).
+## Completed: important fixes already on PR branch
 
-### Bug fixed and now present on PR branch
+### OUTPUT_NODE fix
 
 ```text
 File: analyzer/ComfyUI-Mobile-Analyzer/nodes.py
-Fix: added `OUTPUT_NODE = True` to MobileProfileExporter.
-Reason: without it, ComfyUI rejects any /prompt containing only this node with
-  400 "prompt_no_outputs", because the node has no dependents and wasn't marked
-  as an output node itself. Reproduced live, fixed, re-verified live (queue ->
-  execute -> zip written -> downloadable).
-Original fix commit reported by Claude: 6ab9ef7.
-GitHub PR branch sanity check: confirmed `OUTPUT_NODE = True` is now present on
-  branch `docs/mobile-system-spec`.
+Fix: added OUTPUT_NODE = True to MobileProfileExporter.
+Reason: without it, ComfyUI rejected exporter-only prompts as prompt_no_outputs.
+Status: present on branch docs/mobile-system-spec.
 ```
 
 ### WEB_DIRECTORY cleanup
 
 ```text
 File: analyzer/ComfyUI-Mobile-Analyzer/__init__.py
-Fix: removed unused `WEB_DIRECTORY = "web"` declaration.
-Reason: the custom node does not currently ship ComfyUI frontend web assets, and
-  `analyzer/ComfyUI-Mobile-Analyzer/web/` does not exist in the PR branch.
-  Removing the declaration avoids pointing ComfyUI at a non-existent web folder.
-Commit: 9c1f9e0.
-Runtime note: this cleanup was not revalidated in a live ComfyUI environment in
-  this ChatGPT-only update. It should be naturally covered by the next RunPod
-  ComfyUI startup check.
+Fix: removed unused WEB_DIRECTORY = "web" declaration.
+Reason: the custom node does not currently ship frontend web assets, and analyzer/ComfyUI-Mobile-Analyzer/web/ does not exist.
+Status: committed on branch docs/mobile-system-spec.
+Runtime note: still needs natural confirmation during the next real RunPod ComfyUI startup.
 ```
 
-## In progress / not yet done
+## Completed: smartphone-only preparation
+
+The following was completed without RunPod, Termux, Claude Code, ComfyUI runtime, or Flutter runtime:
 
 ```text
-- Nothing is actively in progress.
-- Current state is ready for the next RunPod/GPU and Android-device validation pass when those environments are available.
+- Runtime result summary added.
+- Blocker list after Claude validation added.
+- Next phase plan added.
+- Future feature preparation added.
+- Additional feature candidates added.
+- app_profile.json evolution plan added.
+- UX flow preparation added.
+- Post-validation issue drafts added.
+- Reference study backlog added.
+- Reference-to-feature map added.
+- Reference study checklist added.
+- Validation result templates added.
+- Debug report template added.
+- Workflow compatibility report template added.
+- Decision record template added.
+- RunPod validation runbook added.
+- Android validation runbook added.
+- AI minimal handoff prompts added.
+- Next action queue added.
+- README updated as the docs index.
+```
+
+## Current source-of-truth docs
+
+Read these first for status:
+
+```text
+docs/mobile-system/HANDOFF.md
+docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
+docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
+docs/mobile-system/NEXT_PHASE_PLAN.md
+docs/mobile-system/NEXT_ACTION_QUEUE.md
+```
+
+Use these for the next validation pass:
+
+```text
+docs/mobile-system/RUNPOD_VALIDATION_RUNBOOK.md
+docs/mobile-system/ANDROID_VALIDATION_RUNBOOK.md
+docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md
+docs/mobile-system/DEBUG_REPORT_TEMPLATE.md
+```
+
+Use this for short AI handoff prompts:
+
+```text
+docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 ```
 
 ## Blocked / deferred
 
 ```text
 1. Real Android build/run (flutter run on emulator or device) — not confirmed yet.
-   The generated test project's AndroidManifest.xml was missing
-   <uses-permission android:name="android.permission.INTERNET" /> by default.
-   This was added only in Claude's throwaway scratch project for testing, not in
-   the repo, because mobile-app/flutter_mvp has no android/ folder committed by design.
-   Whoever runs `flutter create` for real should add this permission.
-2. Real image generation end-to-end — requires a GPU-backed ComfyUI with an
-   actual checkpoint model. Per project rules, no model should be auto-downloaded.
+   The real generated Android project must include:
+   <uses-permission android:name="android.permission.INTERNET" />
+
+2. Real image generation end-to-end — requires a GPU-backed ComfyUI with an actual checkpoint model.
+   Per project rules, no model should be auto-downloaded.
    This must be validated on the user's actual RunPod Pod.
-3. /object_info-based field detection, /models-based existence checks, file-based
-   local storage, UI workflow conversion — all correctly deferred per
-   PRIORITY_CONFLICT_REVIEW.md, not started.
+
+3. WEB_DIRECTORY cleanup still needs real ComfyUI startup confirmation on RunPod.
+
+4. /object_info-based field detection, /models-based existence checks, production storage,
+   UI workflow conversion, advanced workflow support, generated history, and prompt presets
+   are all deferred until RunPod + Android validation passes.
 ```
 
-## PR status
+## Do next when RunPod is available
 
 ```text
-Still Draft. Do not merge.
-PR branch: docs/mobile-system-spec.
-Latest known PR branch includes the OUTPUT_NODE fix and the WEB_DIRECTORY cleanup.
-Architecture direction confirmed valid; no large rewrite triggered.
+1. Read docs/mobile-system/RUNPOD_VALIDATION_RUNBOOK.md.
+2. Start RunPod ComfyUI.
+3. Place Analyzer into custom_nodes.
+4. Confirm ComfyUI starts and Analyzer loads.
+5. Export profile zip.
+6. Check Analyzer profile list/download routes.
+7. Run real generation with an existing model.
+8. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
+9. Update this HANDOFF.md.
 ```
 
-## Recommended next steps (in priority order)
+## Do next when Android validation is available
 
 ```text
-1. When RunPod is available, start ComfyUI with this PR branch's Analyzer and confirm
-   the custom node still imports cleanly after the WEB_DIRECTORY cleanup.
-2. Validate real image generation on a RunPod Pod with GPU + a real checkpoint.
-3. Create the real Flutter Android project shell, add INTERNET permission, then run
-   on an Android device or emulator.
-4. After 1-3 pass, revisit docs/mobile-system/OPEN_TODOS.md and
-   FUTURE_ISSUES_AND_IMPROVEMENTS.md and reprioritize.
+1. Read docs/mobile-system/ANDROID_VALIDATION_RUNBOOK.md.
+2. Create real Flutter Android shell if needed.
+3. Copy flutter_mvp lib and pubspec.
+4. Add Android INTERNET permission.
+5. Run pub get / analyze / run.
+6. Connect to ComfyUI.
+7. Download/save/open profile.
+8. Submit generation.
+9. Display generated image.
+10. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
+11. Update this HANDOFF.md.
+```
+
+## Do next if something fails
+
+```text
+1. Fill docs/mobile-system/DEBUG_REPORT_TEMPLATE.md.
+2. Identify failing area: RunPod / Android / Analyzer / workflow / model / custom node / ComfyUI API.
+3. Fix only the smallest blocker.
+4. Re-test the failed path.
+5. Update this HANDOFF.md.
+6. Keep PR Draft.
+```
+
+## Do not do yet
+
+```text
+- Do not merge PR #1.
+- Do not switch MVP to Serverless.
+- Do not auto-download models.
+- Do not auto-install custom nodes.
+- Do not add Google Drive sync.
+- Do not add payment/monetization.
+- Do not build a public marketplace.
+- Do not turn Android app into a full ComfyUI workflow editor.
+- Do not require Playwright/Chromium for MVP.
+```
+
+## Merge readiness rule
+
+Do not move toward merge until:
+
+```text
+- RunPod ComfyUI validation passes.
+- Real checkpoint image generation passes.
+- Android device/emulator validation passes.
+- HANDOFF.md is updated with final validation results.
+- PR body is updated with final validation results.
+- User explicitly approves moving forward.
 ```
