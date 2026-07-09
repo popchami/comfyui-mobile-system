@@ -96,6 +96,14 @@ Android Flutter app displays the result
 docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 ```
 
+## PR本文更新案
+
+PR本文を直接更新できない場合や、あとで手動更新する場合は以下を使う。
+
+```text
+docs/mobile-system/PR_BODY_UPDATE_DRAFT.md
+```
+
 ## 将来機能の事前準備
 
 実装はしないが、将来機能の目的・リスク・必要データ・受け入れ条件は以下に整理する。
@@ -180,6 +188,7 @@ docs/mobile-system/
   HANDOFF.md
   NEXT_ACTION_QUEUE.md
   DOCS_AUDIT_RESULT.md
+  PR_BODY_UPDATE_DRAFT.md
   RUNPOD_VALIDATION_RUNBOOK.md
   ANDROID_VALIDATION_RUNBOOK.md
   AI_MINIMAL_HANDOFF_PROMPTS.md
