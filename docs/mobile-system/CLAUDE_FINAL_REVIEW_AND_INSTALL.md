@@ -4,7 +4,7 @@
 
 This file is the handoff point for Claude.
 
-The user cannot use a PC right now. The goal is for Claude to review this PR and confirm whether the current work can be installed/tested, then continue to the minimum fixes required for installation.
+The user cannot use a PC right now. The goal is for Claude to review this PR, first confirm whether the design should be adjusted based on official ComfyUI/RunPod capabilities and external references, then confirm whether the current work can be installed/tested.
 
 ## Repository and PR
 
@@ -17,7 +17,7 @@ popchami/comfyui-mobile-system
 PR:
 
 ```text
-#1 Add ComfyUI mobile system architecture specs
+#1 Add ComfyUI mobile system architecture and MVP scaffold
 ```
 
 Branch:
@@ -28,14 +28,33 @@ docs/mobile-system-spec
 
 ## Read first
 
-Claude should read these two files first:
+Claude should read these files first:
 
 ```text
+docs/mobile-system/PRE_CLAUDE_STATUS.md
+docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
+docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
+docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
+docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
 docs/mobile-system/STATIC_REVIEW_NOTES.md
 ```
 
 `STATIC_REVIEW_NOTES.md` records what was already checked and fixed before runtime validation.
+
+## What changed before this handoff
+
+The handoff is no longer only runtime validation.
+
+Because this project is still before implementation hardens, Claude should first check whether the current design should be adjusted around existing official platform capabilities.
+
+Main question:
+
+```text
+Are we rebuilding something ComfyUI or RunPod already provides?
+```
+
+If yes, prefer official platform APIs and keep custom work focused on the mobile profile layer.
 
 ## What was added
 
@@ -55,12 +74,61 @@ Priority is:
 
 ```text
 1. Review current files
-2. Confirm install/test path
-3. Fix blocking errors
-4. Confirm ComfyUI custom node loads
-5. Confirm Flutter MVP can reach flutter analyze / flutter run path
-6. Only then reprioritize future TODOs
+2. Compare current design with official ComfyUI APIs
+3. Compare current design with the external comfy-portal-endpoint reference
+4. Decide whether /object_info and /models should move earlier
+5. Confirm install/test path
+6. Fix blocking errors only
+7. Confirm ComfyUI custom node loads
+8. Confirm Flutter MVP can reach flutter analyze / flutter run path
+9. Only then reprioritize future TODOs
 ```
+
+## Official ComfyUI APIs to consider source-of-truth
+
+Claude should verify whether the current design should use these existing routes before adding custom replacements:
+
+```text
+/prompt
+/ws
+/history/{prompt_id}
+/view
+/upload/image
+/upload/mask
+/system_stats
+/object_info
+/object_info/{node_class}
+/models
+/models/{folder}
+/workflow_templates
+```
+
+Important likely adjustment:
+
+```text
+/object_info and /models may need to move earlier than originally planned.
+```
+
+Reason:
+
+```text
+They can reduce manual Analyzer guessing for field types, combo choices, node compatibility, and model existence checks.
+```
+
+## External reference stance
+
+`comfy-portal-endpoint` is useful as a reference for UI workflow to API workflow conversion.
+
+Do not:
+
+```text
+- copy code
+- make Playwright/Chromium required for MVP
+- turn this project into a generic workflow portal
+- adopt automatic dependency installs
+```
+
+Use it only as a reference for a future optional UI converter.
 
 ## ComfyUI custom node install target
 
@@ -100,7 +168,7 @@ mobile_analyzer
 
 ## ComfyUI runtime checks
 
-After restart, check:
+After architecture alignment, restart and check:
 
 ```text
 1. ComfyUI starts without import errors
@@ -226,6 +294,19 @@ SetupScreen
   ↓ Display /view images
 ```
 
+## Architecture questions before runtime validation
+
+Claude should answer these before making feature changes:
+
+```text
+1. Which current custom logic duplicates official ComfyUI APIs?
+2. Should /object_info support be implemented before adding more manual field detection?
+3. Should /models support be implemented before expanding model warnings?
+4. Which /mobile_analyzer routes remain necessary?
+5. Should UI workflow conversion stay optional for now?
+6. What is the smallest path to validate the mobile profile concept?
+```
+
 ## Do not change these rules
 
 ```text
@@ -234,7 +315,9 @@ SetupScreen
 - Do not remove unknown nodes.
 - Do not auto-install custom nodes.
 - Do not auto-download models.
+- Do not make Playwright/Chromium required for MVP.
 - Do not modify the saved original workflow when generating. Patch a copy.
+- Prefer official ComfyUI APIs over custom reimplementation when they already solve the same problem.
 ```
 
 ## Known areas likely needing fixes
@@ -253,6 +336,7 @@ Claude should specifically check these:
 9. Whether shared_preferences is acceptable for current profile size
 10. Whether Android Internet permission is present in the generated app shell
 11. Whether RemoteProfile parsing matches /mobile_analyzer/profiles runtime output
+12. Whether /object_info and /models should become near-term work
 ```
 
 ## Pass condition
@@ -260,13 +344,15 @@ Claude should specifically check these:
 This work is install-ready when Claude can confirm:
 
 ```text
-1. ComfyUI loads ComfyUI-Mobile-Analyzer
-2. Mobile Profile Exporter creates a valid zip
-3. Analyzer profile API returns and downloads profile zips
-4. Flutter MVP passes flutter pub get
-5. Flutter MVP passes flutter analyze or has only documented non-blocking warnings
-6. Flutter app can connect to ComfyUI
-7. Flutter app can download, save, open, patch, submit, and display at least one generated image
+1. Architecture alignment review is complete
+2. No official ComfyUI API is being unnecessarily reimplemented for MVP
+3. ComfyUI loads ComfyUI-Mobile-Analyzer
+4. Mobile Profile Exporter creates a valid zip
+5. Analyzer profile API returns and downloads profile zips
+6. Flutter MVP passes flutter pub get
+7. Flutter MVP passes flutter analyze or has only documented non-blocking warnings
+8. Flutter app can connect to ComfyUI
+9. Flutter app can download, save, open, patch, submit, and display at least one generated image
 ```
 
 ## After pass condition
@@ -275,6 +361,7 @@ After the install path is confirmed, then revisit:
 
 ```text
 docs/mobile-system/OPEN_TODOS.md
+docs/mobile-system/FUTURE_ISSUES_AND_IMPROVEMENTS.md
 ```
 
 and reorder future work by priority.
