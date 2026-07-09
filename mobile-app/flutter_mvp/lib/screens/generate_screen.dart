@@ -235,7 +235,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
               children: [
                 Text(image.filename, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                Flexible(
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 420),
                   child: InteractiveViewer(
                     child: Image.network(image.url.toString(), fit: BoxFit.contain),
                   ),
