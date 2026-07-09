@@ -31,6 +31,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
   String _promptId = '';
   String _historyPreview = '';
   List<GeneratedImage> _images = const [];
+  List<GeneratedImage> _sessionHistory = const [];
   bool _submitting = false;
   ComfyProgressClient? _progressClient;
   StreamSubscription<ComfyProgressEvent>? _progressSub;
@@ -190,6 +191,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
             _status = images.isEmpty ? 'History loaded' : 'Generated ${images.length} images';
             _historyPreview = const JsonEncoder.withIndent('  ').convert(historyItem);
             _images = images;
+            _mergeIntoSessionHistory(images);
           });
           return;
         }
@@ -206,6 +208,54 @@ class _GenerateScreenState extends State<GenerateScreen> {
     setState(() {
       _status = lastError == null ? 'History wait timed out' : 'History wait timed out: $lastError';
     });
+  }
+
+  String _imageKey(GeneratedImage image) {
+    return '${image.type}/${image.subfolder}/${image.filename}';
+  }
+
+  void _mergeIntoSessionHistory(List<GeneratedImage> images) {
+    if (images.isEmpty) return;
+    final seen = _sessionHistory.map(_imageKey).toSet();
+    final newImages = images.where((image) => seen.add(_imageKey(image))).toList();
+    if (newImages.isEmpty) return;
+    _sessionHistory = [...newImages, ..._sessionHistory];
+  }
+
+  void _openImagePreview(GeneratedImage image) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(image.filename, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Flexible(
+                  child: InteractiveViewer(
+                    child: Image.network(image.url.toString(), fit: BoxFit.contain),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SelectableText(image.url.toString(), style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildField(UiField field) {
@@ -277,14 +327,64 @@ class _GenerateScreenState extends State<GenerateScreen> {
   Widget _buildImage(GeneratedImage image) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(image.filename),
-          const SizedBox(height: 6),
-          Image.network(image.url.toString()),
-        ],
+      child: InkWell(
+        onTap: () => _openImagePreview(image),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(image.filename),
+            const SizedBox(height: 6),
+            Image.network(image.url.toString()),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildHistoryStrip() {
+    if (_sessionHistory.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Session history', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 110,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _sessionHistory.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final image = _sessionHistory[index];
+              return InkWell(
+                onTap: () => _openImagePreview(image),
+                child: SizedBox(
+                  width: 110,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(image.url.toString(), fit: BoxFit.cover),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        image.filename,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 
@@ -311,6 +411,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
             child: Text(_submitting ? 'Submitting...' : 'Submit /prompt'),
           ),
           const SizedBox(height: 12),
+          _buildHistoryStrip(),
           if (_images.isNotEmpty) ...[
             Text('Generated images', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
