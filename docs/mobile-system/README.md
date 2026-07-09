@@ -38,6 +38,7 @@ docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
 docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
 docs/mobile-system/NEXT_PHASE_PLAN.md
 docs/mobile-system/NEXT_ACTION_QUEUE.md
+docs/mobile-system/DOCS_AUDIT_RESULT.md
 ```
 
 ## 重要修正済み
@@ -178,6 +179,7 @@ docs/mobile-system/
   MOBILE_APP_SPEC.md
   HANDOFF.md
   NEXT_ACTION_QUEUE.md
+  DOCS_AUDIT_RESULT.md
   RUNPOD_VALIDATION_RUNBOOK.md
   ANDROID_VALIDATION_RUNBOOK.md
   AI_MINIMAL_HANDOFF_PROMPTS.md
