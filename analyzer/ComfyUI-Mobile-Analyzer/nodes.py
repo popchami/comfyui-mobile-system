@@ -23,6 +23,7 @@ class MobileProfileExporter:
     RETURN_NAMES = ("export_path",)
     FUNCTION = "export_profile"
     CATEGORY = "mobile_analyzer"
+    OUTPUT_NODE = True
 
     def export_profile(self, profile_name: str, workflow_json_text: str, visibility_mode: str) -> Tuple[str]:
         workflow = parse_workflow(workflow_json_text)
