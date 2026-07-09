@@ -12,6 +12,7 @@ import '../models/generated_image.dart';
 import '../models/local_profile.dart';
 import '../services/comfy_api_client.dart';
 import '../services/comfy_progress_client.dart';
+import '../services/environment_model_checker.dart';
 import '../services/history_image_extractor.dart';
 import '../services/workflow_patcher.dart';
 
@@ -307,34 +308,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
     });
     try {
       final client = ComfyApiClient(baseUrl: widget.profile.comfyUrl);
-      final objectInfo = await client.getObjectInfo();
-      final objectClasses = objectInfo.keys.map((value) => value.toString()).toSet();
-
-      List<String> checkpoints = const [];
-      Object? modelListError;
-      try {
-        checkpoints = await client.getModels(folder: 'checkpoints');
-      } catch (e) {
-        modelListError = e;
-      }
-      final checkpointSet = checkpoints.toSet();
-
-      final foundNodes = _appProfile.missingNodes.where((node) => objectClasses.contains(node.classType)).length;
-      final stillMissingNodes = _appProfile.missingNodes.length - foundNodes;
-      final checkpointModels = _appProfile.missingModels.where((model) => model.type.toLowerCase().contains('checkpoint')).toList();
-      final foundModels = checkpointModels.where((model) => checkpointSet.contains(model.name)).length;
-      final stillMissingModels = checkpointModels.length - foundModels;
-
-      final details = <String>[
-        'Environment check: node types ${objectClasses.length}; checkpoints ${checkpoints.length}.',
-        if (_appProfile.missingNodes.isNotEmpty) 'Custom nodes found $foundNodes / ${_appProfile.missingNodes.length}; still missing $stillMissingNodes.',
-        if (checkpointModels.isNotEmpty) 'Checkpoint models found $foundModels / ${checkpointModels.length}; still missing $stillMissingModels.',
-        if (modelListError != null) 'Model list unavailable: ${_friendlyError(modelListError)}',
-        'No models or custom nodes were installed automatically.',
-      ];
-
+      final checker = EnvironmentModelChecker(client: client);
+      final result = await checker.check(_appProfile);
       setState(() {
-        _environmentCheckResult = details.join('\n');
+        _environmentCheckResult = result.toDisplayText();
         _status = 'Environment check complete';
       });
     } catch (e) {
