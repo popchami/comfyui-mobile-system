@@ -9,7 +9,8 @@ The handoff goal changed after reviewing existing ComfyUI/RunPod capabilities an
 The user cannot use a PC right now, so the current goal is:
 
 ```text
-Make the PR clear enough that Claude can first perform architecture alignment,
+Make the PR clear enough that Claude can first review edited pre-implementation decisions,
+then perform architecture alignment,
 then install it, run checks, fix blockers, and confirm install readiness.
 ```
 
@@ -20,6 +21,7 @@ This is no longer only a runtime validation handoff.
 Claude should first review:
 
 ```text
+- edited pre-implementation alignment decisions
 - current system design
 - external reference review
 - official ComfyUI API overlap
@@ -28,6 +30,26 @@ Claude should first review:
 ```
 
 Then Claude should run runtime validation.
+
+## Current edited decision
+
+The inventory has been edited into a decision file:
+
+```text
+docs/mobile-system/PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
+```
+
+Current decision summary:
+
+```text
+- Do not discard the current system.
+- Do adjust the implementation strategy.
+- Use official ComfyUI APIs wherever possible.
+- Keep custom code focused on the missing mobile profile layer.
+- Move /object_info and /models earlier than originally planned.
+- Keep UI workflow conversion optional for now.
+- Keep comfy-portal-endpoint as a reference only.
+```
 
 ## PR state
 
@@ -56,7 +78,7 @@ state: open
 merged: false
 draft: true
 changed files: 50+
-commits: 120+
+commits: 130+
 reviews: none yet
 ```
 
@@ -93,6 +115,7 @@ Read in this order:
 ```text
 docs/mobile-system/PRE_CLAUDE_STATUS.md
 docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
+docs/mobile-system/PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
 docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
 docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
 docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
@@ -121,6 +144,7 @@ MVP_SCOPE.md
 ANALYZER_SPEC.md
 MOBILE_APP_SPEC.md
 PROJECT_DIRECTION_GUARDRAILS.md
+PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
 SYSTEM_INVENTORY_BEFORE_CLAUDE.md
 EXISTING_PLATFORMS_REVIEW.md
 COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
@@ -275,8 +299,8 @@ Claude should answer:
 
 ```text
 1. Which current custom logic duplicates official ComfyUI APIs?
-2. Should /object_info be implemented before deeper field detection?
-3. Should /models be implemented before model warning logic expands?
+2. Should /object_info be the first post-validation Analyzer improvement?
+3. Should /models be the first post-validation model-check improvement?
 4. Which /mobile_analyzer custom routes are still necessary?
 5. Should UI workflow conversion remain optional for now?
 6. What is the minimum blocker-free path to validate the current MVP?
