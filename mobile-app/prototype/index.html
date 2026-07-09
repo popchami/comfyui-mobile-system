@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="./profile-storage.js"></script>
   <script src="./stored-profile-ui.js"></script>
+  <script src="./comfy-progress.js"></script>
   <style>
     body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #f5f5f5; }
     header { padding: 16px; background: #191919; position: sticky; top: 0; z-index: 1; }
@@ -94,11 +95,33 @@ function setStatus(text) { document.getElementById('status').textContent = text;
 function setResult(text) { document.getElementById('resultStatus').textContent = text; }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
+function handleProgressMessage(data) {
+  if (!data || !data.type) return;
+  if (data.type === 'progress' && data.data) {
+    const value = data.data.value ?? '?';
+    const max = data.data.max ?? '?';
+    setResult('生成中... ' + value + ' / ' + max);
+    return;
+  }
+  if (data.type === 'executing' && data.data) {
+    if (data.data.node === null && lastPromptId) {
+      setResult('実行完了通知。履歴取得中...');
+    } else if (data.data.node) {
+      setResult('実行中 node: ' + data.data.node);
+    }
+    return;
+  }
+  if (data.type === 'execution_error') {
+    setResult('ComfyUI実行エラー: ' + JSON.stringify(data.data || data));
+  }
+}
+
 async function checkConnection() {
   try {
     const res = await fetch(baseUrl() + '/system_stats');
     if (!res.ok) throw new Error(res.status);
-    setStatus('接続OK');
+    if (window.ComfyMobileProgress) window.ComfyMobileProgress.connectComfyProgress(baseUrl(), handleProgressMessage);
+    setStatus('接続OK / WebSocket準備OK');
   } catch (e) { setStatus('接続失敗: ' + e.message); }
 }
 
@@ -280,15 +303,20 @@ async function submitPrompt() {
   try {
     const wf = await buildPatchedWorkflow();
     if (!wf) return;
+    if (window.ComfyMobileProgress) window.ComfyMobileProgress.connectComfyProgress(baseUrl(), handleProgressMessage);
     setResult('生成送信中...');
     document.getElementById('images').innerHTML = '';
     document.getElementById('historyOutput').textContent = '';
+    const payload = window.ComfyMobileProgress
+      ? window.ComfyMobileProgress.getPromptPayloadWithClientId(wf)
+      : { prompt: wf };
     const res = await fetch(baseUrl() + '/prompt', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: wf })
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('/prompt ' + res.status);
     const data = await res.json();
     lastPromptId = data.prompt_id;
+    if (window.ComfyMobileProgress) window.ComfyMobileProgress.setProgressPromptId(lastPromptId);
     setResult('送信OK prompt_id: ' + lastPromptId + '\n生成完了待ち...');
     await waitForHistory(lastPromptId);
   } catch (e) { setResult('生成失敗: ' + e.message); }
