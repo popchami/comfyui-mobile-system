@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/comfy_api_client.dart';
 import 'local_profiles_screen.dart';
@@ -12,9 +13,17 @@ class SetupScreen extends StatefulWidget {
 }
 
 class _SetupScreenState extends State<SetupScreen> {
+  static const _comfyUrlKey = 'comfyui_url';
+
   final TextEditingController _urlController = TextEditingController();
   String _status = 'Not connected';
   bool _checking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreSavedUrl();
+  }
 
   @override
   void dispose() {
@@ -22,7 +31,21 @@ class _SetupScreenState extends State<SetupScreen> {
     super.dispose();
   }
 
-  String get _url => _urlController.text.trim();
+  String get _url => _urlController.text.trim().replaceAll(RegExp(r'/+$'), '');
+
+  Future<void> _restoreSavedUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUrl = prefs.getString(_comfyUrlKey);
+    if (!mounted || savedUrl == null || savedUrl.isEmpty) return;
+    _urlController.text = savedUrl;
+    setState(() => _status = 'Saved ComfyUI URL restored');
+  }
+
+  Future<void> _saveUrl() async {
+    if (_url.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_comfyUrlKey, _url);
+  }
 
   Future<void> _checkConnection() async {
     if (_url.isEmpty) {
@@ -38,7 +61,9 @@ class _SetupScreenState extends State<SetupScreen> {
     try {
       final client = ComfyApiClient(baseUrl: _url);
       await client.getSystemStats();
-      setState(() => _status = 'Connected');
+      await _saveUrl();
+      _urlController.text = _url;
+      setState(() => _status = 'Connected; URL saved');
     } catch (e) {
       setState(() => _status = 'Connection failed: $e');
     } finally {
@@ -46,11 +71,13 @@ class _SetupScreenState extends State<SetupScreen> {
     }
   }
 
-  void _openRemoteProfiles() {
+  Future<void> _openRemoteProfiles() async {
     if (_url.isEmpty) {
       setState(() => _status = 'ComfyUI URL is required');
       return;
     }
+    await _saveUrl();
+    if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => RemoteProfilesScreen(comfyUrl: _url)),
     );
