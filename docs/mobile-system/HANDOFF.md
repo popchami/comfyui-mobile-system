@@ -4,7 +4,7 @@
 
 This file is the single source of truth for "what is done / in progress / blocked" on this PR. It is fully rewritten at the end of each work session.
 
-Last updated by: ChatGPT, after smartphone-only GitHub documentation, planning, runbook, handoff-prep, final audit, and completion-report cleanup on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, and Flutter runtime were not used in this update.
+Last updated by: ChatGPT, after cross-file static review and low-risk fixes on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
 
 ## Current decision (unchanged)
 
@@ -35,6 +35,7 @@ Branch: docs/mobile-system-spec
 State: Draft
 Merge: do not merge
 Smartphone-only preparation: complete
+Cross-file static review fixes: complete
 RunPod GPU validation: not complete
 Android real-device/emulator validation: not complete
 Implementation: paused except for minimal blocker fixes
@@ -86,9 +87,35 @@ Status: committed on branch docs/mobile-system-spec.
 Runtime note: still needs natural confirmation during the next real RunPod ComfyUI startup.
 ```
 
+### Static review follow-up fixes
+
+```text
+File: mobile-app/flutter_mvp/lib/services/comfy_api_client.dart
+Fix: preserve base URL path when building ComfyUI HTTP API URLs.
+Reason: path-based proxy URLs must not lose their base path.
+
+File: mobile-app/flutter_mvp/lib/services/comfy_progress_client.dart
+Fix: preserve base URL path when building /ws WebSocket URL.
+Reason: path-based proxy URLs must not lose their base path.
+
+File: mobile-app/prototype/comfy-progress.js
+Fix: preserve base URL path when building prototype WebSocket URL.
+Reason: path-based proxy URLs must not lose their base path.
+
+File: docs/mobile-system/PR_BODY_UPDATE_DRAFT.md
+Fix: replaced nested Markdown fence with a four-backtick outer fence.
+Reason: GitHub Markdown rendering should not collapse the suggested PR body block.
+```
+
+Details are recorded in:
+
+```text
+docs/mobile-system/STATIC_REVIEW_NOTES.md
+```
+
 ## Completed: smartphone-only preparation
 
-Smartphone-only preparation is now complete and recorded in:
+Smartphone-only preparation is complete and recorded in:
 
 ```text
 docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
@@ -134,6 +161,7 @@ docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
 docs/mobile-system/NEXT_PHASE_PLAN.md
 docs/mobile-system/NEXT_ACTION_QUEUE.md
 docs/mobile-system/DOCS_AUDIT_RESULT.md
+docs/mobile-system/STATIC_REVIEW_NOTES.md
 ```
 
 Use these for the next validation pass:
@@ -237,10 +265,9 @@ Do not move toward merge until:
 - User explicitly approves moving forward.
 ```
 
-## Smartphone-only stop condition
+## Static review stop condition
 
 ```text
-Smartphone-only work is complete.
-Do not continue adding documentation unless a new non-runtime planning topic appears.
-The next meaningful work is RunPod/Android real validation.
+Cross-file static review fixes are complete for the issues found in this pass.
+The next meaningful work is RunPod/Android real validation unless a new source-level issue is discovered.
 ```
