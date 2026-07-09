@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This file is the single source of truth for "what is done / in progress / blocked" on this PR. It is fully rewritten at the end of each work session.
+This file is the single source of truth for "what is done / in progress / blocked" on this PR.
 
-Last updated by: ChatGPT, after seed reuse implementation on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
+Last updated by: ChatGPT, after final smartphone-only completion on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
 
-## Current decision (unchanged)
+## Current decision
 
 ```text
 ComfyUI-side Analyzer
@@ -24,7 +24,58 @@ Submit to ComfyUI official APIs
 Display generated result
 ```
 
-Do not discard this system. Use official ComfyUI APIs wherever possible; keep custom code focused on the missing mobile profile layer. Full decision record: `PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md`.
+Do not discard this system. Use official ComfyUI APIs wherever possible; keep custom code focused on the missing mobile profile layer.
+
+## Final smartphone-only status
+
+```text
+Repository: popchami/comfyui-mobile-system
+PR: #1
+Branch: docs/mobile-system-spec
+State: Draft
+Merge: DO NOT MERGE
+Smartphone-only preparation: COMPLETE
+Smartphone-only implementation: COMPLETE
+Smartphone-only documentation: COMPLETE
+Smartphone-only handoff preparation: COMPLETE
+RunPod GPU validation: NOT COMPLETE
+Android real-device/emulator validation: NOT COMPLETE
+Next meaningful work: REAL VALIDATION ONLY
+```
+
+## Smartphone-side app behavior now prepared
+
+```text
+- ComfyUI URL save/restore.
+- /system_stats connection check.
+- /object_info capability check.
+- /models/{folder} read-only helpers.
+- /queue helper and Check queue button.
+- /interrupt helper and Interrupt button.
+- Friendly mobile-facing error messages.
+- app_profile warning parsing.
+- missing model warning display.
+- missing custom node warning display.
+- Analyzer warning display.
+- Read-only Check environment button.
+- ModelFolderResolver for checkpoints, loras, vae, clip, controlnet, upscale_models, diffusion_models, and embeddings.
+- EnvironmentModelChecker integrated into GenerateScreen.
+- profile-specific previous input restore.
+- profile-specific input save before /prompt.
+- Reset to profile defaults.
+- Random seed button.
+- Use last seed button.
+- selected image preview.
+- /prompt submission with client_id.
+- /ws progress listener.
+- /history polling fallback.
+- /view generated image display.
+- Session history strip.
+- Generated image large preview.
+- Generated image metadata: prompt_id, profile name, seed, created_at.
+- Session history thumbnail metadata display.
+- Collapsible generated UI sections.
+```
 
 ## Current generated UI decision
 
@@ -71,40 +122,6 @@ Default generation screen layout:
    - raw workflow/debug info
 ```
 
-Rationale:
-
-```text
-If every usable field is collapsed, the user opens a profile and sees no obvious place to start.
-The app should show the main creative inputs first, then fold detailed settings below.
-```
-
-Spec files updated:
-
-```text
-docs/mobile-system/UI_VISIBILITY_RULES.md
-docs/mobile-system/MOBILE_APP_SPEC.md
-```
-
-Flutter implementation updated:
-
-```text
-mobile-app/flutter_mvp/lib/screens/generate_screen.dart
-```
-
-Implementation behavior:
-
-```text
-- Uses app_profile simple fields.
-- Groups fields by field_id / label / type / section.
-- Core Inputs are shown directly.
-- Basic Generation Settings uses ExpansionTile collapsed by default.
-- Size / Output uses ExpansionTile collapsed by default.
-- Advanced Workflow Features uses ExpansionTile collapsed by default.
-- Expert / Debug uses ExpansionTile collapsed by default.
-- Empty sections are not rendered.
-- If no core field is detected, the first editable field is shown as Core fallback.
-```
-
 ## Current app-side reused behaviors from legacy HTML
 
 ```text
@@ -117,34 +134,10 @@ Implementation behavior:
 - Current-session seed reuse.
 ```
 
-Seed reuse scope:
+Existing HTML profiles under `profiles/` were reviewed as proven behavior references. Details are recorded in:
 
 ```text
-- Current generation screen session only.
-- Detects seed fields from field_id / label / section / type.
-- Captures seed before /prompt submission.
-- Shows Use last seed button when a last seed exists.
-- Does not bypass patch_targets.
-- Not persisted across app restarts yet.
-```
-
-## Current PR status
-
-```text
-Repository: popchami/comfyui-mobile-system
-PR: #1
-Branch: docs/mobile-system-spec
-State: Draft
-Merge: do not merge
-Smartphone-only preparation: complete
-Cross-file static review fixes: complete
-Legacy HTML behavior review/reuse: complete
-Generated UI collapsible section decision: complete
-Generated UI collapsible grouping implementation: complete
-Seed reuse implementation: complete
-RunPod GPU validation: not complete
-Android real-device/emulator validation: not complete
-Implementation: paused except for minimal blocker fixes
+docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 ```
 
 ## Completed: architecture and limited runtime validation
@@ -174,116 +167,13 @@ The validation sandbox had no RunPod GPU, no real checkpoint model, and no Andro
 
 ## Completed: important fixes already on PR branch
 
-### OUTPUT_NODE fix
-
 ```text
-File: analyzer/ComfyUI-Mobile-Analyzer/nodes.py
-Fix: added OUTPUT_NODE = True to MobileProfileExporter.
-Reason: without it, ComfyUI rejected exporter-only prompts as prompt_no_outputs.
-Status: present on branch docs/mobile-system-spec.
-```
-
-### WEB_DIRECTORY cleanup
-
-```text
-File: analyzer/ComfyUI-Mobile-Analyzer/__init__.py
-Fix: removed unused WEB_DIRECTORY = "web" declaration.
-Reason: the custom node does not currently ship frontend web assets, and analyzer/ComfyUI-Mobile-Analyzer/web/ does not exist.
-Status: committed on branch docs/mobile-system-spec.
-Runtime note: still needs natural confirmation during the next real RunPod ComfyUI startup.
-```
-
-### Static review follow-up fixes
-
-```text
-File: mobile-app/flutter_mvp/lib/services/comfy_api_client.dart
-Fix: preserve base URL path when building ComfyUI HTTP API URLs.
-Reason: path-based proxy URLs must not lose their base path.
-
-File: mobile-app/flutter_mvp/lib/services/comfy_progress_client.dart
-Fix: preserve base URL path when building /ws WebSocket URL.
-Reason: path-based proxy URLs must not lose their base path.
-
-File: mobile-app/prototype/comfy-progress.js
-Fix: preserve base URL path when building prototype WebSocket URL.
-Reason: path-based proxy URLs must not lose their base path.
-
-File: docs/mobile-system/PR_BODY_UPDATE_DRAFT.md
-Fix: replaced nested Markdown fence with a four-backtick outer fence.
-Reason: GitHub Markdown rendering should not collapse the suggested PR body block.
-```
-
-Details are recorded in:
-
-```text
-docs/mobile-system/STATIC_REVIEW_NOTES.md
-```
-
-### Legacy HTML behavior reuse
-
-Existing HTML profiles under `profiles/` were reviewed as proven behavior references.
-
-Confirmed existing HTML files include:
-
-```text
-profiles/flux1_dev/normal/comfyui_mobile.html
-profiles/flux2_klein/normal/comfyui_mobile.html
-profiles/flux_full/comfyui_mobile.html
-profiles/flux1_dev/pixelart/comfyui_pixelart.html
-profiles/flux1_dev/icon/comfyui_icon_mobile.html
-profiles/sdxl/chibi/comfyui_sdxl_chibi.html
-profiles/sdxl/pixelart/comfyui_sdxl_pixelart.html
-```
-
-Reused behavior:
-
-```text
-File: mobile-app/flutter_mvp/lib/screens/generate_screen.dart
-Fix: strengthened /history polling fallback after /prompt.
-Reason: existing verified HTML keeps /history polling as a fallback when /ws is unavailable or not connected.
-```
-
-Details are recorded in:
-
-```text
-docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
-```
-
-## Completed: smartphone-only preparation
-
-Smartphone-only preparation is complete and recorded in:
-
-```text
-docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
-```
-
-The following was completed without RunPod, Termux, Claude Code, ComfyUI runtime, or Flutter runtime:
-
-```text
-- Runtime result summary added.
-- Blocker list after Claude validation added.
-- Next phase plan added.
-- Future feature preparation added.
-- Additional feature candidates added.
-- app_profile.json evolution plan added.
-- UX flow preparation added.
-- Post-validation issue drafts added.
-- Reference study backlog added.
-- Reference-to-feature map added.
-- Reference study checklist added.
-- Validation result templates added.
-- Debug report template added.
-- Workflow compatibility report template added.
-- Decision record template added.
-- RunPod validation runbook added.
-- Android validation runbook added.
-- AI minimal handoff prompts added.
-- Next action queue added.
-- PR body update draft added.
-- Docs audit result added.
-- Smartphone-only completion report added.
-- Legacy HTML reuse notes added.
-- README updated as the docs index.
+- MobileProfileExporter has OUTPUT_NODE = True.
+- Analyzer __init__.py no longer declares unused WEB_DIRECTORY.
+- HTTP API URL builder preserves path-based proxy base paths.
+- WebSocket URL builder preserves path-based proxy base paths.
+- Prototype WebSocket URL builder preserves path-based proxy base paths.
+- PR_BODY_UPDATE_DRAFT.md uses safe nested Markdown fences.
 ```
 
 ## Current source-of-truth docs
@@ -302,6 +192,13 @@ docs/mobile-system/STATIC_REVIEW_NOTES.md
 docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 docs/mobile-system/UI_VISIBILITY_RULES.md
 docs/mobile-system/MOBILE_APP_SPEC.md
+docs/mobile-system/APP_INPUT_STATE_CONTROLS.md
+docs/mobile-system/APP_QUEUE_AND_ERROR_CONTROLS.md
+docs/mobile-system/APP_CAPABILITY_CHECKS.md
+docs/mobile-system/APP_PROFILE_WARNING_DISPLAY.md
+docs/mobile-system/APP_MODEL_FOLDER_RESOLVER.md
+docs/mobile-system/APP_ENVIRONMENT_MODEL_CHECKER.md
+docs/mobile-system/APP_GENERATED_IMAGE_METADATA.md
 ```
 
 Use these for the next validation pass:
@@ -332,9 +229,9 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 
 3. WEB_DIRECTORY cleanup still needs real ComfyUI startup confirmation on RunPod.
 
-4. /object_info-based field detection, /models-based existence checks, production storage,
-   UI workflow conversion, advanced workflow support, generated history, and prompt presets
-   are all deferred until RunPod + Android validation passes.
+4. /queue, /interrupt, /object_info, /models/{folder}, Check environment,
+   generated image metadata, session history display, seed reuse, Random seed,
+   Reset to defaults, and generated UI grouping all need Android/RunPod validation.
 ```
 
 ## Do next when RunPod is available
@@ -347,9 +244,12 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 5. Export profile zip.
 6. Check Analyzer profile list/download routes.
 7. Run real generation with an existing model.
-8. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
-9. Compare with existing HTML behavior where useful.
-10. Update this HANDOFF.md.
+8. Validate /prompt -> /ws -> /history -> /view.
+9. Validate /queue and /interrupt.
+10. Validate /object_info and /models/{folder} behavior.
+11. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
+12. Compare with existing HTML behavior where useful.
+13. Update this HANDOFF.md.
 ```
 
 ## Do next when Android validation is available
@@ -362,13 +262,21 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 5. Run pub get / analyze / run.
 6. Connect to ComfyUI.
 7. Download/save/open profile.
-8. Submit generation.
-9. Display generated image.
-10. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
-11. Compare /prompt -> /ws -> /history -> /view behavior against existing HTML.
-12. Confirm generated UI layout: core inputs open, detailed settings collapsed.
-13. Confirm seed reuse interaction.
-14. Update this HANDOFF.md.
+8. Confirm generated UI layout: core inputs open, detailed settings collapsed.
+9. Confirm profile-specific previous input restore.
+10. Confirm Reset to profile defaults.
+11. Confirm Random seed.
+12. Confirm Use last seed.
+13. Confirm Profile warnings card.
+14. Confirm Check environment.
+15. Confirm Check queue.
+16. Confirm Interrupt.
+17. Submit generation.
+18. Display generated image.
+19. Confirm session history metadata and large preview metadata.
+20. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
+21. Compare /prompt -> /ws -> /history -> /view behavior against existing HTML.
+22. Update this HANDOFF.md.
 ```
 
 ## Do next if something fails
@@ -397,6 +305,7 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 - Do not require Playwright/Chromium for MVP.
 - Do not copy legacy HTML prompt/content lists into the new dynamic app.
 - Do not collapse every usable generated UI field.
+- Do not add more smartphone-only features before real validation.
 ```
 
 ## Merge readiness rule
@@ -409,14 +318,17 @@ Do not move toward merge until:
 - Android device/emulator validation passes.
 - Generated UI layout is validated on Android.
 - Seed reuse interaction is validated on Android.
+- Check environment is validated against real ComfyUI.
+- Generated image metadata display is validated on Android.
 - HANDOFF.md is updated with final validation results.
 - PR body is updated with final validation results.
 - User explicitly approves moving forward.
 ```
 
-## Static review stop condition
+## Final smartphone-only stop condition
 
 ```text
-Cross-file static review fixes, legacy HTML reuse pass, collapsible generated UI decision, Flutter generated UI grouping implementation, and seed reuse are complete for the issues found in this pass.
-The next meaningful work is RunPod/Android real validation unless a new source-level issue is discovered.
+Smartphone-only work is complete.
+Do not continue adding smartphone-only features.
+The next meaningful work is RunPod/Android real validation unless a new source-level blocker is discovered.
 ```
