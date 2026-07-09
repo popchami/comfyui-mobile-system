@@ -2,67 +2,89 @@
 
 ## Purpose
 
-This file records known issues, risks, and improvement directions after the pre-Claude handoff preparation.
+This file records known issues, risks, and improvement directions after architecture alignment and the first limited runtime validation pass.
 
-This is not a request to add features before runtime validation.
+This is not a request to add features before RunPod GPU validation and Android real-device validation.
 
 Current priority remains:
 
 ```text
-First prove the minimum runtime path works.
+First prove the real RunPod GPU + Android app path works.
 ```
 
 ## Current status
 
 ```text
 Pre-Claude preparation: complete
+Architecture alignment review: complete
+Limited CPU-only runtime validation: complete
 PR status: Draft
-Runtime validation: not completed yet
-Next step: Claude runtime validation
+RunPod GPU validation: not completed yet
+Android device/emulator validation: not completed yet
+Next step: RunPod GPU + Android real-device validation
+```
+
+See also:
+
+```text
+docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
+docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
+docs/mobile-system/NEXT_PHASE_PLAN.md
 ```
 
 ## Main issue groups
 
 ```text
-1. Runtime uncertainty before validation
+1. Remaining real-environment validation gaps
 2. Analyzer accuracy limits
 3. Flutter app save/load and re-run behavior
 4. Workflow compatibility risks
 5. Long-term safety and operations risks
 ```
 
-## 1. Runtime uncertainty before validation
+## 1. Remaining real-environment validation gaps
 
 ### Problem
 
-The design and file structure are aligned, but the system has not yet been tested inside a real ComfyUI and Flutter Android runtime.
+The design and file structure are aligned, and the limited sandbox validation passed for the parts that environment could test. However, the system has not yet been fully tested inside the intended real environment.
 
-Unknowns:
+Already confirmed:
 
 ```text
-- Whether ComfyUI loads ComfyUI-Mobile-Analyzer correctly.
-- Whether Mobile Profile Exporter appears in ComfyUI.
-- Whether /mobile_analyzer/profiles is registered correctly.
-- Whether output/mobile_profiles resolves to the intended ComfyUI output folder.
-- Whether Flutter Android can complete /ws, /prompt, /history, and /view flow.
+- ComfyUI can load ComfyUI-Mobile-Analyzer in a CPU-only sandbox.
+- Mobile Profile Exporter can appear via /object_info.
+- Mobile Profile Exporter can export a profile zip after OUTPUT_NODE fix.
+- /mobile_analyzer/profiles works in the sandbox.
+- /mobile_analyzer/profiles/{id}/download works in the sandbox.
+- Flutter PR source passes pub get and analyze in the sandbox.
+```
+
+Still unknown:
+
+```text
+- Whether latest branch still loads cleanly on RunPod after WEB_DIRECTORY cleanup.
+- Whether real GPU image generation works with an actual checkpoint model.
+- Whether Flutter Android runs correctly on a real device or emulator.
+- Whether native file_picker behavior works on Android.
+- Whether the full Android UI can download, save, open, patch, submit, and display a generated image.
 ```
 
 ### Improvement direction
 
 Do not add features first.
 
-Run the minimum workflow path:
+Run the intended real workflow path:
 
 ```text
-1. Install Analyzer into ComfyUI/custom_nodes.
-2. Start ComfyUI.
-3. Confirm Mobile Profile Exporter appears.
-4. Paste minimal_api_workflow.json.
+1. Start RunPod ComfyUI.
+2. Install/place Analyzer into ComfyUI/custom_nodes.
+3. Start ComfyUI and confirm no import errors.
+4. Confirm Mobile Profile Exporter appears.
 5. Export profile zip.
 6. Confirm /mobile_analyzer/profiles returns it.
-7. Download the zip in Flutter.
+7. Download the zip in the Flutter Android app.
 8. Open GenerateScreen.
-9. Submit /prompt.
+9. Submit /prompt to the RunPod ComfyUI URL.
 10. Display generated image from /view.
 ```
 
@@ -85,17 +107,17 @@ Current limits:
 
 ### Improvement direction
 
-Improve Analyzer in stages:
+Improve Analyzer in stages after the real RunPod + Android validation path passes:
 
 ```text
 Phase 1:
 Stabilize KSampler / CLIPTextEncode / EmptyLatentImage / LoadImage / model loader handling.
 
 Phase 2:
-Use object_info to read node input types accurately.
+Use /object_info to read node input types accurately.
 
 Phase 3:
-Check model folders and report missing models.
+Use /models and /models/{folder} to check model folders and report missing models.
 
 Phase 4:
 Classify ControlNet / IPAdapter / FaceDetailer / Upscale / RemBG workflows.
@@ -121,15 +143,15 @@ Known risks:
 
 ```text
 - Large workflow JSON may be too heavy for shared_preferences.
-- Image input re-upload behavior needs runtime validation.
-- Saved workflow re-run behavior needs runtime validation.
+- Image input re-upload behavior needs Android runtime validation.
+- Saved workflow re-run behavior needs RunPod + Android validation.
 - Generated history storage is still weak.
 - Error messages are still basic.
 ```
 
 ### Improvement direction
 
-After runtime validation, move toward file-based profile storage.
+After real validation, move toward file-based profile storage if shared_preferences is too weak.
 
 Possible production structure:
 
@@ -152,7 +174,7 @@ MVP:
 Use shared_preferences to prove the flow.
 
 Next:
-Move large profile data to app-local files.
+Move large profile data to app-local files if needed.
 
 Later:
 Add preview image, generated history, last-used values, and profile update handling.
@@ -180,8 +202,8 @@ Compatibility should expand in this order:
 
 ```text
 1. Stabilize flat API workflows.
-2. Use object_info for accurate input metadata.
-3. Report missing models and nodes.
+2. Use /object_info for accurate input metadata.
+3. Use /models to report missing models and nodes.
 4. Add UI workflow import/conversion if needed.
 5. Add bypass handling.
 6. Add subgraph handling.
@@ -240,46 +262,49 @@ Not allowed yet:
 
 ```text
 Step 1:
-Claude runtime validation.
+RunPod GPU validation.
 
 Step 2:
-Fix only blockers found by Claude.
+Android real-device or emulator validation.
 
 Step 3:
-Pass the minimum profile zip to Flutter generation path.
+Fix only blockers found during real validation.
 
 Step 4:
-Confirm saved profile re-run behavior.
+Confirm saved profile re-run behavior and image re-upload behavior.
 
 Step 5:
 Improve error display.
 
 Step 6:
-Add object_info support.
+Decide whether shared_preferences is enough or file-based profile storage is needed.
 
 Step 7:
-Add model/node missing checks.
+Add /object_info support.
 
 Step 8:
-Add UI workflow import/conversion if needed.
+Add /models and /models/{folder} model/node missing checks.
 
 Step 9:
-Add ControlNet / IPAdapter / FaceDetailer / Upscale support.
+Add UI workflow import/conversion if needed.
 
 Step 10:
+Add ControlNet / IPAdapter / FaceDetailer / Upscale support.
+
+Step 11:
 Add bypass / subgraph / node color handling.
 ```
 
 ## Priority ranking
 
-### S rank: prove the core path
+### S rank: prove the real core path
 
 ```text
-- ComfyUI custom node loads.
-- Profile zip is exported.
-- Flutter reads the zip.
-- /prompt generation works.
-- /view image display works.
+- RunPod ComfyUI custom node loads.
+- Profile zip is exported on RunPod.
+- Flutter Android reads the zip.
+- /prompt generation works with a real model.
+- /view image display works in the Android app.
 ```
 
 ### A rank: make MVP usable
@@ -294,8 +319,8 @@ Add bypass / subgraph / node color handling.
 ### B rank: improve compatibility
 
 ```text
-- object_info support.
-- model existence checks.
+- /object_info support.
+- /models existence checks.
 - custom node existence checks.
 - UI workflow import.
 ```
@@ -316,31 +341,11 @@ Add bypass / subgraph / node color handling.
 The next proof target is:
 
 ```text
-A ComfyUI workflow can be analyzed by ComfyUI,
+A ComfyUI workflow can be analyzed by RunPod ComfyUI,
 loaded by a smartphone app,
 patched only through allowed fields,
-submitted back to ComfyUI,
-and displayed as a generated image.
+submitted back to RunPod ComfyUI,
+and displayed on Android as a generated image.
 ```
 
 If this works once, the core concept is validated.
-
-## Recommended files after Claude validation
-
-After Claude completes runtime validation, add:
-
-```text
-1. RUNTIME_VALIDATION_RESULT.md
-2. BLOCKERS_AFTER_CLAUDE.md
-3. NEXT_PHASE_PLAN.md
-```
-
-These should record:
-
-```text
-- What passed.
-- What failed.
-- What was fixed.
-- What remains unverified.
-- What should be done next.
-```
