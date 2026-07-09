@@ -36,6 +36,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
   List<GeneratedImage> _images = const [];
   List<GeneratedImage> _sessionHistory = const [];
   bool _submitting = false;
+  bool _queueChecking = false;
+  bool _interrupting = false;
   ComfyProgressClient? _progressClient;
   StreamSubscription<ComfyProgressEvent>? _progressSub;
 
@@ -65,6 +67,23 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
   String _defaultValueForField(UiField field) {
     return field.defaultValue?.toString() ?? '';
+  }
+
+  String _friendlyError(Object error) {
+    final message = error.toString().replaceFirst('ComfyApiException: ', '');
+    if (message.contains('SocketException') || message.contains('Failed host lookup') || message.contains('Connection refused')) {
+      return 'Connection failed. Check the ComfyUI URL and whether the pod/server is running.';
+    }
+    if (message.contains('/prompt') || message.contains('prompt_id') || message.contains('HTTP 400')) {
+      return 'Generation request failed. The workflow, model, or inputs may not match this ComfyUI environment. $message';
+    }
+    if (message.contains('Invalid JSON')) {
+      return 'ComfyUI returned an unexpected response. $message';
+    }
+    if (message.length > 260) {
+      return '${message.substring(0, 260)}...';
+    }
+    return message;
   }
 
   Future<void> _restoreSavedFieldValues() async {
@@ -159,7 +178,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
       });
     } catch (e) {
       setState(() {
-        _status = 'Patch failed: $e';
+        _status = 'Patch failed: ${_friendlyError(e)}';
         _patchedPreview = '';
       });
     }
@@ -184,7 +203,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
         _status = node == null || node == 'null' ? 'Execution complete; loading history...' : 'Executing node $node';
       });
     } else if (event.isExecutionError) {
-      setState(() => _status = 'Execution error');
+      setState(() => _status = 'Execution error from ComfyUI. Check workflow, model, and custom nodes.');
     }
   }
 
@@ -224,9 +243,53 @@ class _GenerateScreenState extends State<GenerateScreen> {
       });
       await _fetchHistoryWhenReady(client, promptId);
     } catch (e) {
-      setState(() => _status = 'Submit failed: $e');
+      setState(() => _status = 'Submit failed: ${_friendlyError(e)}');
     } finally {
       if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _checkQueue() async {
+    if (widget.profile.comfyUrl.isEmpty) {
+      setState(() => _status = 'ComfyUI URL missing on local profile');
+      return;
+    }
+    setState(() {
+      _queueChecking = true;
+      _status = 'Checking queue...';
+    });
+    try {
+      final client = ComfyApiClient(baseUrl: widget.profile.comfyUrl);
+      final queue = await client.getQueue();
+      final running = queue['queue_running'];
+      final pending = queue['queue_pending'];
+      final runningCount = running is List ? running.length : 0;
+      final pendingCount = pending is List ? pending.length : 0;
+      setState(() => _status = 'Queue: running $runningCount, pending $pendingCount');
+    } catch (e) {
+      setState(() => _status = 'Queue check failed: ${_friendlyError(e)}');
+    } finally {
+      if (mounted) setState(() => _queueChecking = false);
+    }
+  }
+
+  Future<void> _interruptGeneration() async {
+    if (widget.profile.comfyUrl.isEmpty) {
+      setState(() => _status = 'ComfyUI URL missing on local profile');
+      return;
+    }
+    setState(() {
+      _interrupting = true;
+      _status = 'Sending interrupt...';
+    });
+    try {
+      final client = ComfyApiClient(baseUrl: widget.profile.comfyUrl);
+      await client.interrupt();
+      setState(() => _status = 'Interrupt sent');
+    } catch (e) {
+      setState(() => _status = 'Interrupt failed: ${_friendlyError(e)}');
+    } finally {
+      if (mounted) setState(() => _interrupting = false);
     }
   }
 
@@ -263,7 +326,9 @@ class _GenerateScreenState extends State<GenerateScreen> {
       }
     }
     setState(() {
-      _status = lastError == null ? 'History wait timed out' : 'History wait timed out: $lastError';
+      _status = lastError == null
+          ? 'History wait timed out. The image may still be running in ComfyUI.'
+          : 'History wait timed out: ${_friendlyError(lastError)}';
     });
   }
 
@@ -618,6 +683,23 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
+  Widget _buildQueueControls() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        OutlinedButton(
+          onPressed: _queueChecking ? null : _checkQueue,
+          child: Text(_queueChecking ? 'Checking queue...' : 'Check queue'),
+        ),
+        OutlinedButton(
+          onPressed: _interrupting ? null : _interruptGeneration,
+          child: Text(_interrupting ? 'Interrupting...' : 'Interrupt'),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final fields = _appProfile.simpleFields;
@@ -640,6 +722,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
             onPressed: _submitting ? null : _submitPrompt,
             child: Text(_submitting ? 'Submitting...' : 'Submit /prompt'),
           ),
+          const SizedBox(height: 8),
+          _buildQueueControls(),
           const SizedBox(height: 8),
           OutlinedButton(
             onPressed: _resetFieldsToDefault,
