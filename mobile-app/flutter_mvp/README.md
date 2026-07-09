@@ -137,21 +137,44 @@ It exposes a stream of `ComfyProgressEvent` values for:
 
 ### setup_screen.dart
 
-Initial entry screen for entering the ComfyUI URL.
+Entry screen for entering the ComfyUI URL.
+
+Current behavior:
+
+- accepts a ComfyUI URL
+- checks `/system_stats` through `ComfyApiClient`
+- opens RemoteProfilesScreen
+- opens LocalProfilesScreen
 
 ### remote_profiles_screen.dart
 
-Placeholder for fetching remote profiles from the Analyzer API.
+Current behavior:
+
+- fetches `/mobile_analyzer/profiles`
+- displays remote profiles
+- downloads selected profile zip
+- parses zip with `ProfileZipService`
+- saves profile with `LocalProfileStore`
 
 ### local_profiles_screen.dart
 
-Placeholder for saved local profiles.
+Current behavior:
+
+- loads saved local profiles
+- opens GenerateScreen for selected profile
+- deletes a saved profile
 
 ### generate_screen.dart
 
-Initial screen that reads `LocalProfile.appProfile.simpleFields` and lists fields.
+Current behavior:
 
-Later this screen should render editable widgets and call `WorkflowPatcher`.
+- reads `LocalProfile.appProfile.simpleFields`
+- renders simple text fields
+- collects field values
+- calls `WorkflowPatcher`
+- shows patched workflow JSON as a preview
+
+Later this screen should submit to ComfyUI and display images.
 
 ## Initial screens
 
