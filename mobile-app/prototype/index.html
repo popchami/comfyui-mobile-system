@@ -11,11 +11,13 @@
     section { background: #1b1b1b; border: 1px solid #333; border-radius: 14px; padding: 14px; }
     label { display: block; font-size: 13px; color: #bbb; margin-bottom: 6px; }
     input, textarea, select, button { width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid #444; padding: 10px; background: #101010; color: #f5f5f5; }
+    input[type="file"] { padding: 12px; background: #151515; }
     textarea { min-height: 90px; resize: vertical; }
     button { background: #ff7a00; color: #111; border: none; font-weight: 700; margin-top: 8px; }
     button.secondary { background: #333; color: #f5f5f5; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .field { margin-bottom: 12px; }
+    .hint { font-size: 12px; color: #888; margin-top: 4px; }
     .status { font-size: 13px; color: #ccc; white-space: pre-wrap; }
     .warn { color: #ffcc66; }
     img { max-width: 100%; border-radius: 12px; margin-top: 8px; border: 1px solid #333; }
@@ -57,7 +59,7 @@
     <section>
       <h2>4. Simple UI</h2>
       <div id="simpleUi"></div>
-      <button onclick="buildPatchedWorkflow()">Patch確認</button>
+      <button onclick="previewPatch()">Patch確認</button>
       <button onclick="submitPrompt()">生成実行</button>
     </section>
 
@@ -185,6 +187,14 @@ function renderSimpleUi() {
         opt.textContent = v;
         input.appendChild(opt);
       });
+    } else if (field.type === 'image') {
+      input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      const hint = document.createElement('div');
+      hint.className = 'hint';
+      hint.textContent = '未選択の場合は元の画像名を使う: ' + (field.default || 'なし');
+      wrap.appendChild(hint);
     } else {
       input = document.createElement('input');
       input.type = field.type === 'number' || field.type === 'slider' ? 'number' : 'text';
@@ -193,13 +203,23 @@ function renderSimpleUi() {
       if (field.step !== undefined) input.step = field.step;
     }
     input.id = 'field_' + field.field_id;
-    input.value = field.default ?? '';
+    if (field.type !== 'image') input.value = field.default ?? '';
+    input.dataset.defaultValue = field.default ?? '';
+    input.dataset.fieldType = field.type || '';
     wrap.appendChild(input);
     root.appendChild(wrap);
   });
 }
 
-function buildPatchedWorkflow() {
+async function previewPatch() {
+  try {
+    await buildPatchedWorkflow();
+  } catch (e) {
+    setStatus('Patch失敗: ' + e.message);
+  }
+}
+
+async function buildPatchedWorkflow() {
   if (!appProfile || !workflow) {
     setStatus('Profile未読み込み');
     return null;
@@ -213,11 +233,42 @@ function buildPatchedWorkflow() {
     if (!node || !node.inputs || !(target.input in node.inputs)) {
       throw new Error('patch先が存在しません: node ' + target.node_id + ' input ' + target.input);
     }
-    node.inputs[target.input] = castValue(el.value, target.value_type);
+
+    if (target.value_type === 'IMAGE') {
+      node.inputs[target.input] = await resolveImageValue(el);
+    } else {
+      node.inputs[target.input] = castValue(el.value, target.value_type);
+    }
   }
   document.getElementById('patchedOutput').textContent = JSON.stringify(patchedWorkflow, null, 2);
   setStatus('Patch作成OK');
   return patchedWorkflow;
+}
+
+async function resolveImageValue(fileInput) {
+  if (fileInput.files && fileInput.files.length > 0) {
+    const uploaded = await uploadImage(fileInput.files[0]);
+    return uploaded.name || uploaded.filename || fileInput.files[0].name;
+  }
+  const current = fileInput.dataset.defaultValue;
+  if (!current) throw new Error('画像が未選択で、元画像名もありません');
+  return current;
+}
+
+async function uploadImage(file) {
+  setStatus('画像アップロード中: ' + file.name);
+  const form = new FormData();
+  form.append('image', file, file.name);
+  form.append('type', 'input');
+  form.append('overwrite', 'true');
+  const res = await fetch(baseUrl() + '/upload/image', {
+    method: 'POST',
+    body: form
+  });
+  if (!res.ok) throw new Error('/upload/image ' + res.status);
+  const data = await res.json();
+  setStatus('画像アップロードOK: ' + (data.name || data.filename || file.name));
+  return data;
 }
 
 function castValue(value, type) {
@@ -229,7 +280,7 @@ function castValue(value, type) {
 
 async function submitPrompt() {
   try {
-    const wf = buildPatchedWorkflow();
+    const wf = await buildPatchedWorkflow();
     if (!wf) return;
     setResult('生成送信中...');
     document.getElementById('images').innerHTML = '';
