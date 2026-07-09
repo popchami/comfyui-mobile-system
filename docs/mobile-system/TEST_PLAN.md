@@ -32,6 +32,7 @@ Check analyzer skeleton files:
 - `__init__.py`
 - `nodes.py`
 - `server.py`
+- `mobile-app/prototype/profile-storage.js`
 
 Check:
 
@@ -46,6 +47,8 @@ Check:
 - Width, height, and batch are detected from EmptyLatentImage.
 - LoadImage creates an image field.
 - Detected model names are reported as unverified references.
+- Local profile storage uses browser localStorage only.
+- Local profile storage can upsert, delete, and clear profiles.
 
 Pass condition:
 
@@ -121,6 +124,22 @@ Pass condition:
 - One profile zip can be imported without manual JSON paste.
 - One image can be generated from a profile imported through the new flow.
 - If the workflow uses LoadImage, one selected smartphone image can be uploaded and used.
+
+## Phase 6: Local storage helper test
+
+Use browser devtools or a temporary UI hook.
+
+Check:
+
+- `ComfyMobileProfileStorage.upsertStoredProfile(appProfile, workflow)` saves a profile.
+- `ComfyMobileProfileStorage.loadStoredProfiles()` returns saved profiles.
+- Saving the same `profile_id` updates the existing stored profile.
+- `ComfyMobileProfileStorage.deleteStoredProfile(profileId)` removes one profile.
+- `ComfyMobileProfileStorage.clearStoredProfiles()` clears all stored profiles.
+
+Pass condition:
+
+- Imported profiles can be saved and loaded from browser localStorage.
 
 ## Merge rule
 
