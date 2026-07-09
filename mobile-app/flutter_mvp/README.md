@@ -51,6 +51,48 @@ file_picker: ^8.1.0
 
 Package versions should be refreshed before actual Flutter implementation.
 
+## Added MVP files
+
+```text
+lib/models/app_profile.dart
+lib/services/workflow_patcher.dart
+lib/services/comfy_api_client.dart
+lib/services/profile_zip_service.dart
+```
+
+### app_profile.dart
+
+Contains initial Dart models for:
+
+- AppProfile
+- UiField
+- PatchTarget
+
+### workflow_patcher.dart
+
+Patches workflow JSON using `app_profile.patch_targets` only.
+
+### comfy_api_client.dart
+
+Contains initial HTTP methods for:
+
+- GET `/system_stats`
+- GET `/mobile_analyzer/profiles`
+- GET `/mobile_analyzer/profiles/{id}/download`
+- POST `/prompt`
+- GET `/history/{prompt_id}`
+- build `/view` image URLs
+- POST `/upload/image`
+
+### profile_zip_service.dart
+
+Extracts and validates:
+
+- `app_profile.json`
+- `workflow.json`
+
+from `mobile_profile_export.zip`.
+
 ## Initial screens
 
 - SetupScreen
@@ -67,8 +109,6 @@ lib/
   main.dart
   models/
     app_profile.dart
-    patch_target.dart
-    ui_field.dart
     local_profile.dart
   services/
     comfy_api_client.dart
