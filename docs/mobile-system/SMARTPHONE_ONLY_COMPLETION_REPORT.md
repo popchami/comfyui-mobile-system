@@ -4,13 +4,14 @@
 
 This file marks the smartphone-only preparation phase as complete.
 
-No runtime work was performed in this phase. This is a documentation, planning, and handoff completion marker.
+No runtime work was performed in this phase. This is a documentation, planning, handoff, and static-review completion marker.
 
 ## Completion status
 
 ```text
 Smartphone-only preparation: COMPLETE
-Implementation work: paused
+Cross-file static review fixes: COMPLETE
+Implementation work: paused except for minimal static-review fixes already applied
 RunPod runtime validation: not complete
 Android runtime validation: not complete
 PR state: Draft
@@ -44,6 +45,22 @@ Merge: do not merge
 - Debug report template documented.
 - Workflow compatibility report template documented.
 - Decision record template documented.
+- Cross-file static review follow-up documented.
+```
+
+## Static review fixes applied after completion pass
+
+```text
+- ComfyApiClient preserves base URL path when building HTTP API URLs.
+- ComfyProgressClient preserves base URL path when building WebSocket URL.
+- Prototype WebSocket helper preserves base URL path when building WebSocket URL.
+- PR_BODY_UPDATE_DRAFT.md uses safe nested Markdown fences.
+```
+
+Details:
+
+```text
+docs/mobile-system/STATIC_REVIEW_NOTES.md
 ```
 
 ## Confirmed during final smartphone-only pass
@@ -56,7 +73,7 @@ Merge: do not merge
 - README links PR body update draft.
 - README links planning/reference/reporting docs.
 - HANDOFF states the current blocked/deferred work.
-- DOCS_AUDIT_RESULT states smartphone-only audit status.
+- DOCS_AUDIT_RESULT states smartphone-only audit and static-review follow-up status.
 ```
 
 ## What is still impossible from smartphone-only work
@@ -72,7 +89,7 @@ Merge: do not merge
 ## Stop condition
 
 ```text
-Do not continue adding documentation unless a new non-runtime planning topic appears.
+Do not continue adding documentation unless a new source-level issue or non-runtime planning topic appears.
 The next meaningful work is real validation.
 ```
 
