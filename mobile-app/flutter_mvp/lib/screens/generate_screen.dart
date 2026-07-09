@@ -13,6 +13,7 @@ import '../models/local_profile.dart';
 import '../services/comfy_api_client.dart';
 import '../services/comfy_progress_client.dart';
 import '../services/environment_model_checker.dart';
+import '../services/generated_image_metadata_service.dart';
 import '../services/history_image_extractor.dart';
 import '../services/workflow_patcher.dart';
 
@@ -338,11 +339,17 @@ class _GenerateScreenState extends State<GenerateScreen> {
             historyItem: itemMap,
             client: client,
           );
+          final imagesWithMetadata = GeneratedImageMetadataService.attachSessionMetadata(
+            images: images,
+            promptId: promptId,
+            profileName: widget.profile.name,
+            seed: _lastUsedSeed,
+          );
           setState(() {
             _status = images.isEmpty ? 'History loaded' : 'Generated ${images.length} images';
             _historyPreview = const JsonEncoder.withIndent('  ').convert(historyItem);
-            _images = images;
-            _mergeIntoSessionHistory(images);
+            _images = imagesWithMetadata;
+            _mergeIntoSessionHistory(imagesWithMetadata);
           });
           return;
         }
@@ -396,6 +403,18 @@ class _GenerateScreenState extends State<GenerateScreen> {
                 ),
                 const SizedBox(height: 8),
                 SelectableText(image.url.toString(), style: Theme.of(context).textTheme.bodySmall),
+                if (image.seed.isNotEmpty || image.promptId.isNotEmpty || image.profileName.isNotEmpty || image.createdAt.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    [
+                      if (image.profileName.isNotEmpty) 'profile: ${image.profileName}',
+                      if (image.seed.isNotEmpty) 'seed: ${image.seed}',
+                      if (image.promptId.isNotEmpty) 'prompt_id: ${image.promptId}',
+                      if (image.createdAt.isNotEmpty) 'created_at: ${image.createdAt}',
+                    ].join('\n'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerRight,
@@ -726,7 +745,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
         Text('Session history', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         SizedBox(
-          height: 110,
+          height: 132,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: _sessionHistory.length,
@@ -736,7 +755,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
               return InkWell(
                 onTap: () => _openImagePreview(image),
                 child: SizedBox(
-                  width: 110,
+                  width: 126,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -753,6 +772,20 @@ class _GenerateScreenState extends State<GenerateScreen> {
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
+                      if (image.seed.isNotEmpty)
+                        Text(
+                          'seed ${image.seed}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      if (image.profileName.isNotEmpty)
+                        Text(
+                          image.profileName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                     ],
                   ),
                 ),
