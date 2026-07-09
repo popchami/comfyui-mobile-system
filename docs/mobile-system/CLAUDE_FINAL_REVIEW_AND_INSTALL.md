@@ -4,7 +4,7 @@
 
 This file is the handoff point for Claude.
 
-The user cannot use a PC right now. The goal is for Claude to review this PR, first confirm whether the design should be adjusted based on official ComfyUI/RunPod capabilities and external references, then confirm whether the current work can be installed/tested.
+The user cannot use a PC right now. The goal is for Claude to review this PR, first confirm whether the edited pre-implementation decisions are still valid based on official ComfyUI/RunPod capabilities and external references, then confirm whether the current work can be installed/tested.
 
 ## Repository and PR
 
@@ -33,6 +33,7 @@ Claude should read these files first:
 ```text
 docs/mobile-system/PRE_CLAUDE_STATUS.md
 docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
+docs/mobile-system/PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
 docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
 docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
 docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
@@ -40,13 +41,15 @@ docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
 docs/mobile-system/STATIC_REVIEW_NOTES.md
 ```
 
+`PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md` is the edited decision layer. Treat it as more actionable than the raw inventory files.
+
 `STATIC_REVIEW_NOTES.md` records what was already checked and fixed before runtime validation.
 
 ## What changed before this handoff
 
 The handoff is no longer only runtime validation.
 
-Because this project is still before implementation hardens, Claude should first check whether the current design should be adjusted around existing official platform capabilities.
+Because this project is still before implementation hardens, Claude should first check whether the edited pre-implementation decisions are still correct.
 
 Main question:
 
@@ -55,6 +58,22 @@ Are we rebuilding something ComfyUI or RunPod already provides?
 ```
 
 If yes, prefer official platform APIs and keep custom work focused on the mobile profile layer.
+
+## Edited pre-implementation decision
+
+Current decision summary:
+
+```text
+- Do not discard the current system.
+- Do adjust the implementation strategy.
+- Use official ComfyUI APIs wherever possible.
+- Keep custom code focused on the missing mobile profile layer.
+- Move /object_info and /models earlier than originally planned.
+- Keep UI workflow conversion optional for now.
+- Keep comfy-portal-endpoint as a reference only.
+```
+
+Do not broadly rewrite the code before runtime validation unless Claude identifies a true blocker.
 
 ## What was added
 
@@ -73,15 +92,16 @@ Do not add new features first.
 Priority is:
 
 ```text
-1. Review current files
-2. Compare current design with official ComfyUI APIs
-3. Compare current design with the external comfy-portal-endpoint reference
-4. Decide whether /object_info and /models should move earlier
-5. Confirm install/test path
-6. Fix blocking errors only
-7. Confirm ComfyUI custom node loads
-8. Confirm Flutter MVP can reach flutter analyze / flutter run path
-9. Only then reprioritize future TODOs
+1. Review edited pre-implementation decisions
+2. Review current files
+3. Compare current design with official ComfyUI APIs
+4. Compare current design with the external comfy-portal-endpoint reference
+5. Confirm /object_info and /models should move earlier, but keep full implementation for after minimum runtime validation unless they are blockers
+6. Confirm install/test path
+7. Fix blocking errors only
+8. Confirm ComfyUI custom node loads
+9. Confirm Flutter MVP can reach flutter analyze / flutter run path
+10. Only then reprioritize future TODOs
 ```
 
 ## Official ComfyUI APIs to consider source-of-truth
@@ -106,7 +126,7 @@ Claude should verify whether the current design should use these existing routes
 Important likely adjustment:
 
 ```text
-/object_info and /models may need to move earlier than originally planned.
+/object_info and /models should become near-term priorities after minimum runtime validation.
 ```
 
 Reason:
@@ -300,8 +320,8 @@ Claude should answer these before making feature changes:
 
 ```text
 1. Which current custom logic duplicates official ComfyUI APIs?
-2. Should /object_info support be implemented before adding more manual field detection?
-3. Should /models support be implemented before expanding model warnings?
+2. Should /object_info be the first post-validation Analyzer improvement?
+3. Should /models and /models/{folder} be the first post-validation model-check improvement?
 4. Which /mobile_analyzer routes remain necessary?
 5. Should UI workflow conversion stay optional for now?
 6. What is the smallest path to validate the mobile profile concept?
@@ -344,15 +364,16 @@ Claude should specifically check these:
 This work is install-ready when Claude can confirm:
 
 ```text
-1. Architecture alignment review is complete
-2. No official ComfyUI API is being unnecessarily reimplemented for MVP
-3. ComfyUI loads ComfyUI-Mobile-Analyzer
-4. Mobile Profile Exporter creates a valid zip
-5. Analyzer profile API returns and downloads profile zips
-6. Flutter MVP passes flutter pub get
-7. Flutter MVP passes flutter analyze or has only documented non-blocking warnings
-8. Flutter app can connect to ComfyUI
-9. Flutter app can download, save, open, patch, submit, and display at least one generated image
+1. Edited pre-implementation decisions are still valid
+2. Architecture alignment review is complete
+3. No official ComfyUI API is being unnecessarily reimplemented for MVP
+4. ComfyUI loads ComfyUI-Mobile-Analyzer
+5. Mobile Profile Exporter creates a valid zip
+6. Analyzer profile API returns and downloads profile zips
+7. Flutter MVP passes flutter pub get
+8. Flutter MVP passes flutter analyze or has only documented non-blocking warnings
+9. Flutter app can connect to ComfyUI
+10. Flutter app can download, save, open, patch, submit, and display at least one generated image
 ```
 
 ## After pass condition
