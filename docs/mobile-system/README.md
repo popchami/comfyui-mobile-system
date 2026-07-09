@@ -85,6 +85,7 @@ docs/mobile-system/
   OPEN_TODOS.md
   FUTURE_ISSUES_AND_IMPROVEMENTS.md
   EXTERNAL_REFERENCES.md
+  COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 ```
 
 ## 未決定TODO / 改善記録
@@ -101,6 +102,12 @@ docs/mobile-system/FUTURE_ISSUES_AND_IMPROVEMENTS.md
 
 ```text
 docs/mobile-system/EXTERNAL_REFERENCES.md
+```
+
+`comfy-portal-endpoint` の実用度レビューは以下に記録する。
+
+```text
+docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 ```
 
 現在の主な未決定項目:
