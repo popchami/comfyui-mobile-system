@@ -8,6 +8,93 @@ Last updated by: Claude, work session paused by user request on branch `docs/mob
 
 **要確認(rebase統合時のメモ)**: 本ファイルは2つの独立した更新系列を統合したものです。時系列としてはClaudeによる「Session paused — quick resume summary」(13:22)が先、ChatGPTによる大幅な拡張(同日21:30まで、複数コミット)が後です。両者はそれぞれ別のブランチ状態からの記述であり、このrebase統合コミットで初めて突き合わされました。内容に新旧の食い違いがある場合、基本的にはこの後に続く各セクション(ChatGPT側、時系列で後)がより新しい状態を反映しています。Claudeの記録は「その時点のスナップショット」として保持しています。
 
+## Session update (Claude, 2026-07-10 08:46 JST) — autonomous task run #2
+
+Second autonomous ("self-driving") run on this branch, same ground rules as
+the run below (skip confirmation-required decisions rather than blocking,
+`git commit` auto-approved, `git push` explicitly forbidden — nothing here
+has been pushed).
+
+### Task 1 & 2: `detect_model_strategy()` initial implementation — DONE
+
+Implemented `analyzer/ComfyUI-Mobile-Analyzer/model_strategy_detector.py`
+per the decided scope in `IMAGE_GENERATION_FIRST_MODEL_BRANCHING_PLAN.md`
+(commit `871f42c`), wired into `MobileProfileV2ValidatedDebugExporter` as a
+new top-level `model_strategy` key (sibling of `runtime_requirements` etc.,
+per the earlier placement decision). `nodes.py` (production v1
+`app_profile.json` exporter) was not touched.
+
+Covers: `model_family` (flux, with `flux1`/`flux2_klein` sub-split, via
+confirmed `DualCLIPLoader.type=="flux"` vs `CLIPLoader.type=="flux2"`; sdxl
+via the confirmed `CLIPTextEncodeSDXL`/`CLIPTextEncodeSDXLRefiner` marker
+nodes; else unknown), `loader_strategy` (`checkpoint_single_file`,
+`diffusion_model_plus_text_encoders_plus_vae`, `fp8_diffusion_model` via
+`UNETLoader.weight_dtype`, `custom_loader` via confirmed `RETURN_TYPES`
+containing `MODEL`, else `unknown`), `vae_strategy` (`bundled`,
+`external_required`, `external_optional`, `unknown`, via tracing which
+loader class feeds a `vae` input connection), and `lora_family` (inferred by
+tracing a `LoraLoader`/`LoraLoaderModelOnly` node's `model` input back to a
+recognized base-model loader — never read off the LoRA node itself, since it
+carries no family information).
+
+Not implemented, per the prior session's deferral decision: `fp8_checkpoint`,
+`gguf_quantized`. Also newly documented as a known limitation while building
+this: there is no confirmed node-level signal to positively classify
+`model_family="sd15"` (only `sdxl` can be positively confirmed via
+`CLIPTextEncodeSDXL`); a bare `CheckpointLoaderSimple` workflow without that
+marker stays `model_family="unknown"` rather than being assumed `sd15`.
+Likewise `merged_checkpoint` as a category distinct from
+`checkpoint_single_file` has no confirmed graph-level signal and is not
+produced.
+
+Added `analyzer/ComfyUI-Mobile-Analyzer/tests/test_model_strategy_detector.py`
+(8 cases, covering all 5 scenarios requested this session). Test result:
+`python -m unittest discover -s analyzer/ComfyUI-Mobile-Analyzer/tests -p "test_*.py"`
+— **22/22 PASS** (14 pre-existing + 8 new).
+
+Also verified end-to-end against a live ComfyUI instance (scratchpad,
+CPU-only): submitted a real Flux.1 workflow (`UNETLoader` + `DualCLIPLoader`
+type="flux" + `VAELoader`) and a real Flux.2 Klein workflow (`UNETLoader` +
+`CLIPLoader` type="flux2" + `VAELoader`) through
+`MobileProfileV2ValidatedDebugExporter`; both executed with no node errors,
+and the exported `app_profile_v2_validated_debug.json` correctly showed
+`model_strategy.flux_generation` as `"flux1"` and `"flux2_klein"`
+respectively, with `confidence: "high"` for both.
+
+### Task 3: draft status + this record — DONE
+
+`IMAGE_GENERATION_FIRST_MODEL_BRANCHING_PLAN.md` status moved to
+`DRAFT - initial implementation in progress` (commit `6f9adce`), with an
+"Implementation status" section listing covered vs. deferred scope.
+
+### Unpushed commits on this branch (as of this session)
+
+```text
+6f9adce  Update branching plan draft status to reflect initial implementation
+871f42c  Add initial model_strategy detector (model_family/loader_strategy/vae_strategy/lora_family)
+fac1b7b  Apply user decisions on model_strategy placement and deferred detectors
+```
+
+(`fac1b7b` was already unpushed at the start of this session, from the
+previous turn's decisions; `871f42c` and `6f9adce` are new from this run.)
+
+### Items needing the user's judgment before proceeding (要確認)
+
+```text
+1. Whether/when to push the 3 commits above.
+2. Review the model_strategy_detector.py implementation itself — this is a
+   first pass; the sd15/merged_checkpoint limitations above were judgment
+   calls made without asking mid-run, per this session's "skip and record"
+   instruction, and should be reviewed.
+3. Whether the lora_family "trace back to root loader" approach (assumes a
+   single dominant model_family per workflow, does not yet handle workflows
+   that genuinely mix multiple model families with separate LoRA chains) is
+   sufficient for now, or needs multi-branch support later.
+4. fp8_checkpoint / gguf_quantized / VHS_VideoCombine confirmation: still
+   pending RunPod real-environment verification (carried over from the
+   previous session's HANDOFF entry below).
+```
+
 ## Session update (Claude, 2026-07-10 08:18 JST) — autonomous task run
 
 This section records an autonomous ("self-driving") task run on this branch.
