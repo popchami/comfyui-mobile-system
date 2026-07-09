@@ -15,11 +15,13 @@ analyzer/ComfyUI-Mobile-Analyzer/__init__.py
 analyzer/ComfyUI-Mobile-Analyzer/examples/output_app_profile_example.json
 mobile-app/flutter_mvp/lib/main.dart
 mobile-app/flutter_mvp/lib/models/local_profile.dart
+mobile-app/flutter_mvp/lib/models/remote_profile.dart
 mobile-app/flutter_mvp/lib/services/comfy_api_client.dart
 mobile-app/flutter_mvp/lib/services/comfy_progress_client.dart
 mobile-app/flutter_mvp/lib/services/local_profile_store.dart
 mobile-app/flutter_mvp/lib/services/profile_zip_service.dart
 mobile-app/flutter_mvp/lib/services/workflow_patcher.dart
+mobile-app/flutter_mvp/lib/screens/remote_profiles_screen.dart
 mobile-app/flutter_mvp/lib/screens/generate_screen.dart
 ```
 
@@ -120,6 +122,35 @@ current patch_target_id format
 unverified model warnings
 exists_in_comfyui null
 ```
+
+### 7. Typed Flutter remote profile handling
+
+Added:
+
+```text
+mobile-app/flutter_mvp/lib/models/remote_profile.dart
+```
+
+Updated:
+
+```text
+mobile-app/flutter_mvp/lib/services/comfy_api_client.dart
+mobile-app/flutter_mvp/lib/screens/remote_profiles_screen.dart
+```
+
+`getRemoteProfiles()` now returns typed `List<RemoteProfile>` values instead of `List<dynamic>`.
+
+RemoteProfilesScreen now uses:
+
+```text
+profile.id
+profile.name
+profile.file
+profile.sizeBytes
+profile.modifiedAt
+```
+
+This reduces dynamic typing before Claude runs `flutter analyze`.
 
 ## Flutter target clarification
 
