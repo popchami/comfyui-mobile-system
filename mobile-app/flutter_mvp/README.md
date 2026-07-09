@@ -38,22 +38,47 @@ Read /history/{prompt_id}
 Display /view images
 ```
 
-## Suggested packages
+## Run checklist
+
+See:
+
+```text
+RUN_CHECKLIST.md
+```
+
+Basic commands:
+
+```bash
+flutter pub get
+flutter analyze
+flutter run
+```
+
+## Dependencies
+
+Declared in:
+
+```text
+pubspec.yaml
+```
+
+Current packages:
 
 ```yaml
 http: ^1.2.0
 web_socket_channel: ^3.0.0
 archive: ^3.6.0
-path_provider: ^2.1.0
 shared_preferences: ^2.3.0
 file_picker: ^8.1.0
 ```
 
-Package versions should be refreshed before actual Flutter implementation.
+Package versions should be refreshed before production implementation.
 
 ## Added MVP files
 
 ```text
+pubspec.yaml
+RUN_CHECKLIST.md
 lib/models/app_profile.dart
 lib/models/local_profile.dart
 lib/models/generated_image.dart
@@ -233,8 +258,6 @@ lib/
     remote_profiles_screen.dart
     local_profiles_screen.dart
     generate_screen.dart
-  widgets/
-    dynamic_field_widget.dart
 ```
 
 ## Rule
