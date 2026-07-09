@@ -149,6 +149,7 @@ RUN_CHECKLIST.md
 lib/main.dart
 lib/models/app_profile.dart
 lib/models/local_profile.dart
+lib/models/remote_profile.dart
 lib/models/generated_image.dart
 lib/services/comfy_api_client.dart
 lib/services/profile_zip_service.dart
@@ -160,6 +161,13 @@ lib/screens/setup_screen.dart
 lib/screens/remote_profiles_screen.dart
 lib/screens/local_profiles_screen.dart
 lib/screens/generate_screen.dart
+```
+
+Important Flutter note:
+
+```text
+ComfyApiClient.getRemoteProfiles() returns List<RemoteProfile>.
+RemoteProfilesScreen should not use dynamic profile maps anymore.
 ```
 
 Run commands from:
@@ -203,7 +211,7 @@ SetupScreen
   ↓ Enter ComfyUI URL
   ↓ Check /system_stats
   ↓ Open Remote Profiles
-  ↓ Load /mobile_analyzer/profiles
+  ↓ Load typed RemoteProfile values from /mobile_analyzer/profiles
   ↓ Save selected profile zip
   ↓ Open Local Profiles
   ↓ Open saved profile
@@ -244,6 +252,7 @@ Claude should specifically check these:
 8. Whether generated app_profile includes image fields for LoadImage
 9. Whether shared_preferences is acceptable for current profile size
 10. Whether Android Internet permission is present in the generated app shell
+11. Whether RemoteProfile parsing matches /mobile_analyzer/profiles runtime output
 ```
 
 ## Pass condition
