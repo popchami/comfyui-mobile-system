@@ -16,9 +16,22 @@ Do not merge yet.
 
 ## Suggested PR body addition
 
-Add this under the current source-of-truth / validation docs section.
+Add this near the top of the PR body, under the current status section.
 
 ````markdown
+## Final smartphone-only status
+
+```text
+Smartphone-only preparation: COMPLETE
+Smartphone-only implementation: COMPLETE
+Smartphone-only documentation: COMPLETE
+Smartphone-only handoff preparation: COMPLETE
+RunPod GPU validation: NOT COMPLETE
+Android real-device/emulator validation: NOT COMPLETE
+Merge: DO NOT MERGE
+Next meaningful work: REAL VALIDATION ONLY
+```
+
 ## Current source of truth
 
 Read these first:
@@ -31,6 +44,7 @@ docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
 docs/mobile-system/NEXT_PHASE_PLAN.md
 docs/mobile-system/NEXT_ACTION_QUEUE.md
 docs/mobile-system/DOCS_AUDIT_RESULT.md
+docs/mobile-system/STATIC_REVIEW_NOTES.md
 ```
 
 ## Validation runbooks
@@ -38,40 +52,50 @@ docs/mobile-system/DOCS_AUDIT_RESULT.md
 ```text
 docs/mobile-system/RUNPOD_VALIDATION_RUNBOOK.md
 docs/mobile-system/ANDROID_VALIDATION_RUNBOOK.md
-```
-
-## Minimal AI handoff
-
-```text
-docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
-```
-
-## Added smartphone-only planning docs
-
-```text
-docs/mobile-system/FUTURE_FEATURE_PREP.md
-docs/mobile-system/ADDITIONAL_FEATURE_CANDIDATES.md
-docs/mobile-system/APP_PROFILE_EVOLUTION_PLAN.md
-docs/mobile-system/UX_FLOW_PREP.md
-docs/mobile-system/POST_VALIDATION_ISSUE_DRAFTS.md
-docs/mobile-system/REFERENCE_STUDY_BACKLOG.md
-docs/mobile-system/REFERENCE_TO_FEATURE_MAP.md
-docs/mobile-system/REFERENCE_STUDY_CHECKLIST.md
 docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md
 docs/mobile-system/DEBUG_REPORT_TEMPLATE.md
-docs/mobile-system/WORKFLOW_COMPATIBILITY_REPORT_TEMPLATE.md
-docs/mobile-system/DECISION_RECORD_TEMPLATE.md
 ```
 
-## Latest smartphone-only preparation status
+## Smartphone-side app features prepared
 
 ```text
-- No runtime validation was performed in this prep pass.
-- No Termux work was performed.
-- No RunPod work was performed.
-- No Flutter runtime work was performed.
-- Documentation, planning, validation runbooks, reporting templates, and AI handoff prompts were updated.
-- HANDOFF.md and README.md are the current main entrypoints.
+- ComfyUI URL save/restore
+- /system_stats connection check
+- /object_info capability check
+- /models/{folder} read-only helpers
+- /queue helper + Check queue
+- /interrupt helper + Interrupt
+- friendly error messages
+- profile warning display
+- missing model / missing custom node warning
+- Check environment
+- ModelFolderResolver
+- EnvironmentModelChecker
+- profile-specific previous input save/restore
+- Reset to profile defaults
+- Random seed
+- Use last seed
+- selected image preview
+- /prompt + client_id
+- /ws progress
+- /history fallback
+- /view generated image display
+- session history
+- generated image large preview
+- generated image metadata
+- collapsible generated UI sections
+```
+
+## Feature detail docs added
+
+```text
+docs/mobile-system/APP_INPUT_STATE_CONTROLS.md
+docs/mobile-system/APP_QUEUE_AND_ERROR_CONTROLS.md
+docs/mobile-system/APP_CAPABILITY_CHECKS.md
+docs/mobile-system/APP_PROFILE_WARNING_DISPLAY.md
+docs/mobile-system/APP_MODEL_FOLDER_RESOLVER.md
+docs/mobile-system/APP_ENVIRONMENT_MODEL_CHECKER.md
+docs/mobile-system/APP_GENERATED_IMAGE_METADATA.md
 ```
 
 ## Still blocked before merge
@@ -81,11 +105,19 @@ docs/mobile-system/DECISION_RECORD_TEMPLATE.md
 - Real checkpoint image generation.
 - Android device/emulator validation.
 - Flutter app end-to-end generated image display.
+- Android validation of generated UI grouping, seed controls, environment checks, queue/interrupt, and generated image metadata.
+```
+
+## Stop condition
+
+```text
+Do not add more smartphone-only features before real validation.
+Do not mark PR ready for review or merge until RunPod + Android validation pass and HANDOFF.md is updated with final results.
 ```
 ````
 
 ## Reminder
 
 ```text
-Do not mark PR ready for review or merge until RunPod + Android validation pass and HANDOFF.md is updated with final results.
+PR #1 must remain Draft and unmerged until RunPod + Android validation pass.
 ```
