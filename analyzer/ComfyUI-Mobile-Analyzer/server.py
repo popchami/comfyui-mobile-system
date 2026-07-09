@@ -1,11 +1,11 @@
-"""Server route skeleton for ComfyUI-Mobile-Analyzer.
+"""Server routes for ComfyUI-Mobile-Analyzer.
 
-This file is a draft. It will need validation inside a real ComfyUI runtime.
+Runtime validation inside ComfyUI is still required.
 """
 
 from __future__ import annotations
 
-import json
+import time
 from pathlib import Path
 
 try:
@@ -22,16 +22,27 @@ PROFILE_DIR = Path("output") / "mobile_profiles"
 def list_profiles():
     PROFILE_DIR.mkdir(parents=True, exist_ok=True)
     profiles = []
-    for path in sorted(PROFILE_DIR.glob("*.zip"), reverse=True):
+    for path in sorted(PROFILE_DIR.glob("*.zip"), key=lambda item: item.stat().st_mtime, reverse=True):
+        stat = path.stat()
         profiles.append(
             {
                 "id": path.stem,
                 "name": path.stem,
                 "file": path.name,
                 "status": "ready",
+                "size_bytes": stat.st_size,
+                "modified_at": time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(stat.st_mtime)),
+                "download_url": f"/mobile_analyzer/profiles/{path.stem}/download",
             }
         )
     return profiles
+
+
+def resolve_profile_zip(profile_id: str) -> Path:
+    safe_name = Path(profile_id).name
+    if safe_name.endswith(".zip"):
+        safe_name = safe_name[:-4]
+    return PROFILE_DIR / f"{safe_name}.zip"
 
 
 async def handle_profiles(request):
@@ -40,8 +51,7 @@ async def handle_profiles(request):
 
 async def handle_download(request):
     profile_id = request.match_info.get("profile_id", "")
-    safe_name = Path(profile_id).name
-    zip_path = PROFILE_DIR / f"{safe_name}.zip"
+    zip_path = resolve_profile_zip(profile_id)
     if not zip_path.exists():
         return web.json_response({"error": "profile not found"}, status=404)
     return web.FileResponse(zip_path)
