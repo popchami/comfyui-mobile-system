@@ -47,6 +47,68 @@ Complex node details can be placed elsewhere:
 - profile analysis report page
 ```
 
+## One workflow graph behind multiple UI pages
+
+The app may split the UI into visible and less-visible pages.
+
+But internally, those pages must still operate on the same analyzed workflow graph.
+
+```text
+Main page controls
+Advanced page controls
+Graph / Node page controls
+Subgraph detail page controls
+Debug / report page information
+```
+
+All of these are different views over the same source:
+
+```text
+workflow.json
+app_profile.json
+patch_targets
+execution_map
+subgraph metadata
+bypass state metadata
+```
+
+Important:
+
+```text
+Separate UI pages do not mean separate workflows.
+Separate UI pages do not mean disconnected node logic.
+Every visible or hidden control must still map back to the correct node/input through Analyzer-generated patch_targets.
+```
+
+## Visible vs less-visible controls
+
+Some controls should be easy to reach:
+
+```text
+- prompt
+- negative prompt when available
+- required image upload
+- required mask / paint controls
+- important parameters
+- generate button
+- generated output review
+```
+
+Some controls can be less visible:
+
+```text
+- full node list
+- subgraph internals
+- bypass ON/OFF
+- rare parameters
+- raw analyzer report
+- unknown node warnings
+```
+
+But less visible does not mean less connected.
+
+Less visible controls still affect the same workflow graph when enabled and safely patchable.
+
 ## Important implication
 
 Because complex node information may be hidden or moved to a less visible page, the Analyzer must be even more accurate.
@@ -251,4 +313,5 @@ The app UI can stay simple.
 The node graph can be hidden or secondary.
 But Analyzer accuracy cannot be secondary.
 A simple UI must be backed by exact patch_targets, exact execution-state awareness, correct upload/mask/wildcard handling, and clear warnings.
+Visible and less-visible UI pages are only different views of one connected workflow graph.
 ```
