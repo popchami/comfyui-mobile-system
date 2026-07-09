@@ -7,6 +7,9 @@ class AppProfile {
     required this.workflowId,
     required this.simpleFields,
     required this.patchTargets,
+    required this.missingNodes,
+    required this.missingModels,
+    required this.warnings,
   });
 
   final String schemaVersion;
@@ -16,11 +19,17 @@ class AppProfile {
   final String workflowId;
   final List<UiField> simpleFields;
   final List<PatchTarget> patchTargets;
+  final List<MissingNode> missingNodes;
+  final List<MissingModel> missingModels;
+  final List<String> warnings;
 
   factory AppProfile.fromJson(Map<String, dynamic> json) {
     final ui = json['ui'] as Map<String, dynamic>? ?? const {};
     final simple = ui['simple'] as List<dynamic>? ?? const [];
     final targets = json['patch_targets'] as List<dynamic>? ?? const [];
+    final missingNodes = json['missing_nodes'] as List<dynamic>? ?? const [];
+    final missingModels = json['missing_models'] as List<dynamic>? ?? const [];
+    final warnings = json['warnings'] as List<dynamic>? ?? const [];
 
     return AppProfile(
       schemaVersion: json['schema_version'] as String? ?? '',
@@ -36,6 +45,15 @@ class AppProfile {
           .whereType<Map<String, dynamic>>()
           .map(PatchTarget.fromJson)
           .toList(),
+      missingNodes: missingNodes
+          .whereType<Map<String, dynamic>>()
+          .map(MissingNode.fromJson)
+          .toList(),
+      missingModels: missingModels
+          .whereType<Map<String, dynamic>>()
+          .map(MissingModel.fromJson)
+          .toList(),
+      warnings: warnings.map((value) => value.toString()).where((value) => value.isNotEmpty).toList(),
     );
   }
 }
@@ -103,6 +121,43 @@ class PatchTarget {
       nodeId: json['node_id']?.toString() ?? '',
       input: json['input'] as String? ?? '',
       valueType: json['value_type'] as String? ?? 'STRING',
+    );
+  }
+}
+
+class MissingNode {
+  const MissingNode({
+    required this.nodeId,
+    required this.classType,
+  });
+
+  final String nodeId;
+  final String classType;
+
+  factory MissingNode.fromJson(Map<String, dynamic> json) {
+    return MissingNode(
+      nodeId: json['node_id']?.toString() ?? '',
+      classType: json['class_type'] as String? ?? '',
+    );
+  }
+}
+
+class MissingModel {
+  const MissingModel({
+    required this.type,
+    required this.name,
+    required this.pathHint,
+  });
+
+  final String type;
+  final String name;
+  final String pathHint;
+
+  factory MissingModel.fromJson(Map<String, dynamic> json) {
+    return MissingModel(
+      type: json['type'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      pathHint: json['path_hint'] as String? ?? '',
     );
   }
 }
