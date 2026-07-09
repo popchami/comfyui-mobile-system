@@ -23,6 +23,13 @@ class ComfyProgressClient {
     return value.endsWith('/') ? value.substring(0, value.length - 1) : value;
   }
 
+  static String _joinPaths(String basePath, String childPath) {
+    final left = basePath.endsWith('/') ? basePath.substring(0, basePath.length - 1) : basePath;
+    final right = childPath.startsWith('/') ? childPath.substring(1) : childPath;
+    if (left.isEmpty || left == '/') return '/$right';
+    return '$left/$right';
+  }
+
   static String _makeClientId() {
     final random = Random().nextInt(0xFFFFFF).toRadixString(16);
     return 'mobile_${DateTime.now().millisecondsSinceEpoch}_$random';
@@ -32,7 +39,7 @@ class ComfyProgressClient {
     final scheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
     return baseUri.replace(
       scheme: scheme,
-      path: '/ws',
+      path: _joinPaths(baseUri.path, '/ws'),
       queryParameters: {'clientId': clientId},
     );
   }
