@@ -34,6 +34,7 @@ Check analyzer skeleton files:
 - `server.py`
 - `mobile-app/prototype/profile-storage.js`
 - `mobile-app/prototype/stored-profile-ui.js`
+- `mobile-app/prototype/comfy-progress.js`
 
 Check:
 
@@ -51,6 +52,8 @@ Check:
 - Local profile storage uses browser localStorage only.
 - Local profile storage can upsert, delete, and clear profiles.
 - Stored profile UI can save, load, delete, and clear profiles.
+- WebSocket helper uses a generated client_id.
+- `/prompt` payload includes the same client_id used by `/ws`.
 
 Pass condition:
 
@@ -108,6 +111,9 @@ Use `mobile-app/prototype/index.html`.
 Check:
 
 - Register ComfyUI URL.
+- WebSocket connects to `/ws`.
+- `/prompt` is submitted with matching `client_id`.
+- Basic progress or executing messages appear during generation.
 - Fetch profile list.
 - Download selected remote profile zip.
 - Import local profile zip.
@@ -129,6 +135,7 @@ Pass condition:
 - One profile zip can be imported without manual JSON paste.
 - One imported profile can be saved and reloaded.
 - One image can be generated from a profile imported through the new flow.
+- Progress messages appear while generation is running.
 - If the workflow uses LoadImage, one selected smartphone image can be uploaded and used.
 
 ## Phase 6: Local storage helper test
