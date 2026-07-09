@@ -33,6 +33,17 @@ class _SetupScreenState extends State<SetupScreen> {
 
   String get _url => _urlController.text.trim().replaceAll(RegExp(r'/+$'), '');
 
+  String _friendlyError(Object error) {
+    final message = error.toString().replaceFirst('ComfyApiException: ', '');
+    if (message.contains('SocketException') || message.contains('Failed host lookup') || message.contains('Connection refused')) {
+      return 'Connection failed. Check the ComfyUI URL and whether the pod/server is running.';
+    }
+    if (message.length > 220) {
+      return '${message.substring(0, 220)}...';
+    }
+    return message;
+  }
+
   Future<void> _restoreSavedUrl() async {
     final prefs = await SharedPreferences.getInstance();
     final savedUrl = prefs.getString(_comfyUrlKey);
@@ -61,11 +72,23 @@ class _SetupScreenState extends State<SetupScreen> {
     try {
       final client = ComfyApiClient(baseUrl: _url);
       await client.getSystemStats();
+      setState(() => _status = 'Connected. Checking nodes...');
+      final objectInfo = await client.getObjectInfo();
+      setState(() => _status = 'Connected. Checking checkpoint models...');
+      var checkpointCount = 0;
+      try {
+        final checkpoints = await client.getModels(folder: 'checkpoints');
+        checkpointCount = checkpoints.length;
+      } catch (_) {
+        // /models can vary by ComfyUI version. Do not fail connection if only model listing fails.
+      }
       await _saveUrl();
       _urlController.text = _url;
-      setState(() => _status = 'Connected; URL saved');
+      setState(() {
+        _status = 'Connected; ${objectInfo.length} node types found; $checkpointCount checkpoints; URL saved';
+      });
     } catch (e) {
-      setState(() => _status = 'Connection failed: $e');
+      setState(() => _status = 'Connection failed: ${_friendlyError(e)}');
     } finally {
       if (mounted) setState(() => _checking = false);
     }
