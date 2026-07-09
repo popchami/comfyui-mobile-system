@@ -259,6 +259,130 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
+  bool _containsAny(String value, List<String> needles) {
+    final normalized = value.toLowerCase();
+    return needles.any(normalized.contains);
+  }
+
+  String _fieldSearchText(UiField field) {
+    return '${field.fieldId} ${field.label} ${field.section} ${field.type}'.toLowerCase();
+  }
+
+  bool _isCoreInput(UiField field) {
+    final text = _fieldSearchText(field);
+    return field.type == 'image' || _containsAny(text, ['prompt', 'negative']);
+  }
+
+  bool _isBasicSetting(UiField field) {
+    final text = _fieldSearchText(field);
+    return _containsAny(text, [
+      'basic_sampling',
+      'seed',
+      'steps',
+      'cfg',
+      'sampler',
+      'scheduler',
+      'denoise',
+    ]);
+  }
+
+  bool _isSizeOrOutput(UiField field) {
+    final text = _fieldSearchText(field);
+    return _containsAny(text, [
+      'size',
+      'width',
+      'height',
+      'batch',
+      'output',
+      'filename',
+      'prefix',
+    ]);
+  }
+
+  bool _isExpertField(UiField field) {
+    final text = _fieldSearchText(field);
+    return _containsAny(text, ['unknown', 'debug', 'raw', 'expert']);
+  }
+
+  List<Widget> _buildGeneratedFieldSections(List<UiField> fields) {
+    final core = <UiField>[];
+    final basic = <UiField>[];
+    final size = <UiField>[];
+    final advanced = <UiField>[];
+    final expert = <UiField>[];
+
+    for (final field in fields) {
+      if (_isCoreInput(field)) {
+        core.add(field);
+      } else if (_isBasicSetting(field)) {
+        basic.add(field);
+      } else if (_isSizeOrOutput(field)) {
+        size.add(field);
+      } else if (_isExpertField(field)) {
+        expert.add(field);
+      } else {
+        advanced.add(field);
+      }
+    }
+
+    if (core.isEmpty) {
+      final fallback = fields.isNotEmpty ? fields.first : null;
+      if (fallback != null) {
+        core.add(fallback);
+        basic.remove(fallback);
+        size.remove(fallback);
+        advanced.remove(fallback);
+        expert.remove(fallback);
+      }
+    }
+
+    return [
+      if (core.isNotEmpty) ...[
+        Text('Core Inputs', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        ...core.map(_buildField),
+      ],
+      _buildFieldSectionTile(
+        title: 'Basic Generation Settings',
+        fields: basic,
+        initiallyExpanded: false,
+      ),
+      _buildFieldSectionTile(
+        title: 'Size / Output',
+        fields: size,
+        initiallyExpanded: false,
+      ),
+      _buildFieldSectionTile(
+        title: 'Advanced Workflow Features',
+        fields: advanced,
+        initiallyExpanded: false,
+      ),
+      _buildFieldSectionTile(
+        title: 'Expert / Debug',
+        fields: expert,
+        initiallyExpanded: false,
+      ),
+    ].where((widget) => widget is! SizedBox || widget.key != _emptySectionKey).toList();
+  }
+
+  static const ValueKey<String> _emptySectionKey = ValueKey<String>('empty_section');
+
+  Widget _buildFieldSectionTile({
+    required String title,
+    required List<UiField> fields,
+    required bool initiallyExpanded,
+  }) {
+    if (fields.isEmpty) return const SizedBox(key: _emptySectionKey);
+    return Card(
+      child: ExpansionTile(
+        title: Text(title),
+        initiallyExpanded: initiallyExpanded,
+        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        children: fields.map(_buildField).toList(),
+      ),
+    );
+  }
+
   Widget _buildField(UiField field) {
     if (field.type == 'image') {
       return _buildImageField(field);
@@ -401,7 +525,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
           Text(_status),
           if (_promptId.isNotEmpty) Text('prompt_id: $_promptId'),
           const SizedBox(height: 12),
-          ...fields.map(_buildField),
+          ..._buildGeneratedFieldSections(fields),
           FilledButton(
             onPressed: _buildPatchPreview,
             child: const Text('Patch preview'),
