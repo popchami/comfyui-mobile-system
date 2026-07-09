@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_profile.dart';
 import '../models/local_profile.dart';
+import '../services/comfy_api_client.dart';
 import '../services/workflow_patcher.dart';
 
 class GenerateScreen extends StatefulWidget {
@@ -19,6 +20,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
   final Map<String, TextEditingController> _controllers = {};
   String _status = 'Ready';
   String _patchedPreview = '';
+  String _promptId = '';
+  bool _submitting = false;
 
   AppProfile get _appProfile => widget.profile.appProfile;
 
@@ -38,19 +41,25 @@ class _GenerateScreenState extends State<GenerateScreen> {
     super.dispose();
   }
 
+  Map<String, dynamic> _fieldValues() {
+    final values = <String, dynamic>{};
+    for (final entry in _controllers.entries) {
+      values[entry.key] = entry.value.text;
+    }
+    return values;
+  }
+
+  Map<String, dynamic> _patchedWorkflow() {
+    return WorkflowPatcher.patchWorkflow(
+      workflow: widget.profile.rawWorkflowJson,
+      profile: _appProfile,
+      fieldValues: _fieldValues(),
+    );
+  }
+
   void _buildPatchPreview() {
     try {
-      final values = <String, dynamic>{};
-      for (final entry in _controllers.entries) {
-        values[entry.key] = entry.value.text;
-      }
-
-      final patched = WorkflowPatcher.patchWorkflow(
-        workflow: widget.profile.rawWorkflowJson,
-        profile: _appProfile,
-        fieldValues: values,
-      );
-
+      final patched = _patchedWorkflow();
       setState(() {
         _status = 'Patch OK';
         _patchedPreview = const JsonEncoder.withIndent('  ').convert(patched);
@@ -60,6 +69,34 @@ class _GenerateScreenState extends State<GenerateScreen> {
         _status = 'Patch failed: $e';
         _patchedPreview = '';
       });
+    }
+  }
+
+  Future<void> _submitPrompt() async {
+    if (widget.profile.comfyUrl.isEmpty) {
+      setState(() => _status = 'ComfyUI URL missing on local profile');
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _status = 'Submitting prompt...';
+      _promptId = '';
+    });
+
+    try {
+      final patched = _patchedWorkflow();
+      final client = ComfyApiClient(baseUrl: widget.profile.comfyUrl);
+      final promptId = await client.queuePrompt(workflow: patched);
+      setState(() {
+        _status = 'Submitted';
+        _promptId = promptId;
+        _patchedPreview = const JsonEncoder.withIndent('  ').convert(patched);
+      });
+    } catch (e) {
+      setState(() => _status = 'Submit failed: $e');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -95,11 +132,17 @@ class _GenerateScreenState extends State<GenerateScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(_status),
+          if (_promptId.isNotEmpty) Text('prompt_id: $_promptId'),
           const SizedBox(height: 12),
           ...fields.map(_buildField),
           FilledButton(
             onPressed: _buildPatchPreview,
             child: const Text('Patch preview'),
+          ),
+          const SizedBox(height: 8),
+          FilledButton(
+            onPressed: _submitting ? null : _submitPrompt,
+            child: Text(_submitting ? 'Submitting...' : 'Submit /prompt'),
           ),
           const SizedBox(height: 12),
           if (_patchedPreview.isNotEmpty)
