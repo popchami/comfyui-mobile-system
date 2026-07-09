@@ -60,6 +60,15 @@ Fixed in this pass:
 7. mobile-app/flutter_mvp/lib/screens/generate_screen.dart
    - Reused proven legacy HTML behavior: show selected input image preview before generation.
    - Uses Image.file for selected image fields.
+
+8. mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+   - Reused proven legacy HTML behavior: add generated images to an in-session history list.
+   - Deduplicates generated images by type/subfolder/filename.
+   - Displays a horizontal Session history strip.
+
+9. mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+   - Reused proven legacy HTML behavior: open generated images in a larger preview.
+   - Uses a dialog with InteractiveViewer.
 ```
 
 Legacy HTML reference:
@@ -76,6 +85,8 @@ Still not proven by static review:
 - Real /prompt -> /ws -> /history -> /view generation path.
 - Real Android flutter run.
 - Real Android image picker / upload / display path.
+- Real Android session history rendering.
+- Real Android preview dialog interaction.
 ```
 
 ## Reviewed areas
@@ -119,6 +130,8 @@ saved ComfyUI URL restore
 /view for generated images
 /upload/image for input images
 local preview for selected input images
+session generated image history
+larger generated image preview
 ```
 
 The new Flutter MVP now follows the same safety idea more closely.
@@ -305,6 +318,8 @@ history snapshots
 8. /ws connection with clientId
 9. /prompt submission with same clientId
 10. /history polling and /view image display
+11. session history strip
+12. larger generated image preview dialog
 ```
 
 ## Known caveats
