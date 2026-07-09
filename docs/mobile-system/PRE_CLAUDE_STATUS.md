@@ -36,8 +36,8 @@ Current state observed before this update:
 state: open
 merged: false
 draft: true
-changed files: 48
-commits: 109+
+changed files: 50
+commits: 116+
 reviews: none yet
 ```
 
@@ -47,6 +47,14 @@ Important:
 Do not merge yet.
 Claude should run install/runtime checks first.
 The PR is intentionally kept as Draft until runtime validation passes.
+```
+
+## Completion marker
+
+Pre-Claude preparation is marked complete here:
+
+```text
+docs/mobile-system/PRE_CLAUDE_DONE.md
 ```
 
 ## Claude handoff prompt
@@ -87,6 +95,7 @@ UI_VISIBILITY_RULES.md
 MVP_SCOPE.md
 ANALYZER_SPEC.md
 MOBILE_APP_SPEC.md
+PRE_CLAUDE_DONE.md
 PRE_CLAUDE_STATUS.md
 PRIORITY_CONFLICT_REVIEW.md
 CLAUDE_COPYPASTE_PROMPT.md
