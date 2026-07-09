@@ -149,6 +149,16 @@ ComfyUI generates an image with a real model
 Android Flutter app displays the result
 ```
 
+## 将来機能の事前準備
+
+RunPod + Android検証前に実装はしないが、将来機能の目的・リスク・必要データ・受け入れ条件は以下に整理する。
+
+```text
+docs/mobile-system/FUTURE_FEATURE_PREP.md
+```
+
+この文書は、検証後にGitHub Issueや実装チケットへ分解するための下書き。
+
 ## ドキュメント構成
 
 ```text
@@ -174,6 +184,7 @@ docs/mobile-system/
   STATIC_REVIEW_NOTES.md
   OPEN_TODOS.md
   FUTURE_ISSUES_AND_IMPROVEMENTS.md
+  FUTURE_FEATURE_PREP.md
   EXTERNAL_REFERENCES.md
   COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
   RUNTIME_VALIDATION_RESULT.md
@@ -189,6 +200,12 @@ docs/mobile-system/
 
 ```text
 docs/mobile-system/FUTURE_ISSUES_AND_IMPROVEMENTS.md
+```
+
+将来機能の仕様準備は以下に記録する。
+
+```text
+docs/mobile-system/FUTURE_FEATURE_PREP.md
 ```
 
 外部プロジェクトを参考にする場合の方針は以下に記録する。
