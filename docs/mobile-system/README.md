@@ -26,6 +26,26 @@ Smartphone App
 docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
 ```
 
+## 実装前の採用判断
+
+棚卸し結果をそのままClaudeに渡すのではなく、実装前の判断として整理済み。
+
+```text
+docs/mobile-system/PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
+```
+
+現在の判断:
+
+```text
+- 現在のシステムは捨てない
+- ただし実装方針は調整する
+- ComfyUI公式APIを優先して使う
+- Analyzerは公式APIの情報をスマホ用profileへ翻訳する役割に寄せる
+- /object_info と /models は優先度を上げる
+- UI workflow変換はMVP後のoptional扱い
+- comfy-portal-endpointは参考のみ
+```
+
 ## Claude最終確認
 
 PCでの実行確認はClaudeに引き継ぐ。
@@ -35,11 +55,12 @@ PCでの実行確認はClaudeに引き継ぐ。
 現在は単なる runtime validation ではなく、先に以下を行う。
 
 ```text
-1. 現在のシステムを棚卸し
-2. comfy-portal-endpoint の参考範囲を確認
-3. ComfyUI / RunPod 公式機能との重複を確認
-4. 必要なら実装前に設計を調整
-5. その後に runtime validation
+1. 実装前の採用判断を確認
+2. 現在のシステムを棚卸し
+3. comfy-portal-endpoint の参考範囲を確認
+4. ComfyUI / RunPod 公式機能との重複を確認
+5. 必要なら実装前に設計を調整
+6. その後に runtime validation
 ```
 
 渡す前の作業完了メモ:
@@ -59,6 +80,7 @@ Claudeは最初にこの順番で見る:
 ```text
 docs/mobile-system/PRE_CLAUDE_STATUS.md
 docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
+docs/mobile-system/PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
 docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
 docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
 docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
@@ -71,6 +93,7 @@ docs/mobile-system/STATIC_REVIEW_NOTES.md
 
 ```text
 - PR全体レビュー
+- 実装前の採用判断の確認
 - 公式ComfyUI APIと重複する自作部分の確認
 - /object_info と /models を早めるべきか確認
 - comfy-portal-endpoint を参考にする範囲の確認
@@ -95,6 +118,7 @@ docs/mobile-system/
   MOBILE_APP_SPEC.md
   HANDOFF.md
   PROJECT_DIRECTION_GUARDRAILS.md
+  PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
   SYSTEM_INVENTORY_BEFORE_CLAUDE.md
   EXISTING_PLATFORMS_REVIEW.md
   PRE_CLAUDE_DONE.md
