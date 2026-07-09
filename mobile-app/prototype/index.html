@@ -17,7 +17,8 @@
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .field { margin-bottom: 12px; }
     .status { font-size: 13px; color: #ccc; white-space: pre-wrap; }
-    img { max-width: 100%; border-radius: 12px; margin-top: 8px; }
+    .warn { color: #ffcc66; }
+    img { max-width: 100%; border-radius: 12px; margin-top: 8px; border: 1px solid #333; }
     pre { overflow: auto; background: #0b0b0b; padding: 10px; border-radius: 10px; font-size: 12px; }
   </style>
 </head>
@@ -41,7 +42,7 @@
       <label>Remote Profiles</label>
       <select id="profileSelect"></select>
       <button onclick="downloadSelectedProfile()">選択Profileを取得</button>
-      <p class="status">注意: ZIP展開はまだ未実装。MVP検証では下のJSON欄に app_profile.json と workflow.json を貼り付ける。</p>
+      <p class="status warn">注意: ZIP展開はまだ未実装。MVP検証では下のJSON欄に app_profile.json と workflow.json を貼り付ける。</p>
     </section>
 
     <section>
@@ -68,6 +69,10 @@
         <summary>patched workflow</summary>
         <pre id="patchedOutput"></pre>
       </details>
+      <details>
+        <summary>history response</summary>
+        <pre id="historyOutput"></pre>
+      </details>
     </section>
   </main>
 
@@ -76,6 +81,7 @@ let appProfile = null;
 let workflow = null;
 let patchedWorkflow = null;
 let profiles = [];
+let lastPromptId = null;
 
 function baseUrl() {
   return document.getElementById('comfyUrl').value.replace(/\/$/, '');
@@ -83,6 +89,14 @@ function baseUrl() {
 
 function setStatus(text) {
   document.getElementById('status').textContent = text;
+}
+
+function setResult(text) {
+  document.getElementById('resultStatus').textContent = text;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function checkConnection() {
@@ -117,18 +131,27 @@ async function fetchProfiles() {
 async function downloadSelectedProfile() {
   const selected = profiles[document.getElementById('profileSelect').value];
   if (!selected) return setStatus('Profile未選択');
-  setStatus('ZIP取得はこのHTMLでは未展開。URL確認: ' + baseUrl() + '/mobile_analyzer/profiles/' + selected.id + '/download');
+  const downloadUrl = baseUrl() + '/mobile_analyzer/profiles/' + selected.id + '/download';
+  setStatus('ZIP取得はこのHTMLでは未展開。URL確認: ' + downloadUrl);
 }
 
 function loadManualProfile() {
   try {
     appProfile = JSON.parse(document.getElementById('appProfileText').value);
     workflow = JSON.parse(document.getElementById('workflowText').value);
+    validateProfile(appProfile, workflow);
     renderSimpleUi();
-    setStatus('手動Profile読み込みOK');
+    setStatus('手動Profile読み込みOK: ' + (appProfile.profile_name || appProfile.profile_id || 'profile'));
   } catch (e) {
     setStatus('JSON読み込み失敗: ' + e.message);
   }
+}
+
+function validateProfile(profile, wf) {
+  if (!profile.schema_version) throw new Error('app_profile.json に schema_version がありません');
+  if (!profile.ui || !Array.isArray(profile.ui.simple)) throw new Error('app_profile.json に ui.simple がありません');
+  if (!Array.isArray(profile.patch_targets)) throw new Error('app_profile.json に patch_targets がありません');
+  if (!wf || typeof wf !== 'object') throw new Error('workflow.json が不正です');
 }
 
 function renderSimpleUi() {
@@ -147,7 +170,16 @@ function renderSimpleUi() {
       input = document.createElement('textarea');
     } else if (field.type === 'select') {
       input = document.createElement('select');
-      (field.options || []).forEach(v => {
+      const options = field.options && field.options.length ? field.options : [field.default].filter(v => v !== undefined);
+      options.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        input.appendChild(opt);
+      });
+    } else if (field.type === 'switch') {
+      input = document.createElement('select');
+      ['true', 'false'].forEach(v => {
         const opt = document.createElement('option');
         opt.value = v;
         opt.textContent = v;
@@ -168,16 +200,21 @@ function renderSimpleUi() {
 }
 
 function buildPatchedWorkflow() {
-  if (!appProfile || !workflow) return setStatus('Profile未読み込み');
+  if (!appProfile || !workflow) {
+    setStatus('Profile未読み込み');
+    return null;
+  }
   patchedWorkflow = JSON.parse(JSON.stringify(workflow));
   const targets = appProfile.patch_targets || [];
-  targets.forEach(target => {
+  for (const target of targets) {
     const el = document.getElementById('field_' + target.field_id);
-    if (!el) return;
+    if (!el) continue;
     const node = patchedWorkflow[target.node_id];
-    if (!node || !node.inputs || !(target.input in node.inputs)) return;
+    if (!node || !node.inputs || !(target.input in node.inputs)) {
+      throw new Error('patch先が存在しません: node ' + target.node_id + ' input ' + target.input);
+    }
     node.inputs[target.input] = castValue(el.value, target.value_type);
-  });
+  }
   document.getElementById('patchedOutput').textContent = JSON.stringify(patchedWorkflow, null, 2);
   setStatus('Patch作成OK');
   return patchedWorkflow;
@@ -194,17 +231,81 @@ async function submitPrompt() {
   try {
     const wf = buildPatchedWorkflow();
     if (!wf) return;
+    setResult('生成送信中...');
+    document.getElementById('images').innerHTML = '';
+    document.getElementById('historyOutput').textContent = '';
+
     const res = await fetch(baseUrl() + '/prompt', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: wf })
     });
-    if (!res.ok) throw new Error(res.status);
+    if (!res.ok) throw new Error('/prompt ' + res.status);
     const data = await res.json();
-    document.getElementById('resultStatus').textContent = '送信OK prompt_id: ' + data.prompt_id + '\n履歴取得は次段階で実装';
+    lastPromptId = data.prompt_id;
+    setResult('送信OK prompt_id: ' + lastPromptId + '\n生成完了待ち...');
+    await waitForHistory(lastPromptId);
   } catch (e) {
-    document.getElementById('resultStatus').textContent = '生成失敗: ' + e.message;
+    setResult('生成失敗: ' + e.message);
   }
+}
+
+async function waitForHistory(promptId) {
+  const maxTries = 90;
+  for (let i = 0; i < maxTries; i++) {
+    await sleep(1000);
+    const history = await fetchHistory(promptId);
+    if (history && history[promptId]) {
+      document.getElementById('historyOutput').textContent = JSON.stringify(history[promptId], null, 2);
+      const imageUrls = extractImageUrls(history[promptId]);
+      if (imageUrls.length > 0) {
+        renderImages(imageUrls);
+        setResult('生成完了: ' + imageUrls.length + '枚');
+        return;
+      }
+      setResult('履歴取得OK。画像出力待ち... ' + (i + 1) + '/' + maxTries);
+    } else {
+      setResult('生成待ち... ' + (i + 1) + '/' + maxTries);
+    }
+  }
+  throw new Error('生成結果の取得がタイムアウトしました');
+}
+
+async function fetchHistory(promptId) {
+  const res = await fetch(baseUrl() + '/history/' + promptId);
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+function extractImageUrls(historyItem) {
+  const urls = [];
+  const outputs = historyItem.outputs || {};
+  Object.keys(outputs).forEach(nodeId => {
+    const output = outputs[nodeId];
+    const images = output.images || [];
+    images.forEach(img => {
+      const params = new URLSearchParams();
+      params.set('filename', img.filename);
+      params.set('subfolder', img.subfolder || '');
+      params.set('type', img.type || 'output');
+      urls.push(baseUrl() + '/view?' + params.toString());
+    });
+  });
+  return urls;
+}
+
+function renderImages(urls) {
+  const root = document.getElementById('images');
+  root.innerHTML = '';
+  urls.forEach(url => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    const img = document.createElement('img');
+    img.src = url;
+    a.appendChild(img);
+    root.appendChild(a);
+  });
 }
 </script>
 </body>
