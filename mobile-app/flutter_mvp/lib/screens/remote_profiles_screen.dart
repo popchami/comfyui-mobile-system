@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/local_profile.dart';
+import '../models/remote_profile.dart';
 import '../services/comfy_api_client.dart';
 import '../services/local_profile_store.dart';
 import '../services/profile_zip_service.dart';
@@ -18,7 +19,7 @@ class _RemoteProfilesScreenState extends State<RemoteProfilesScreen> {
   bool _loading = false;
   bool _saving = false;
   String _status = 'Not loaded';
-  List<dynamic> _profiles = const [];
+  List<RemoteProfile> _profiles = const [];
 
   ComfyApiClient get _client => ComfyApiClient(baseUrl: widget.comfyUrl);
 
@@ -41,20 +42,19 @@ class _RemoteProfilesScreenState extends State<RemoteProfilesScreen> {
     }
   }
 
-  Future<void> _downloadAndSave(dynamic profile) async {
-    final profileId = _profileId(profile);
-    if (profileId.isEmpty) {
+  Future<void> _downloadAndSave(RemoteProfile profile) async {
+    if (profile.id.isEmpty) {
       setState(() => _status = 'Profile id missing');
       return;
     }
 
     setState(() {
       _saving = true;
-      _status = 'Downloading $profileId...';
+      _status = 'Downloading ${profile.id}...';
     });
 
     try {
-      final zipBytes = await _client.downloadProfileZip(profileId);
+      final zipBytes = await _client.downloadProfileZip(profile.id);
       final bundle = ProfileZipService.parseProfileZip(zipBytes);
       final local = LocalProfile.fromBundle(
         appProfileJson: bundle.rawAppProfileJson,
@@ -70,18 +70,12 @@ class _RemoteProfilesScreenState extends State<RemoteProfilesScreen> {
     }
   }
 
-  String _profileId(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return (value['id'] ?? value['profile_id'] ?? value['file'] ?? '').toString();
-    }
-    return value.toString();
-  }
-
-  String _profileName(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return (value['name'] ?? value['id'] ?? value['file'] ?? 'profile').toString();
-    }
-    return value.toString();
+  String _profileSubtitle(RemoteProfile profile) {
+    final parts = <String>[];
+    if (profile.file.isNotEmpty) parts.add(profile.file);
+    if (profile.sizeBytes > 0) parts.add('${profile.sizeBytes} bytes');
+    if (profile.modifiedAt.isNotEmpty) parts.add(profile.modifiedAt);
+    return parts.isEmpty ? profile.id : parts.join(' / ');
   }
 
   @override
@@ -108,8 +102,8 @@ class _RemoteProfilesScreenState extends State<RemoteProfilesScreen> {
                 itemBuilder: (context, index) {
                   final profile = _profiles[index];
                   return ListTile(
-                    title: Text(_profileName(profile)),
-                    subtitle: Text(_profileId(profile)),
+                    title: Text(profile.name),
+                    subtitle: Text(_profileSubtitle(profile)),
                     trailing: FilledButton(
                       onPressed: _saving ? null : () => _downloadAndSave(profile),
                       child: const Text('Save'),
