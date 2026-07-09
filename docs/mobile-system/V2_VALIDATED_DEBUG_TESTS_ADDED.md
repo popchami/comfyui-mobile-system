@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records the first fixture-based static tests for the v2 validated debug exporter.
+This document records fixture-based static tests for the v2 validated debug exporter.
 
 ## Added test file
 
@@ -29,7 +29,7 @@ The tests make sure the validator does not accidentally treat unsafe or unclear 
 
 ## Covered cases
 
-The first test file covers:
+The test file now covers:
 
 ```text
 basic txt2img-style direct values
@@ -39,6 +39,15 @@ URL-like field requires review
 unknown custom STRING becomes Expert editable, not normal supported
 SaveImage output is detected as image output
 validated profile pieces include validation/compatibility data
+LoRA name and strength fields are extracted safely
+LoRA model/clip connection inputs are not patched
+ControlNet-like strength fields are classified as advanced
+video output detection
+audio output detection
+external API warning behavior
+missing runtime definition warning behavior
+runtime definition metadata affects source confidence and required flags
+no-output workflows become unsupported for generation
 ```
 
 ## How to run
@@ -64,8 +73,32 @@ real workflow validation
 
 They only protect the Analyzer's local validator logic from basic regressions.
 
+## Current limitation
+
+The tests are designed to run outside a real ComfyUI process.
+
+They do not yet prove:
+
+```text
+ComfyUI can load every new node on RunPod
+ComfyUI can execute the exporter prompt on RunPod
+real custom node runtime metadata is read correctly
+real workflow zips import correctly into Android
+```
+
 ## Next target
 
 ```text
-Add more fixtures for LoRA, ControlNet, video output, audio output, missing runtime definitions, and external API warning behavior.
+Run the static tests in an actual environment, then fix any import/runtime issues.
+```
+
+After that, add fixture categories for:
+
+```text
+inpaint / mask
+wildcard / dynamic prompt
+subgraph placeholder behavior
+bypass/switch placeholder behavior
+multi-output workflows
+unknown output type
 ```
