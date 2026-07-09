@@ -21,7 +21,7 @@ popchami/comfyui-mobile-system
 PR:
 
 ```text
-#1 Add ComfyUI mobile system architecture specs
+#1 Add ComfyUI mobile system architecture and MVP scaffold
 ```
 
 Branch:
@@ -35,9 +35,9 @@ Current state observed before this update:
 ```text
 state: open
 merged: false
-draft: false
+draft: true
 changed files: 48
-commits: 108+
+commits: 109+
 reviews: none yet
 ```
 
@@ -46,6 +46,7 @@ Important:
 ```text
 Do not merge yet.
 Claude should run install/runtime checks first.
+The PR is intentionally kept as Draft until runtime validation passes.
 ```
 
 ## Claude should start here
