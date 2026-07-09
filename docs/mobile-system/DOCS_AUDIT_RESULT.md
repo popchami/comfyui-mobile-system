@@ -2,14 +2,15 @@
 
 ## Purpose
 
-This file records the final documentation audit after smartphone-only preparation.
+This file records the final documentation audit after smartphone-only preparation and the later cross-file static review follow-up.
 
 ## Audit result
 
 ```text
 Status: PASS
 Smartphone-only preparation: COMPLETE
-Implementation changed: no
+Static review follow-up fixes: COMPLETE
+Implementation changed: yes, minimal source-level fixes only
 Runtime validation performed in this audit: no
 RunPod used: no
 Android runtime used: no
@@ -27,6 +28,7 @@ RUNTIME_VALIDATION_RESULT.md
 BLOCKERS_AFTER_CLAUDE.md
 NEXT_PHASE_PLAN.md
 NEXT_ACTION_QUEUE.md
+STATIC_REVIEW_NOTES.md
 ```
 
 Validation runbooks:
@@ -85,6 +87,7 @@ PR_BODY_UPDATE_DRAFT.md
 - Known blockers are documented.
 - Next phase is documented.
 - Smartphone-only completion report is documented.
+- Cross-file static review follow-up is documented.
 - RunPod validation steps are documented.
 - Android validation steps are documented.
 - Failure/debug reporting is documented.
@@ -106,6 +109,15 @@ No stale search hits were found for:
 - runtime-validation-pending
 - TODO
 - FIXME
+```
+
+## Static review follow-up fixes
+
+```text
+- ComfyApiClient now preserves base URL path when building HTTP API URLs.
+- ComfyProgressClient now preserves base URL path when building /ws URL.
+- Prototype WebSocket helper now preserves base URL path when building /ws URL.
+- PR_BODY_UPDATE_DRAFT.md now uses a safe four-backtick outer Markdown fence.
 ```
 
 ## What remains blocked
@@ -150,6 +162,6 @@ When PR body editing is available:
 ## Audit conclusion
 
 ```text
-Smartphone-only planning and documentation work is complete.
-The project should now wait for RunPod and Android runtime access unless a new non-runtime planning topic is introduced.
+Smartphone-only planning, documentation work, and current static-review follow-up fixes are complete.
+The project should now wait for RunPod and Android runtime access unless a new source-level issue or non-runtime planning topic is introduced.
 ```
