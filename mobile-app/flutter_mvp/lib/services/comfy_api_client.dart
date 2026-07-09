@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import '../models/remote_profile.dart';
+
 class ComfyApiClient {
   ComfyApiClient({required String baseUrl}) : baseUri = Uri.parse(_normalizeBaseUrl(baseUrl));
 
@@ -25,11 +27,17 @@ class ComfyApiClient {
     return _decodeJsonResponse(response);
   }
 
-  Future<List<dynamic>> getRemoteProfiles() async {
+  Future<List<RemoteProfile>> getRemoteProfiles() async {
     final response = await http.get(_uri('/mobile_analyzer/profiles'));
     final decoded = _decodeJson(response);
-    if (decoded is List<dynamic>) return decoded;
-    throw ComfyApiException('Profile list response is not a list');
+    if (decoded is! List<dynamic>) {
+      throw ComfyApiException('Profile list response is not a list');
+    }
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(RemoteProfile.fromJson)
+        .where((profile) => profile.id.isNotEmpty)
+        .toList();
   }
 
   Future<List<int>> downloadProfileZip(String profileId) async {
