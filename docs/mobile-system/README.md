@@ -163,6 +163,7 @@ docs/mobile-system/FUTURE_FEATURE_PREP.md
 docs/mobile-system/APP_PROFILE_EVOLUTION_PLAN.md
 docs/mobile-system/UX_FLOW_PREP.md
 docs/mobile-system/POST_VALIDATION_ISSUE_DRAFTS.md
+docs/mobile-system/ADDITIONAL_FEATURE_CANDIDATES.md
 ```
 
 役割:
@@ -179,6 +180,9 @@ UX_FLOW_PREP.md
 
 POST_VALIDATION_ISSUE_DRAFTS.md
   = RunPod + Android検証後にIssue化するための下書き
+
+ADDITIONAL_FEATURE_CANDIDATES.md
+  = 運用・管理・便利機能など追加候補の一覧
 ```
 
 ## ドキュメント構成
@@ -210,6 +214,7 @@ docs/mobile-system/
   APP_PROFILE_EVOLUTION_PLAN.md
   UX_FLOW_PREP.md
   POST_VALIDATION_ISSUE_DRAFTS.md
+  ADDITIONAL_FEATURE_CANDIDATES.md
   EXTERNAL_REFERENCES.md
   COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
   RUNTIME_VALIDATION_RESULT.md
@@ -234,6 +239,7 @@ docs/mobile-system/FUTURE_FEATURE_PREP.md
 docs/mobile-system/APP_PROFILE_EVOLUTION_PLAN.md
 docs/mobile-system/UX_FLOW_PREP.md
 docs/mobile-system/POST_VALIDATION_ISSUE_DRAFTS.md
+docs/mobile-system/ADDITIONAL_FEATURE_CANDIDATES.md
 ```
 
 外部プロジェクトを参考にする場合の方針は以下に記録する。
