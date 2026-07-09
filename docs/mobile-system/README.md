@@ -193,6 +193,18 @@ ADDITIONAL_FEATURE_CANDIDATES.md
 docs/mobile-system/REFERENCE_STUDY_BACKLOG.md
 ```
 
+参考元がどの機能に効くかは以下に整理する。
+
+```text
+docs/mobile-system/REFERENCE_TO_FEATURE_MAP.md
+```
+
+実際に調査する時のチェック項目は以下に整理する。
+
+```text
+docs/mobile-system/REFERENCE_STUDY_CHECKLIST.md
+```
+
 主な参考対象:
 
 ```text
@@ -239,6 +251,8 @@ docs/mobile-system/
   POST_VALIDATION_ISSUE_DRAFTS.md
   ADDITIONAL_FEATURE_CANDIDATES.md
   REFERENCE_STUDY_BACKLOG.md
+  REFERENCE_TO_FEATURE_MAP.md
+  REFERENCE_STUDY_CHECKLIST.md
   EXTERNAL_REFERENCES.md
   COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
   RUNTIME_VALIDATION_RESULT.md
@@ -270,6 +284,8 @@ docs/mobile-system/ADDITIONAL_FEATURE_CANDIDATES.md
 
 ```text
 docs/mobile-system/REFERENCE_STUDY_BACKLOG.md
+docs/mobile-system/REFERENCE_TO_FEATURE_MAP.md
+docs/mobile-system/REFERENCE_STUDY_CHECKLIST.md
 docs/mobile-system/EXTERNAL_REFERENCES.md
 docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
 ```
