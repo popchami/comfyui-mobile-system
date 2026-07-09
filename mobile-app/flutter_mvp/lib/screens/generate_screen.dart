@@ -123,7 +123,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
     if (event.isProgress) {
       setState(() => _status = 'Progress ${event.progressValue ?? '?'} / ${event.progressMax ?? '?'}');
     } else if (event.isExecuting) {
-      setState(() => _status = 'Executing node ${event.executingNode ?? '-'}');
+      final node = event.executingNode;
+      setState(() {
+        _status = node == null || node == 'null' ? 'Execution complete; loading history...' : 'Executing node $node';
+      });
     } else if (event.isExecutionError) {
       setState(() => _status = 'Execution error');
     }
@@ -157,7 +160,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
         clientId: _progressClient?.clientId,
       );
       setState(() {
-        _status = 'Submitted';
+        _status = 'Submitted; waiting for history...';
         _promptId = promptId;
         _patchedPreview = const JsonEncoder.withIndent('  ').convert(patched);
       });
@@ -170,25 +173,39 @@ class _GenerateScreenState extends State<GenerateScreen> {
   }
 
   Future<void> _fetchHistoryWhenReady(ComfyApiClient client, String promptId) async {
-    for (var i = 0; i < 60; i++) {
-      await Future<void>.delayed(const Duration(seconds: 1));
-      final history = await client.getHistory(promptId);
-      if (history.containsKey(promptId)) {
-        final historyItem = history[promptId];
-        final itemMap = historyItem is Map<String, dynamic> ? historyItem : <String, dynamic>{};
-        final images = HistoryImageExtractor.extractImages(
-          historyItem: itemMap,
-          client: client,
-        );
-        setState(() {
-          _status = images.isEmpty ? 'History loaded' : 'Generated ${images.length} images';
-          _historyPreview = const JsonEncoder.withIndent('  ').convert(historyItem);
-          _images = images;
-        });
-        return;
+    Object? lastError;
+    // Match the proven legacy HTML behavior: keep polling /history as a fallback even when /ws is unavailable.
+    for (var i = 0; i < 80; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+      try {
+        final history = await client.getHistory(promptId);
+        if (history.containsKey(promptId)) {
+          final historyItem = history[promptId];
+          final itemMap = historyItem is Map<String, dynamic> ? historyItem : <String, dynamic>{};
+          final images = HistoryImageExtractor.extractImages(
+            historyItem: itemMap,
+            client: client,
+          );
+          setState(() {
+            _status = images.isEmpty ? 'History loaded' : 'Generated ${images.length} images';
+            _historyPreview = const JsonEncoder.withIndent('  ').convert(historyItem);
+            _images = images;
+          });
+          return;
+        }
+        if (mounted && i % 5 == 0) {
+          setState(() => _status = 'Waiting for history... ${i + 1}/80');
+        }
+      } catch (e) {
+        lastError = e;
+        if (mounted && i % 5 == 0) {
+          setState(() => _status = 'Waiting for history... ${i + 1}/80');
+        }
       }
     }
-    setState(() => _status = 'History wait timed out');
+    setState(() {
+      _status = lastError == null ? 'History wait timed out' : 'History wait timed out: $lastError';
+    });
   }
 
   Widget _buildField(UiField field) {
