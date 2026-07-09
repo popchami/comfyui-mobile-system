@@ -220,6 +220,17 @@ docs/mobile-system/REFERENCE_STUDY_CHECKLIST.md
 - Prompt/style preset patterns
 ```
 
+## 検証・報告テンプレート
+
+RunPod検証、Android検証、失敗報告、workflow互換性、重要判断の記録は以下を使う。
+
+```text
+docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md
+docs/mobile-system/DEBUG_REPORT_TEMPLATE.md
+docs/mobile-system/WORKFLOW_COMPATIBILITY_REPORT_TEMPLATE.md
+docs/mobile-system/DECISION_RECORD_TEMPLATE.md
+```
+
 ## ドキュメント構成
 
 ```text
@@ -253,6 +264,10 @@ docs/mobile-system/
   REFERENCE_STUDY_BACKLOG.md
   REFERENCE_TO_FEATURE_MAP.md
   REFERENCE_STUDY_CHECKLIST.md
+  VALIDATION_RESULT_TEMPLATES.md
+  DEBUG_REPORT_TEMPLATE.md
+  WORKFLOW_COMPATIBILITY_REPORT_TEMPLATE.md
+  DECISION_RECORD_TEMPLATE.md
   EXTERNAL_REFERENCES.md
   COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
   RUNTIME_VALIDATION_RESULT.md
@@ -288,6 +303,15 @@ docs/mobile-system/REFERENCE_TO_FEATURE_MAP.md
 docs/mobile-system/REFERENCE_STUDY_CHECKLIST.md
 docs/mobile-system/EXTERNAL_REFERENCES.md
 docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
+```
+
+検証・報告・判断記録は以下に記録する。
+
+```text
+docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md
+docs/mobile-system/DEBUG_REPORT_TEMPLATE.md
+docs/mobile-system/WORKFLOW_COMPATIBILITY_REPORT_TEMPLATE.md
+docs/mobile-system/DECISION_RECORD_TEMPLATE.md
 ```
 
 現在のシステム、外部参考、公式参考の棚卸しは以下に記録する。
