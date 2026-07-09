@@ -1,6 +1,48 @@
 # Image Generation First: Model Branching Plan
 
-Status: DRAFT - pending user review
+Status: DRAFT - initial implementation in progress
+
+## Implementation status (2026-07-10)
+
+Implemented in `analyzer/ComfyUI-Mobile-Analyzer/model_strategy_detector.py`,
+wired into `MobileProfileV2ValidatedDebugExporter` as a new top-level
+`model_strategy` key (per the placement decision above). Does not touch the
+production `app_profile.json` (v1) exporter (`nodes.py`).
+
+```text
+Implemented:
+  - model_family: flux (with flux1 / flux2_klein sub-split) / sdxl / unknown
+  - loader_strategy: checkpoint_single_file / diffusion_model_plus_text_encoders_plus_vae
+    / fp8_diffusion_model / custom_loader / unknown
+  - vae_strategy: bundled / external_required / external_optional / unknown
+  - lora_family: inferred by tracing a LoraLoader/LoraLoaderModelOnly node's
+    `model` input back to a recognized base-model loader; falls back to
+    "unknown" if the trace fails or the base model_family itself is unknown
+  - confidence (high/medium/low) + reasons[] on every result
+
+Not implemented (deferred by user decision, 2026-07-10):
+  - fp8_checkpoint — no confirmed node-level dtype signal for
+    CheckpointLoaderSimple/CheckpointLoader; stays unknown until RunPod
+    verification finds a reliable signal (or a separate model registry).
+  - gguf_quantized — no GGUF-loader node was present in this project's local
+    /object_info verification session; not hardcoded until a RunPod
+    environment with ComfyUI-GGUF installed confirms the real class name.
+  - merged_checkpoint as a category distinct from checkpoint_single_file —
+    no confirmed graph-level signal exists to tell them apart.
+  - sd15 as a positively-confirmed model_family value — the only available
+    signal (CLIPTextEncodeSDXL) can positively confirm sdxl, but there is no
+    equivalent confirmed node for sd15; a bare CheckpointLoaderSimple
+    workflow without that marker stays model_family=unknown rather than
+    being assumed to be sd15.
+```
+
+Tests: `analyzer/ComfyUI-Mobile-Analyzer/tests/test_model_strategy_detector.py`
+(8 cases) plus the existing 14-case `test_v2_validated_debug.py` — 22/22 PASS.
+Also verified end-to-end against a live ComfyUI instance for both a Flux.1
+(DualCLIPLoader type="flux") and a Flux.2 Klein (CLIPLoader type="flux2")
+workflow, confirming `model_strategy` appears as a top-level key in the real
+exported `app_profile_v2_validated_debug.json` and correctly distinguishes the
+two Flux generations.
 
 ## Relationship to existing docs
 
