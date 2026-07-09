@@ -182,6 +182,28 @@ Changes:
 - Show filename and selectable image URL in the preview.
 ```
 
+### 7. Seed reuse
+
+Existing HTML supports copying/reusing seed values.
+
+Flutter GenerateScreen now stores the last submitted seed for the current screen session and can restore it to a seed field.
+
+Fixed:
+
+```text
+mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+```
+
+Changes:
+
+```text
+- Detect seed fields from field_id / label / section / type.
+- Capture the current seed before submitting /prompt.
+- Show last seed in the seed field helper text.
+- Show a Use last seed button when a last seed exists.
+- Reapply only the field value; workflow patching still happens through patch_targets.
+```
+
 ## App-prepared components from legacy HTML
 
 These are useful as app-side components because they are UI/UX or client behavior, not workflow-specific model content:
@@ -198,9 +220,10 @@ S: Already reused or should be app core
 - generated image display
 - local generated history list
 - larger image preview screen
+- seed reuse within current screen session
 
 A: Useful after MVP validation
-- seed copy/reuse
+- persistent seed copy/reuse across app launches
 - last-used field values per profile
 - visual selected-state markers
 - collapsible advanced sections
@@ -301,4 +324,5 @@ During RunPod/Android validation, compare the new MVP against the existing HTML 
 - Can fetch/display images through /view.
 - Can add generated images to session history.
 - Can open generated images in larger preview.
+- Can remember and reuse the last seed within the generation screen session.
 ```
