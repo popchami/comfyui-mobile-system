@@ -27,6 +27,7 @@ Merge: しない
 Architecture alignment: 完了
 Claude limited runtime validation: 完了
 Smartphone-only preparation: 完了
+Cross-file static review fixes: 完了
 RunPod GPU validation: 未完了
 Android real-device/emulator validation: 未完了
 ```
@@ -41,6 +42,7 @@ docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
 docs/mobile-system/NEXT_PHASE_PLAN.md
 docs/mobile-system/NEXT_ACTION_QUEUE.md
 docs/mobile-system/DOCS_AUDIT_RESULT.md
+docs/mobile-system/STATIC_REVIEW_NOTES.md
 ```
 
 ## スマホ作業完了
@@ -54,10 +56,10 @@ docs/mobile-system/SMARTPHONE_ONLY_COMPLETION_REPORT.md
 次の意味で完了扱いにする。
 
 ```text
-- 実装はしない
 - RunPod検証はまだ
 - Android実機検証はまだ
 - 文書整理、手順書、引き継ぎ、将来準備は完了
+- 横断静的レビューで見つけた小さい修正は完了
 - 次の意味ある作業はRunPod/Androidの実検証
 ```
 
@@ -71,6 +73,24 @@ analyzer/ComfyUI-Mobile-Analyzer/nodes.py
 analyzer/ComfyUI-Mobile-Analyzer/__init__.py
 - 未使用の WEB_DIRECTORY = "web" を削除
 - 理由: web/ フォルダが存在せず、web assetsも未提供のため
+
+mobile-app/flutter_mvp/lib/services/comfy_api_client.dart
+- パス付きComfyUI URLを壊さないようにURL結合を修正
+
+mobile-app/flutter_mvp/lib/services/comfy_progress_client.dart
+- パス付きComfyUI URLを壊さないようにWebSocket URL結合を修正
+
+mobile-app/prototype/comfy-progress.js
+- prototype側もWebSocket URL結合を修正
+
+docs/mobile-system/PR_BODY_UPDATE_DRAFT.md
+- Markdownの入れ子コードフェンス崩れを修正
+```
+
+詳細:
+
+```text
+docs/mobile-system/STATIC_REVIEW_NOTES.md
 ```
 
 ## 次フェーズ
