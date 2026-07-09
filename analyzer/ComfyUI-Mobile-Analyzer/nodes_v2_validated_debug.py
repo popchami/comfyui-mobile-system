@@ -20,6 +20,7 @@ from .nodes_v2_debug import (
     section_order,
     slugify,
 )
+from .model_strategy_detector import detect_model_strategy
 
 
 class MobileProfileV2ValidatedDebugExporter:
@@ -75,6 +76,7 @@ class MobileProfileV2ValidatedDebugExporter:
             "runtime_requirements": runtime_requirements,
             "outputs": outputs,
             "warnings": warnings,
+            "model_strategy": detect_model_strategy(workflow, runtime_node_defs),
             "validation": {
                 "schema_version": "candidate_validation.0.1",
                 "summary": summarize_validation_results(validation_results),
