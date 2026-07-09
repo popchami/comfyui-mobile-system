@@ -187,7 +187,11 @@ Current behavior:
 
 - reads `LocalProfile.appProfile.simpleFields`
 - renders simple text fields
-- collects field values
+- renders image fields as image pickers
+- collects text field values
+- lets the user select local image files through `file_picker`
+- uploads selected image files to `/upload/image`
+- uses uploaded image names when patching image fields
 - calls `WorkflowPatcher`
 - shows patched workflow JSON as a preview
 - submits patched workflow to `/prompt`
@@ -198,8 +202,6 @@ Current behavior:
 - builds `/view` image URLs
 - displays generated images with `Image.network`
 - shows history JSON preview
-
-Later this screen should support image input fields and `/upload/image`.
 
 ## Initial screens
 
