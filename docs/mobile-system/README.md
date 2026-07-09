@@ -18,6 +18,27 @@ Smartphone App
   = zipをComfyUIから取得し、app_profile.jsonを読んでUI生成・workflow patch・生成実行を行う
 ```
 
+## 現在の状態
+
+```text
+PR #1: Draft
+Branch: docs/mobile-system-spec
+Merge: しない
+Architecture alignment: 完了
+Claude limited runtime validation: 完了
+RunPod GPU validation: 未完了
+Android real-device/emulator validation: 未完了
+```
+
+現在の最新状況は以下を見る。
+
+```text
+docs/mobile-system/HANDOFF.md
+docs/mobile-system/RUNTIME_VALIDATION_RESULT.md
+docs/mobile-system/BLOCKERS_AFTER_CLAUDE.md
+docs/mobile-system/NEXT_PHASE_PLAN.md
+```
+
 ## 方向性ガードレール
 
 外部リポジトリを参考にしても、このプロジェクトの方向性は変えない。
@@ -46,62 +67,86 @@ docs/mobile-system/PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
 - comfy-portal-endpointは参考のみ
 ```
 
-## Claude最終確認
+## Claude検証結果
 
-PCでの実行確認はClaudeに引き継ぐ。
-
-ただし、Claudeに渡す内容は更新済み。
-
-現在は単なる runtime validation ではなく、先に以下を行う。
+Claudeは以下を完了済み。
 
 ```text
 1. 実装前の採用判断を確認
 2. 現在のシステムを棚卸し
 3. comfy-portal-endpoint の参考範囲を確認
 4. ComfyUI / RunPod 公式機能との重複を確認
-5. 必要なら実装前に設計を調整
-6. その後に runtime validation
+5. アーキテクチャ方針が妥当であることを確認
+6. CPU-only aarch64 sandboxで限定ランタイム検証
+7. OUTPUT_NODE blockerを発見・修正
 ```
 
-渡す前の作業完了メモ:
+限定検証で通ったもの:
 
 ```text
-docs/mobile-system/PRE_CLAUDE_DONE.md
+- ComfyUI starts with ComfyUI-Mobile-Analyzer installed
+- Mobile Profile Exporter appears via /object_info
+- Mobile Profile Exporter creates a zip after OUTPUT_NODE fix
+- Zip contains workflow.json and app_profile.json
+- /mobile_analyzer/profiles returns metadata
+- /mobile_analyzer/profiles/{id}/download downloads zip
+- Flutter MVP passes flutter pub get
+- Flutter MVP passes flutter analyze for PR lib/ source
 ```
 
-Claudeに渡すコピペ文:
+まだ通っていないもの:
 
 ```text
-docs/mobile-system/CLAUDE_COPYPASTE_PROMPT.md
+- RunPod GPU上での実モデル画像生成
+- Android実機/エミュレータでのFlutterアプリ起動
+- AndroidアプリからRunPod ComfyUIへ接続
+- Androidアプリでprofile download / save / open / patch / submit / display
 ```
 
-Claudeは最初にこの順番で見る:
+## 重要修正
 
 ```text
-docs/mobile-system/PRE_CLAUDE_STATUS.md
-docs/mobile-system/PROJECT_DIRECTION_GUARDRAILS.md
-docs/mobile-system/PRE_IMPLEMENTATION_ALIGNMENT_DECISIONS.md
-docs/mobile-system/SYSTEM_INVENTORY_BEFORE_CLAUDE.md
-docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
-docs/mobile-system/COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
-docs/mobile-system/PRIORITY_CONFLICT_REVIEW.md
-docs/mobile-system/CLAUDE_FINAL_REVIEW_AND_INSTALL.md
-docs/mobile-system/STATIC_REVIEW_NOTES.md
+analyzer/ComfyUI-Mobile-Analyzer/nodes.py
+- MobileProfileExporter に OUTPUT_NODE = True を追加
+- 理由: これがないと ComfyUI が prompt_no_outputs で拒否する
+
+analyzer/ComfyUI-Mobile-Analyzer/__init__.py
+- 未使用の WEB_DIRECTORY = "web" を削除
+- 理由: web/ フォルダが存在せず、web assetsも未提供のため
+```
+
+## 次フェーズ
+
+RunPodが使えるようになったら以下へ進む。
+
+```text
+docs/mobile-system/NEXT_PHASE_PLAN.md
+```
+
+次フェーズ名:
+
+```text
+RunPod GPU + Android real-device validation
 ```
 
 目的:
 
 ```text
-- PR全体レビュー
-- 実装前の採用判断の確認
-- 公式ComfyUI APIと重複する自作部分の確認
-- /object_info と /models を早めるべきか確認
-- comfy-portal-endpoint を参考にする範囲の確認
-- インストール前にやるべきこと/後回し/今やらないことの確認
-- ComfyUI custom node install確認
-- Flutter MVP install/run確認
-- blocking error修正
-- install-ready判定
+RunPod ComfyUI
+  ↓
+ComfyUI-Mobile-Analyzer exports profile zip
+  ↓
+Android Flutter app downloads profile zip
+  ↓
+Android Flutter app opens profile
+  ↓
+Android Flutter app patches patch_targets only
+  ↓
+Android Flutter app submits workflow to ComfyUI
+  ↓
+ComfyUI generates an image with a real model
+  ↓
+Android Flutter app displays the result
 ```
 
 ## ドキュメント構成
@@ -131,6 +176,9 @@ docs/mobile-system/
   FUTURE_ISSUES_AND_IMPROVEMENTS.md
   EXTERNAL_REFERENCES.md
   COMFY_PORTAL_ENDPOINT_REFERENCE_REVIEW.md
+  RUNTIME_VALIDATION_RESULT.md
+  BLOCKERS_AFTER_CLAUDE.md
+  NEXT_PHASE_PLAN.md
 ```
 
 ## 未決定TODO / 改善記録
@@ -187,4 +235,5 @@ docs/mobile-system/EXISTING_PLATFORMS_REVIEW.md
 - ComfyUI側からprofile zipを直接ダウンロードする
 - 公式ComfyUI APIで解決できる部分は優先して使う
 - 外部リポジトリを参考にしても方向性は変えない
+- PR #1はRunPod + Android検証が終わるまでマージしない
 ```
