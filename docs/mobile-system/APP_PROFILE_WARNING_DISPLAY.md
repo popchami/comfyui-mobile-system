@@ -75,6 +75,45 @@ The card also reminds the user:
 No models or custom nodes are installed automatically.
 ```
 
+## Read-only environment check
+
+`GenerateScreen` now includes a `Check environment` button inside the warning card.
+
+It reads the current ComfyUI environment using official APIs:
+
+```text
+GET /object_info
+GET /models/checkpoints
+```
+
+Current behavior:
+
+```text
+- Counts node types from /object_info.
+- Counts checkpoint models from /models/checkpoints when available.
+- Compares missing_nodes class_type values against /object_info keys.
+- Compares missing checkpoint model names against /models/checkpoints.
+- Shows a short result summary in the warning card.
+```
+
+Example result:
+
+```text
+Environment check: node types 321; checkpoints 4.
+Custom nodes found 1 / 2; still missing 1.
+Checkpoint models found 0 / 1; still missing 1.
+No models or custom nodes were installed automatically.
+```
+
+Important:
+
+```text
+This check is read-only.
+It does not install custom nodes.
+It does not download models.
+It does not modify workflow.json.
+```
+
 ## Safety rules
 
 ```text
@@ -83,14 +122,15 @@ No models or custom nodes are installed automatically.
 - Do not modify workflow.json to remove missing nodes.
 - Do not hide warnings just because generation might still work.
 - Keep warnings visible before Submit /prompt.
+- Keep environment check manual and read-only.
 ```
 
 ## Deferred until RunPod + Android validation
 
 ```text
 - Verify warnings with real exported profiles.
-- Compare missing model names against /models/checkpoints.
-- Compare missing node class_type against /object_info.
+- Confirm exact /models/checkpoints response shape.
+- Add non-checkpoint model folder checks such as loras or vae after confirming API support.
 - Add severity levels such as info/warning/blocking.
 - Add links or local instructions for where to place models.
 ```
@@ -106,4 +146,8 @@ During RunPod + Android validation, confirm:
 4. Warnings do not trigger automatic download or install.
 5. Warnings appear before Submit /prompt.
 6. Profiles with no warnings do not show an empty warning card.
+7. Check environment calls /object_info successfully.
+8. Check environment handles /models/checkpoints success.
+9. Check environment handles /models/checkpoints failure without crashing.
+10. Check environment result is readable on Android.
 ```
