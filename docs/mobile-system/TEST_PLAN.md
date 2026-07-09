@@ -33,6 +33,7 @@ Check analyzer skeleton files:
 - `nodes.py`
 - `server.py`
 - `mobile-app/prototype/profile-storage.js`
+- `mobile-app/prototype/stored-profile-ui.js`
 
 Check:
 
@@ -49,6 +50,7 @@ Check:
 - Detected model names are reported as unverified references.
 - Local profile storage uses browser localStorage only.
 - Local profile storage can upsert, delete, and clear profiles.
+- Stored profile UI can save, load, delete, and clear profiles.
 
 Pass condition:
 
@@ -110,6 +112,9 @@ Check:
 - Download selected remote profile zip.
 - Import local profile zip.
 - Extract `app_profile.json` and `workflow.json` from zip.
+- Save imported profile to browser storage.
+- Reload saved profile from saved profile list.
+- Delete saved profile from saved profile list.
 - Render simple fields.
 - Render image fields as file pickers.
 - Upload selected image to `/upload/image`.
@@ -122,24 +127,26 @@ Check:
 Pass condition:
 
 - One profile zip can be imported without manual JSON paste.
+- One imported profile can be saved and reloaded.
 - One image can be generated from a profile imported through the new flow.
 - If the workflow uses LoadImage, one selected smartphone image can be uploaded and used.
 
 ## Phase 6: Local storage helper test
 
-Use browser devtools or a temporary UI hook.
+Use the Saved Profiles section in the prototype.
 
 Check:
 
-- `ComfyMobileProfileStorage.upsertStoredProfile(appProfile, workflow)` saves a profile.
-- `ComfyMobileProfileStorage.loadStoredProfiles()` returns saved profiles.
-- Saving the same `profile_id` updates the existing stored profile.
-- `ComfyMobileProfileStorage.deleteStoredProfile(profileId)` removes one profile.
-- `ComfyMobileProfileStorage.clearStoredProfiles()` clears all stored profiles.
+- Save current profile.
+- Reload the page.
+- Stored profile remains visible.
+- Load stored profile.
+- Delete stored profile.
+- Clear all stored profiles.
 
 Pass condition:
 
-- Imported profiles can be saved and loaded from browser localStorage.
+- Imported profiles can be saved and loaded from browser localStorage using the prototype UI.
 
 ## Merge rule
 
