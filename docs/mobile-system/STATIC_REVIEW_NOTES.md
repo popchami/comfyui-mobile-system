@@ -24,7 +24,7 @@ Result:
 ```text
 Static cross-file review completed.
 Low-risk issues were fixed on branch docs/mobile-system-spec.
-Legacy HTML behavior was reviewed and useful fallback behavior was reused.
+Legacy HTML behavior was reviewed and useful app-side behavior was reused.
 PR remains Draft.
 Runtime validation is still required.
 ```
@@ -51,6 +51,15 @@ Fixed in this pass:
    - Reused proven legacy HTML behavior: keep /history polling as the completion fallback after /prompt.
    - Temporary /history errors no longer immediately fail the generation flow.
    - WebSocket executing null now reports that execution is complete and history is loading.
+
+6. mobile-app/flutter_mvp/lib/screens/setup_screen.dart
+   - Reused proven legacy HTML behavior: remember and restore the ComfyUI URL.
+   - Uses shared_preferences instead of browser localStorage.
+   - Saves the normalized URL after connection and before opening remote profiles.
+
+7. mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+   - Reused proven legacy HTML behavior: show selected input image preview before generation.
+   - Uses Image.file for selected image fields.
 ```
 
 Legacy HTML reference:
@@ -91,6 +100,7 @@ mobile-app/flutter_mvp/lib/services/comfy_progress_client.dart
 mobile-app/flutter_mvp/lib/services/local_profile_store.dart
 mobile-app/flutter_mvp/lib/services/profile_zip_service.dart
 mobile-app/flutter_mvp/lib/services/workflow_patcher.dart
+mobile-app/flutter_mvp/lib/screens/setup_screen.dart
 mobile-app/flutter_mvp/lib/screens/remote_profiles_screen.dart
 mobile-app/flutter_mvp/lib/screens/generate_screen.dart
 mobile-app/prototype/comfy-progress.js
@@ -102,10 +112,13 @@ docs/mobile-system/PR_BODY_UPDATE_DRAFT.md
 The existing normal HTML flow already used the practical pattern:
 
 ```text
+saved ComfyUI URL restore
 /prompt with client_id
 /ws for progress when available
 /history/{prompt_id} as the reliable completion/result fallback
 /view for generated images
+/upload/image for input images
+local preview for selected input images
 ```
 
 The new Flutter MVP now follows the same safety idea more closely.
@@ -287,9 +300,11 @@ history snapshots
 3. flutter run on Android target
 4. Android Internet permission in generated platform shell
 5. file_picker behavior on Android
-6. /ws connection with clientId
-7. /prompt submission with same clientId
-8. /history polling and /view image display
+6. saved ComfyUI URL restore
+7. selected image preview
+8. /ws connection with clientId
+9. /prompt submission with same clientId
+10. /history polling and /view image display
 ```
 
 ## Known caveats
