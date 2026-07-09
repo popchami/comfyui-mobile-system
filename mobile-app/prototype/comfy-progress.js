@@ -12,10 +12,17 @@ function getProgressClientId() {
   return comfyProgressClientId;
 }
 
+function joinUrlPath(basePath, childPath) {
+  const left = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+  const right = childPath.startsWith('/') ? childPath.slice(1) : childPath;
+  if (!left || left === '/') return '/' + right;
+  return left + '/' + right;
+}
+
 function toWebSocketUrl(httpBaseUrl) {
   const url = new URL(httpBaseUrl);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  url.pathname = '/ws';
+  url.pathname = joinUrlPath(url.pathname, '/ws');
   url.searchParams.set('clientId', getProgressClientId());
   return url.toString();
 }
