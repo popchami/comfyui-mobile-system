@@ -76,11 +76,14 @@ at the end of that document.
 
 ### Unpushed commits on this branch (as of this session)
 
+`cc8f020` (rebase conflict resolution) and `1826681` (CLIPTextEncode
+text-output fix) were already pushed to `origin/docs/mobile-system-spec` in a
+prior session/turn. Only this session's new work is unpushed:
+
 ```text
-9be1125  Add draft image-generation-first model branching plan
 9f8b269  Fix video/audio/json/svg/3d substring misfires in infer_output_type
-1826681  Fix false-positive text output detection in infer_output_type
-cc8f020  Record session pause state in HANDOFF.md (rebase conflict resolution)
+9be1125  Add draft image-generation-first model branching plan
+e81d167  Record autonomous session task run in HANDOFF.md
 ```
 
 `git push` was not run for any of the above per this session's explicit
