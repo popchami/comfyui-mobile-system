@@ -56,11 +56,13 @@ Package versions should be refreshed before actual Flutter implementation.
 ```text
 lib/models/app_profile.dart
 lib/models/local_profile.dart
+lib/models/generated_image.dart
 lib/services/workflow_patcher.dart
 lib/services/comfy_api_client.dart
 lib/services/profile_zip_service.dart
 lib/services/local_profile_store.dart
 lib/services/comfy_progress_client.dart
+lib/services/history_image_extractor.dart
 lib/screens/setup_screen.dart
 lib/screens/remote_profiles_screen.dart
 lib/screens/local_profiles_screen.dart
@@ -87,6 +89,15 @@ Contains the local saved profile model:
 - raw app_profile JSON
 - raw workflow JSON
 - source ComfyUI URL
+
+### generated_image.dart
+
+Contains a generated image model with:
+
+- filename
+- subfolder
+- type
+- `/view` URL
 
 ### workflow_patcher.dart
 
@@ -134,6 +145,10 @@ It exposes a stream of `ComfyProgressEvent` values for:
 - execution_error
 - socket open/close/error
 
+### history_image_extractor.dart
+
+Extracts image records from `/history/{prompt_id}` output data and builds `/view` URLs through `ComfyApiClient`.
+
 ## Screen scaffolds
 
 ### setup_screen.dart
@@ -179,9 +194,12 @@ Current behavior:
 - connects to `/ws` with matching `clientId`
 - shows basic progress/executing status
 - polls `/history/{prompt_id}` until history is available
+- extracts generated image records from history
+- builds `/view` image URLs
+- displays generated images with `Image.network`
 - shows history JSON preview
 
-Later this screen should extract `/view` image URLs and display generated images.
+Later this screen should support image input fields and `/upload/image`.
 
 ## Initial screens
 
@@ -200,12 +218,14 @@ lib/
   models/
     app_profile.dart
     local_profile.dart
+    generated_image.dart
   services/
     comfy_api_client.dart
     profile_zip_service.dart
     local_profile_store.dart
     workflow_patcher.dart
     comfy_progress_client.dart
+    history_image_extractor.dart
   screens/
     setup_screen.dart
     remote_profiles_screen.dart
