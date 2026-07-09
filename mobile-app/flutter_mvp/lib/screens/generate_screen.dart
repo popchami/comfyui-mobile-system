@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../models/app_profile.dart';
 import '../models/local_profile.dart';
 import '../services/comfy_api_client.dart';
+import '../services/comfy_progress_client.dart';
 import '../services/workflow_patcher.dart';
 
 class GenerateScreen extends StatefulWidget {
@@ -21,7 +23,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
   String _status = 'Ready';
   String _patchedPreview = '';
   String _promptId = '';
+  String _historyPreview = '';
   bool _submitting = false;
+  ComfyProgressClient? _progressClient;
+  StreamSubscription<ComfyProgressEvent>? _progressSub;
 
   AppProfile get _appProfile => widget.profile.appProfile;
 
@@ -38,6 +43,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
     for (final controller in _controllers.values) {
       controller.dispose();
     }
+    _progressSub?.cancel();
+    _progressClient?.dispose();
     super.dispose();
   }
 
@@ -72,6 +79,26 @@ class _GenerateScreenState extends State<GenerateScreen> {
     }
   }
 
+  Future<void> _connectProgress() async {
+    await _progressSub?.cancel();
+    await _progressClient?.close();
+    final progressClient = ComfyProgressClient(baseUrl: widget.profile.comfyUrl);
+    _progressClient = progressClient;
+    _progressSub = progressClient.events.listen(_handleProgressEvent);
+    progressClient.connect();
+  }
+
+  void _handleProgressEvent(ComfyProgressEvent event) {
+    if (!mounted) return;
+    if (event.isProgress) {
+      setState(() => _status = 'Progress ${event.progressValue ?? '?'} / ${event.progressMax ?? '?'}');
+    } else if (event.isExecuting) {
+      setState(() => _status = 'Executing node ${event.executingNode ?? '-'}');
+    } else if (event.isExecutionError) {
+      setState(() => _status = 'Execution error');
+    }
+  }
+
   Future<void> _submitPrompt() async {
     if (widget.profile.comfyUrl.isEmpty) {
       setState(() => _status = 'ComfyUI URL missing on local profile');
@@ -82,22 +109,43 @@ class _GenerateScreenState extends State<GenerateScreen> {
       _submitting = true;
       _status = 'Submitting prompt...';
       _promptId = '';
+      _historyPreview = '';
     });
 
     try {
       final patched = _patchedWorkflow();
+      await _connectProgress();
       final client = ComfyApiClient(baseUrl: widget.profile.comfyUrl);
-      final promptId = await client.queuePrompt(workflow: patched);
+      final promptId = await client.queuePrompt(
+        workflow: patched,
+        clientId: _progressClient?.clientId,
+      );
       setState(() {
         _status = 'Submitted';
         _promptId = promptId;
         _patchedPreview = const JsonEncoder.withIndent('  ').convert(patched);
       });
+      await _fetchHistoryWhenReady(client, promptId);
     } catch (e) {
       setState(() => _status = 'Submit failed: $e');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  Future<void> _fetchHistoryWhenReady(ComfyApiClient client, String promptId) async {
+    for (var i = 0; i < 60; i++) {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      final history = await client.getHistory(promptId);
+      if (history.containsKey(promptId)) {
+        setState(() {
+          _status = 'History loaded';
+          _historyPreview = const JsonEncoder.withIndent('  ').convert(history[promptId]);
+        });
+        return;
+      }
+    }
+    setState(() => _status = 'History wait timed out');
   }
 
   Widget _buildField(UiField field) {
@@ -145,11 +193,21 @@ class _GenerateScreenState extends State<GenerateScreen> {
             child: Text(_submitting ? 'Submitting...' : 'Submit /prompt'),
           ),
           const SizedBox(height: 12),
-          if (_patchedPreview.isNotEmpty)
+          if (_historyPreview.isNotEmpty) ...[
+            Text('History', style: Theme.of(context).textTheme.titleMedium),
+            SelectableText(
+              _historyPreview,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (_patchedPreview.isNotEmpty) ...[
+            Text('Patched workflow', style: Theme.of(context).textTheme.titleMedium),
             SelectableText(
               _patchedPreview,
               style: Theme.of(context).textTheme.bodySmall,
             ),
+          ],
         ],
       ),
     );
