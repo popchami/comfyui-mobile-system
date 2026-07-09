@@ -4,7 +4,7 @@
 
 This file is the single source of truth for "what is done / in progress / blocked" on this PR. It is fully rewritten at the end of each work session.
 
-Last updated by: ChatGPT, after cross-file static review and low-risk fixes on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
+Last updated by: ChatGPT, after legacy HTML behavior review and minimal Flutter reuse on branch `docs/mobile-system-spec` (PR #1). Termux, RunPod, ComfyUI runtime, Flutter runtime, and Android runtime were not used in this update.
 
 ## Current decision (unchanged)
 
@@ -36,6 +36,7 @@ State: Draft
 Merge: do not merge
 Smartphone-only preparation: complete
 Cross-file static review fixes: complete
+Legacy HTML behavior review/reuse: complete
 RunPod GPU validation: not complete
 Android real-device/emulator validation: not complete
 Implementation: paused except for minimal blocker fixes
@@ -113,6 +114,36 @@ Details are recorded in:
 docs/mobile-system/STATIC_REVIEW_NOTES.md
 ```
 
+### Legacy HTML behavior reuse
+
+Existing HTML profiles under `profiles/` were reviewed as proven behavior references.
+
+Confirmed existing HTML files include:
+
+```text
+profiles/flux1_dev/normal/comfyui_mobile.html
+profiles/flux2_klein/normal/comfyui_mobile.html
+profiles/flux_full/comfyui_mobile.html
+profiles/flux1_dev/pixelart/comfyui_pixelart.html
+profiles/flux1_dev/icon/comfyui_icon_mobile.html
+profiles/sdxl/chibi/comfyui_sdxl_chibi.html
+profiles/sdxl/pixelart/comfyui_sdxl_pixelart.html
+```
+
+Reused behavior:
+
+```text
+File: mobile-app/flutter_mvp/lib/screens/generate_screen.dart
+Fix: strengthened /history polling fallback after /prompt.
+Reason: existing verified HTML keeps /history polling as a fallback when /ws is unavailable or not connected.
+```
+
+Details are recorded in:
+
+```text
+docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
+```
+
 ## Completed: smartphone-only preparation
 
 Smartphone-only preparation is complete and recorded in:
@@ -146,6 +177,7 @@ The following was completed without RunPod, Termux, Claude Code, ComfyUI runtime
 - PR body update draft added.
 - Docs audit result added.
 - Smartphone-only completion report added.
+- Legacy HTML reuse notes added.
 - README updated as the docs index.
 ```
 
@@ -162,6 +194,7 @@ docs/mobile-system/NEXT_PHASE_PLAN.md
 docs/mobile-system/NEXT_ACTION_QUEUE.md
 docs/mobile-system/DOCS_AUDIT_RESULT.md
 docs/mobile-system/STATIC_REVIEW_NOTES.md
+docs/mobile-system/LEGACY_HTML_REUSE_NOTES.md
 ```
 
 Use these for the next validation pass:
@@ -208,7 +241,8 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 6. Check Analyzer profile list/download routes.
 7. Run real generation with an existing model.
 8. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
-9. Update this HANDOFF.md.
+9. Compare with existing HTML behavior where useful.
+10. Update this HANDOFF.md.
 ```
 
 ## Do next when Android validation is available
@@ -224,7 +258,8 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 8. Submit generation.
 9. Display generated image.
 10. Record result using docs/mobile-system/VALIDATION_RESULT_TEMPLATES.md.
-11. Update this HANDOFF.md.
+11. Compare /prompt -> /ws -> /history -> /view behavior against existing HTML.
+12. Update this HANDOFF.md.
 ```
 
 ## Do next if something fails
@@ -232,10 +267,11 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 ```text
 1. Fill docs/mobile-system/DEBUG_REPORT_TEMPLATE.md.
 2. Identify failing area: RunPod / Android / Analyzer / workflow / model / custom node / ComfyUI API.
-3. Fix only the smallest blocker.
-4. Re-test the failed path.
-5. Update this HANDOFF.md.
-6. Keep PR Draft.
+3. Check whether existing HTML already has proven behavior for the failing area.
+4. Fix only the smallest blocker.
+5. Re-test the failed path.
+6. Update this HANDOFF.md.
+7. Keep PR Draft.
 ```
 
 ## Do not do yet
@@ -250,6 +286,7 @@ docs/mobile-system/AI_MINIMAL_HANDOFF_PROMPTS.md
 - Do not build a public marketplace.
 - Do not turn Android app into a full ComfyUI workflow editor.
 - Do not require Playwright/Chromium for MVP.
+- Do not copy legacy HTML prompt/content lists into the new dynamic app.
 ```
 
 ## Merge readiness rule
@@ -268,6 +305,6 @@ Do not move toward merge until:
 ## Static review stop condition
 
 ```text
-Cross-file static review fixes are complete for the issues found in this pass.
+Cross-file static review fixes and legacy HTML reuse pass are complete for the issues found in this pass.
 The next meaningful work is RunPod/Android real validation unless a new source-level issue is discovered.
 ```
