@@ -1,7 +1,8 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-13 / 更新者: Claude Code(チャミの直接承認による夜間自律作業、「もう寝るから自由にすすめといて」2026-07-13)
+2026-07-13 / 更新者: Claude Code(チャミの直接承認による夜間自律作業、「もう寝るから自由にすすめといて」2026-07-13。
+Codexからのmain反映前レビュー依頼を受け、SVG項目の記述誤りを訂正)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -31,17 +32,22 @@
   追加されている。iconワークフロー(アイコン生成用途)にも同じFaceDetailer追加を
   適用すべきかは対象が顔写真ではなくアイコン画像であるため自明ではなく、
   ハルシネーション禁止ルールにより憶測で実装しない。チャミの判断待ち。
-- [ChatGPT分析済み・Claude Code実行待ち・2026-07-13時点で保留] comfyui_icon_mobile.html
-  のAPI生成部分にBRIA_RMBG → ConvertRasterToVector → SaveSVG を追加する件。
-  workflow JSON内でのノード存在は確認済み(BRIA_RMBG/ConvertRasterToVector/SaveSVG/
-  ImageUpscaleWithModel/UpscaleModelLoaderいずれも実在、配線もImageUpscaleWithModel→
-  BRIA_RMBG→ConvertRasterToVector→SaveSVGの順で確認)。ただしHTML側コード自身に
-  既存コメントがあり(「PNG保存(正方形、背景透過・SVG化は/object_info確認後に追加予定)」
-  L699付近)、ConvertRasterToVectorのworkflow.json上の値は位置指定のwidgets_values
-  (['color','spline',4,8,80,2,15,45,5,True])のみでAPI入力名(キー名)が不明なため、
-  下記の/object_info確認が完了するまで実装しない。
-- [Claude Code要実施・引き続きRunPod実機待ち] 上記実装前提として、RunPod実機で
-  /object_info を見てBRIA_RMBG/ConvertRasterToVector/SaveSVGのAPI入力名を確認
+- [訂正・2026-07-13] comfyui_icon_mobile.htmlのSVG追加は**実装済み**(commit 71da543、
+  2026-07-08 22:07、このセッションより前)。前回のこの節の記述(「実装しない」)は誤り。
+  誤りの原因: 今回の調査をdocs/mobile-system-specブランチ上のファイルで行ってしまい、
+  chatgpt-work側で既に加わっていた変更を見落とした(ブランチを跨いだ調査ミス。以後は
+  対象ブランチのHEADを確認してから記述する)。71da543の実装内容は、BRIA_RMBG→
+  ConvertRasterToVector→SaveSVGの接続(image/svg_strings)のみを追加し、各ノードの
+  ウィジェットパラメータ(BRIA_RMBGのバージョン値、ConvertRasterToVectorの
+  color/spline等の閾値、SaveSVGのfilename_prefix等)はAPI入力キー名が/object_info
+  未確認のため意図的に指定しておらず、ComfyUI側のノード既定値に委ねる設計(コメントで
+  明記済み)。ノード名・接続順はworkflow JSON実体と一致、ハルシネーションではない。
+  **残っている未検証事項**: (1)実際にComfyUI(RunPod等)で/promptに投げて実行が
+  通るか未検証(ウィジェット省略時の既定値解決を含め、実機での動作確認なし)、
+  (2)既定値のままで意図した見た目(閾値・解像度等)になるかは未確認。
+- [Claude Code要実施・引き続きRunPod実機待ち] 上記の未検証事項(1)(2)を、RunPod実機で
+  実際に生成を実行して確認する。合わせて/object_infoでBRIA_RMBG/ConvertRasterToVector/
+  SaveSVGの正式なAPI入力キー名を確認し、意図した閾値等を明示指定できるようにする。
 - ~~mainブランチへの直接pushをGit hookでブロックする安全装置を作る~~ → 完了済みへ移動
 
 ## ブロック中・保留
@@ -50,7 +56,8 @@
   元ZIPの再アップロードが必要。緊急度低、ComfyUI動作確認が優先
 - flux1_dev_icon_24/32/48GB workflow新規作成: FaceDetailerをiconワークフローにも
   含めるか要判断(上記「進行中」参照)
-- comfyui_icon_mobile.htmlのSVGノード配線: /object_info確認(RunPod実機)待ち
+- comfyui_icon_mobile.htmlのSVGノード配線: 接続自体は実装済み(commit 71da543)。
+  RunPod実機での実行検証と、/object_infoによるウィジェット入力キー名確認が未了
 
 ## 重要な注意事項(繰り返し確認が必要なルール)
 - ChatGPTは分析・提案のみ。編集・commit・push は一切行わない
