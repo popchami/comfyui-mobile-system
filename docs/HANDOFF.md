@@ -25,13 +25,32 @@ Codexからのmain反映前レビュー依頼を受け、SVG項目の記述誤�
   で同様に保護したい場合は同じフックを別途設置する必要がある。
 
 ## 進行中・次にやること(担当者を明記)
-- [ChatGPT分析済み・Claude Code実行待ち・2026-07-13時点で保留] flux1_dev_icon_24/32/48GB
-  workflowの新規作成。当初想定(weight_dtypeのみがtier差分)は不十分と判明:
-  normal/tierの実ファイルをdiffした結果、32GB/48GBには16/24GBに無い
-  UltralyticsDetectorProvider + FaceDetailer(顔検出・顔ディテール強化)ノードが
-  追加されている。iconワークフロー(アイコン生成用途)にも同じFaceDetailer追加を
-  適用すべきかは対象が顔写真ではなくアイコン画像であるため自明ではなく、
-  ハルシネーション禁止ルールにより憶測で実装しない。チャミの判断待ち。
+- [2026-07-13・実装完了、チャミの最終確認待ち] flux1_dev_icon_24/32/48GB workflowを
+  新規作成した(flux1_dev_icon_24GB_workflow_v2ollama.json / _32GB_ / _48GB_)。
+  当初想定(weight_dtypeのみがtier差分)は不十分と判明していた点(下記参照)を
+  踏まえ、以下の方針で実装:
+  - FaceDetailer(顔検出・顔ディテール強化)は**含めない**。根拠: (1)normal/tierの
+    実ファイルをdiffした結果、32GB/48GBにのみUltralyticsDetectorProvider+
+    FaceDetailerが追加されていることを確認したが、(2)specs/icons/
+    kickkick_icon_bundle_all_v1/ICON_SPEC_street.mdを確認したところ、icon生成対象は
+    『Kick×Kick』アプリのUIナビゲーションアイコン14種(nav_home/nav_settings/
+    icon_trophy等、ストリートテーマの抽象グリフ)であり顔を含まない、(3)さらに
+    profiles/flux1_dev/icon/download_list_flux1.txt内で
+    `# face_yolov8m ...`の行が既にコメントアウトされており(=未ダウンロード設定)、
+    FaceDetailer非搭載が元々の設計意図と一致することを確認した。
+    ただし現時点で確認できたのはstreetテーマ1件のみで、将来的に顔を含む
+    キャラクター/マスコット系アイコンテーマが追加された場合は再検討が必要。
+  - icon_24GB/32GBはicon_16GBと構造的に同一(UNETLoaderのtitleラベルのみ
+    normal/tierの命名慣習に合わせて変更、weight_dtypeはfp8_e4m3fnのまま)。
+  - icon_48GBはUNETLoaderのweight_dtypeを bf16 に変更(normal/48GBと同じ差分パターン)。
+  - setup_flux1_dev.ipynbの24/32/48GB tierのtarget_workflow参照名も
+    icon付きファイル名に修正済み(16GBと同様の対応)。
+  - 生成後、全ファイルJSON妥当性を検証済み(python3 json.loadで26ノード確認)。
+  - **新たに判明した別ギャップ(今回は対応せず記録のみ)**: icon_48GB tierが
+    参照するbf16版モデル(flux1-dev.safetensors、非量子化)は、
+    download_list_flux1.txtに未記載。ただしこれはnormal/download_list.txtにも
+    同様の記載漏れがある既存の問題で、今回のicon作業で新規に生じたものではない。
+    別途対応要否をチャミに確認。
 - [訂正・2026-07-13] comfyui_icon_mobile.htmlのSVG追加は**実装済み**(commit 71da543、
   2026-07-08 22:07、このセッションより前)。前回のこの節の記述(「実装しない」)は誤り。
   誤りの原因: 今回の調査をdocs/mobile-system-specブランチ上のファイルで行ってしまい、
