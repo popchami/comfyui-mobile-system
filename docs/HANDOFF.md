@@ -1,7 +1,7 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-08 / 更新者: Claude Code
+2026-07-13 / 更新者: Claude Code(チャミの直接承認による夜間自律作業、「もう寝るから自由にすすめといて」2026-07-13)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -9,30 +9,48 @@
 - RunPod APIキー設定(.env, .gitignore保護)
 - scripts/runpod_status_check.py 作成・動作確認
 - profiles/flux1_dev/icon/ 配置(既存normal/pixelart/との差分はSHA256照合済み、別バージョンと確認)
+- [2026-07-13] profiles/flux1_dev/icon/setup_flux1_dev.ipynb の16GB tier
+  target_workflow参照名を flux1_dev_16GB_workflow_v2ollama.json から
+  flux1_dev_icon_16GB_workflow_v2ollama.json に修正(該当行はファイル内で一意な文字列と
+  確認した上でsed置換、grep再確認済み)。24/32/48GB tierの参照名は元々icon付きファイル名
+  (flux1_dev_icon_24/32/48GB_workflow_v2ollama.json)を指しているが、そのファイル自体が
+  まだ存在しない(下記「新規作成」項目が未着手のため)。
+- [2026-07-13] mainブランチへの直接pushをブロックするpre-pushフックを追加
+  (.git/hooks/pre-push、chatgpt-workなど他ブランチへのpushは許可)。
+  ローカルでrefs/heads/mainへのpushをシミュレートしexit 1を確認、
+  refs/heads/chatgpt-workではexit 0を確認済み。
+  **注意**: gitフックは.gitディレクトリ内にありcloneで共有されないため、
+  この安全装置は「このローカルクローンのみ」で有効。他の環境(RunPod上のclone等)
+  で同様に保護したい場合は同じフックを別途設置する必要がある。
 
 ## 進行中・次にやること(担当者を明記)
-- [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
-  (normal/のTIER差分:weight_dtypeがflux1-dev-fp8.safetensors[16/24/32GB]→
-  flux1-dev.safetensors[48GBのみ]、workflow内weight_dtypeはfp8_e4m3fn[16/24/32GB]→
-  bf16[48GBのみ]という差分パターンを踏まえて作成する)
-- [ChatGPT分析済み・Claude Code実行待ち] profiles/flux1_dev/icon/setup_flux1_dev.ipynb の
-  target_workflow参照名を flux1_dev_16GB_workflow_v2ollama.json から
-  flux1_dev_icon_16GB_workflow_v2ollama.json に修正
-- [ChatGPT分析済み・Claude Code実行待ち] comfyui_icon_mobile.html のAPI生成部分に
-  BRIA_RMBG → ConvertRasterToVector → SaveSVG を追加(workflow JSON内には実在確認済み、
-  HTML側で未接続なことが判明。ImageUpscaleWithModelというノード名も提案されたが
-  実在未確認、実装前にworkflow内で確認が必要)
-- [Claude Code要実施] 上記実装後、RunPod実機で /object_info を見て
-  SVG系3ノードのAPI入力名を確認
-- [Claude Code要実施] mainブランチへの直接pushをGit hookでブロックする
-  安全装置を作る(pre-push hook等)。ChatGPTがブランチを自動認識できない
-  ため、人間の確認だけに頼らず機械的に事故を防ぐ目的。
-  chatgpt-workブランチへのpushは許可、mainへの直接pushのみ拒否する設定。
+- [ChatGPT分析済み・Claude Code実行待ち・2026-07-13時点で保留] flux1_dev_icon_24/32/48GB
+  workflowの新規作成。当初想定(weight_dtypeのみがtier差分)は不十分と判明:
+  normal/tierの実ファイルをdiffした結果、32GB/48GBには16/24GBに無い
+  UltralyticsDetectorProvider + FaceDetailer(顔検出・顔ディテール強化)ノードが
+  追加されている。iconワークフロー(アイコン生成用途)にも同じFaceDetailer追加を
+  適用すべきかは対象が顔写真ではなくアイコン画像であるため自明ではなく、
+  ハルシネーション禁止ルールにより憶測で実装しない。チャミの判断待ち。
+- [ChatGPT分析済み・Claude Code実行待ち・2026-07-13時点で保留] comfyui_icon_mobile.html
+  のAPI生成部分にBRIA_RMBG → ConvertRasterToVector → SaveSVG を追加する件。
+  workflow JSON内でのノード存在は確認済み(BRIA_RMBG/ConvertRasterToVector/SaveSVG/
+  ImageUpscaleWithModel/UpscaleModelLoaderいずれも実在、配線もImageUpscaleWithModel→
+  BRIA_RMBG→ConvertRasterToVector→SaveSVGの順で確認)。ただしHTML側コード自身に
+  既存コメントがあり(「PNG保存(正方形、背景透過・SVG化は/object_info確認後に追加予定)」
+  L699付近)、ConvertRasterToVectorのworkflow.json上の値は位置指定のwidgets_values
+  (['color','spline',4,8,80,2,15,45,5,True])のみでAPI入力名(キー名)が不明なため、
+  下記の/object_info確認が完了するまで実装しない。
+- [Claude Code要実施・引き続きRunPod実機待ち] 上記実装前提として、RunPod実機で
+  /object_info を見てBRIA_RMBG/ConvertRasterToVector/SaveSVGのAPI入力名を確認
+- ~~mainブランチへの直接pushをGit hookでブロックする安全装置を作る~~ → 完了済みへ移動
 
 ## ブロック中・保留
 - ICON_SPEC_street.md(specs/icons/)のSHA256照合:kickkick_icon_bundle_all_v1.zip由来の
   同名ファイルと重複の可能性があるが、ZIP本体削除済みのため再照合には
   元ZIPの再アップロードが必要。緊急度低、ComfyUI動作確認が優先
+- flux1_dev_icon_24/32/48GB workflow新規作成: FaceDetailerをiconワークフローにも
+  含めるか要判断(上記「進行中」参照)
+- comfyui_icon_mobile.htmlのSVGノード配線: /object_info確認(RunPod実機)待ち
 
 ## 重要な注意事項(繰り返し確認が必要なルール)
 - ChatGPTは分析・提案のみ。編集・commit・push は一切行わない
