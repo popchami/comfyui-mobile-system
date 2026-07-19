@@ -1,7 +1,7 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-20 / 更新者: Claude Code(ハルト表情セットv2 ZIP取込作業、mainへのPR作成)
+2026-07-20 / 更新者: Claude Code(ハルト4方向立ち絵・ナツキ正本の複数package/複数category対応、Draft PR作成)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -45,6 +45,63 @@
     実URL・実ネットワーク経由で、認証なし取得・SHA-256一致・PNG31枚1254×1254・
     manifest31表情すべて解決・既存アセット非上書き・`--force`再取得・テスト36件、
     いずれも実機確認済み(2026-07-19〜20)
+  - **PR #2としてmainへsquash-merge済み**(2026-07-20、コミット`48867f3`)。
+    3commitのみを`haruto-expression-set-v2-pr`ブランチへcherry-pickして
+    スコープを限定、マージ前最終Codexレビューで指摘された`_atomic_replace`の
+    バックアップ命名方式のCriticalも修正済み。マージ後ブランチ削除済み
+- **ハルト4方向立ち絵・ナツキ正本の複数package/複数category対応拡張**。詳細:
+  - 新規ZIP3件をチャミが検証済みとして提供(SHA-256・容量とも実機で再照合し
+    完全一致確認済み): `haruto_turnaround_for_claude_code_v1.zip`(実運用対象、
+    PNG4枚・各1024×1536)、`natsuki_complete_set_v2.zip`(実運用対象、
+    31表情+4方向+装備2枚の計37枚、1ZIPに3カテゴリ収録)、
+    `haruto_complete_archive_v1.zip`(保存・復旧専用の完全版、既存31表情+
+    新turnaround4枚の意図的重複、CMS自動取得の対象外)
+  - **決定事項(チャミ)**: 疑似キャラクターフォルダ方式は不採用。1キャラクター
+    配下にcategory(expressions/turnaround/equipment、将来poses/training等)を
+    持たせる。論理IDは既存表情`<character>/<tag>.png`の後方互換を維持しつつ、
+    新category向けに`<character>/<category>/<tag>.png`形式を追加。
+    実ファイル名の表記揺れ(`left-facing-profile`と`left-profile`等)は
+    category別manifestが吸収し、論理IDは統一済みタグへ集約する
+  - `asset.json`(旧形式・単一package・単一category)は後方互換のため無変更。
+    新形式`packages.json`で1キャラクターが複数Release ZIP(package)を持て、
+    1package(1ZIP)が複数categoryを収録できるよう拡張。categoryごとに
+    独立したmanifest.json(1つの巨大manifestへ混在させない)
+  - `scripts/reference_image_categories.py`(新規共有モジュール)で
+    `KNOWN_CATEGORIES`・`CATEGORY_PLACE_TO`・`CATEGORY_MANIFEST_REL`を
+    一本化し、fetch/resolve両スクリプトの定義drift(片方だけcategory追加漏れ)
+    を防止
+  - `scripts/fetch_reference_images.py`: 旧形式asset.jsonを内部で新形式へ
+    正規化してから処理。package全categoryの検証完了後にのみ原子的に配置
+    (1categoryでも検証失敗した場合、そのpackageからは何も配置しない)。
+    既存の`_character_lock()`(flock)・`_atomic_replace()`は無変更で継続利用
+  - `scripts/resolve_reference_image.py`: 論理ID正規表現にcategoryセグメントを
+    任意(省略可)で追加、省略時は`expressions`扱い(既存互換)
+  - **Codexレビュー2ラウンド実施・Critical/Minorすべて修正済み**:
+    (1) `place_to`/`zip_subdir`/`manifest`等、config供給値を検証なしで
+    パス結合していたCritical3件 → `_resolve_contained()`によるベース
+    ディレクトリ封じ込めチェックを追加、かつ`place_to`/`manifest`は
+    canonicalな対応表と完全一致必須へ変更(config側の自由記述を廃止)。
+    (2) `expected_image_size: null`のcategoryでオブジェクト形式manifest
+    (`file`/`width`/`height`)が未強制で、サイレントに寸法検証がスキップ
+    されていたCritical1件(実際にナツキのequipment categoryで発生していたのを
+    確認・修正) → 必須化。(3) `KNOWN_CATEGORIES`の2ファイル間重複(Minor)
+    → 共有モジュールへ統合
+  - `tests/test_fetch_reference_images.py`・`tests/test_resolve_reference_image.py`
+    を大幅拡張、**計88件全て合格**(`python3 -m unittest discover -s tests`)。
+    既存haruto表情31件の後方互換・複数package取得・1ZIP3category取得・
+    ナツキ31表情タグの互換性・ファイル別寸法検証・装備2論理ID解決・
+    旧形式asset.json互換・不正category/予約語/パストラバーサル拒否・
+    検証失敗時の既存アセット保持・flock排他・完全版archiveの自動取得対象外化
+    などを個別カバー
+  - 実データ(実ZIP)での再検証済み: ハルトturnaround4枚・ナツキ37枚
+    (31表情+4方向+装備2)、いずれも全論理ID解決成功、equipmentのファイル別
+    寸法検証も実データで正しく動作確認済み
+  - ブランチ`multi-character-reference-images`(48867f3から分岐、2commit:
+    `5380550`実装→`e1da8ca`Codex指摘修正)をpush、**Draft PR #3作成済み**:
+    https://github.com/popchami/comfyui-mobile-system/pull/3
+    (mainへのマージ・GitHub Release作成(`haruto-turnaround-v1`・
+    `natsuki-complete-set-v2`・`haruto-complete-archive-v1`)はいずれも
+    チャミの承認待ち、未実施)
 
 ## 進行中・次にやること(担当者を明記)
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
@@ -69,17 +126,27 @@
   ハルト表情セットv2 PRとは別スコープのため、mainへは別途chatgpt-workブランチ全体の
   マージ(またはそれらのcommit単位でのPR)で反映する想定。詳細はchatgpt-workブランチの
   git logおよびそちらのHANDOFF.mdを参照。
-- [2026-07-20・PR作成済み、マージ待ち] ハルト表情セットv2の取込基盤を、
-  chatgpt-workから独立したブランチ`haruto-expression-set-v2-pr`(cdc9295・d0293ba・
-  883a879の3commitのみをmainへcherry-pick)としてPR化した。マージはチャミの確認後に行う
+- [2026-07-20・Draft PR作成済み、レビュー・マージ待ち] ハルト4方向立ち絵・
+  ナツキ正本の複数package/複数category対応拡張(PR #3、
+  https://github.com/popchami/comfyui-mobile-system/pull/3 )。
+  チャミの確認後、Draft解除・マージを行う想定
+- [チャミ承認待ち・実行前に必ず内容提示] 上記PRとは別に、GitHub Release
+  3件の新規作成が未実施のまま残っている: `haruto-turnaround-v1`
+  (`haruto_turnaround_for_claude_code_v1.zip`)、`natsuki-complete-set-v2`
+  (`natsuki_complete_set_v2.zip`)、`haruto-complete-archive-v1`(保存用、
+  `haruto_complete_archive_v1.zip`・CMS自動取得対象外)。タグ名・タイトル・
+  本文・SHA-256・容量はdocs/HANDOFF.mdの完了済みセクションおよびPR #3本文に
+  記載済み。既存Release`haruto-expression-set-v2`は変更・削除しないこと
 - [Phase 2・将来] `profiles/sdxl/isekai_nihon_manga/` 配下にSDXL+IPAdapterのマンガ用
   ComfyUI Workflowを構築する(今回はデータ層・取得基盤のみ実装、Workflow本体は未着手)。
   実装時は`scripts/resolve_reference_image.py`をノード/前処理から呼び出す形で
   reference_image(論理ID)→実ファイルの解決を行う想定
-- [将来] ハルト以外のキャラクター(ナツキ・アキラ・フユミ・書記官)の表情セット・
-  書記官解説カットストックが用意され次第、同じ`asset.json`/`manifest.json`パターンで
-  `reference_images/<character>/`を追加する(`scripts/fetch_reference_images.py`は
-  複数キャラクターの自動検出に対応済み)
+- [将来] ナツキは今回の複数package/複数category拡張で表情・4方向立ち絵・装備まで
+  対応済み(Draft PR #3、Release未作成)。アキラ・フユミ・書記官の表情セット・
+  書記官解説カットストックが用意され次第、同じ`packages.json`/category別
+  manifest.jsonパターンで`reference_images/<character>/`を追加する
+  (`scripts/fetch_reference_images.py`は複数キャラクター・複数package・
+  複数categoryの自動検出に対応済み)
 
 ## ブロック中・保留
 - ICON_SPEC_street.md(specs/icons/)のSHA256照合:kickkick_icon_bundle_all_v1.zip由来の
