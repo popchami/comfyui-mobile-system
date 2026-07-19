@@ -133,6 +133,49 @@ def verify_extracted_images(staging_dir, config):
             )
 
 
+def _atomic_replace(new_path, final_path):
+    """new_path(final_pathと同じファイルシステム上にあることが前提)を
+    final_pathへ原子的に入れ替える。ファイル・ディレクトリのどちらにも
+    使える。
+
+    final_pathが既存の場合はまず退避してから入れ替え、成功後に退避先を
+    削除する。入れ替え(os.rename)自体が失敗した場合は退避しておいた
+    元の内容を復元してから例外を送出する。これにより、途中で失敗しても
+    final_pathは常に「入れ替え前の内容」か「入れ替え後の内容」の
+    いずれかであり、消失・部分破損した状態にはならない(Codexレビュー
+    指摘: 旧shutil.rmtree→shutil.moveの2段階処理は、異なるファイル
+    システム間の移動失敗や処理中断時に旧アセットを失う恐れがあった)。
+    """
+    backup_path = final_path.parent / (final_path.name + ".old-tmp")
+    if backup_path.exists():
+        if backup_path.is_dir():
+            shutil.rmtree(backup_path)
+        else:
+            backup_path.unlink()
+
+    had_existing = final_path.exists()
+    if had_existing:
+        final_path.rename(backup_path)
+
+    try:
+        new_path.rename(final_path)
+    except OSError:
+        if had_existing:
+            if final_path.exists():
+                if final_path.is_dir():
+                    shutil.rmtree(final_path)
+                else:
+                    final_path.unlink()
+            backup_path.rename(final_path)
+        raise
+
+    if had_existing and backup_path.exists():
+        if backup_path.is_dir():
+            shutil.rmtree(backup_path)
+        else:
+            backup_path.unlink()
+
+
 def verify_manifest_coverage(staging_dir, manifest_path):
     """manifest.jsonが参照する全ファイルが、展開結果に実在することを確認する。"""
     with manifest_path.open(encoding="utf-8") as f:
@@ -161,7 +204,12 @@ def fetch_character(character_dir, force=False):
 
     print(f"[{name}] 設定読み込み完了: {config['filename']} (release={config['release_tag']})")
 
-    with tempfile.TemporaryDirectory(prefix="ref_fetch_") as tmp:
+    # dir=character_dir.parent を指定し、一時ディレクトリを正式配置先と
+    # 同じファイルシステム上に作る。これにより後続のos.rename(Path.rename)
+    # による入れ替えが真に原子的になる(異なるファイルシステム間だと
+    # renameできずcopy+削除にフォールバックし、部分失敗の余地が生まれる
+    # ため。Codexレビュー指摘)。
+    with tempfile.TemporaryDirectory(prefix=f".fetch_{name}_", dir=character_dir.parent) as tmp:
         tmp_path = Path(tmp)
         zip_path = tmp_path / config["filename"]
 
@@ -193,14 +241,12 @@ def fetch_character(character_dir, force=False):
 
         # ここまでの処理はすべて一時ディレクトリ内で完結しており、正式配置
         # (character_dir/images, character_dir/index.html)には一切触れて
-        # いない。全検証に合格した場合にのみ、ここで初めて反映する。
-        if final_images_dir.exists():
-            shutil.rmtree(final_images_dir)
-        shutil.move(str(staging_dir / "images"), str(final_images_dir))
+        # いない。全検証に合格した場合にのみ、ここで初めて原子的に反映する。
+        _atomic_replace(staging_dir / "images", final_images_dir)
 
         index_html_src = staging_dir / "index.html"
         if index_html_src.is_file():
-            shutil.move(str(index_html_src), str(character_dir / "index.html"))
+            _atomic_replace(index_html_src, character_dir / "index.html")
 
         print(f"[{name}] 配置完了: {final_images_dir}")
 

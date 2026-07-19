@@ -200,6 +200,93 @@ class FetchCharacterTest(unittest.TestCase):
             with self.assertRaises(fri.FetchError):
                 fri.fetch_character(self.character_dir)
 
+    def test_temp_dir_created_under_character_dir_parent(self):
+        # 一時ディレクトリが正式配置先(character_dir)と同じファイル
+        # システム上に作られることを確認する。異なるファイルシステムだと
+        # 最終配置のos.renameが真に原子的にならない(Codexレビュー指摘)。
+        with mock.patch.object(
+            fri.tempfile, "TemporaryDirectory", wraps=fri.tempfile.TemporaryDirectory
+        ) as mocked_tmp:
+            with mock.patch.object(fri, "download_file", side_effect=self._mock_download):
+                fri.fetch_character(self.character_dir)
+
+        mocked_tmp.assert_called_once()
+        _, kwargs = mocked_tmp.call_args
+        self.assertEqual(kwargs.get("dir"), self.character_dir.parent)
+
+
+class AtomicReplaceTest(unittest.TestCase):
+    """_atomic_replace(): 旧shutil.rmtree→shutil.moveの2段階処理が持っていた
+    「置き換え失敗時に旧アセットを失う」問題(Codexレビュー指摘)の修正を
+    検証する。
+    """
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmpdir.cleanup)
+        self.root = pathlib.Path(self._tmpdir.name)
+
+    def test_replaces_existing_directory_and_leaves_no_backup(self):
+        final = self.root / "images"
+        final.mkdir()
+        (final / "old.png").write_bytes(b"old")
+
+        new = self.root / "images.new"
+        new.mkdir()
+        (new / "new.png").write_bytes(b"new")
+
+        fri._atomic_replace(new, final)
+
+        self.assertFalse((final / "old.png").exists())
+        self.assertTrue((final / "new.png").is_file())
+        self.assertFalse(new.exists())
+        self.assertFalse((self.root / "images.old-tmp").exists())
+
+    def test_places_new_directory_when_no_existing_final(self):
+        final = self.root / "images"
+        new = self.root / "images.new"
+        new.mkdir()
+        (new / "new.png").write_bytes(b"new")
+
+        fri._atomic_replace(new, final)
+
+        self.assertTrue((final / "new.png").is_file())
+
+    def test_replaces_existing_file(self):
+        final = self.root / "index.html"
+        final.write_text("old")
+        new = self.root / "index.html.new"
+        new.write_text("new")
+
+        fri._atomic_replace(new, final)
+
+        self.assertEqual(final.read_text(), "new")
+
+    def test_rename_failure_restores_original_content(self):
+        final = self.root / "images"
+        final.mkdir()
+        (final / "old.png").write_bytes(b"old")
+
+        new = self.root / "images.new"
+        new.mkdir()
+        (new / "new.png").write_bytes(b"new")
+
+        original_rename = pathlib.Path.rename
+
+        def flaky_rename(self_path, target):
+            if self_path == new and pathlib.Path(target) == final:
+                raise OSError("simulated rename failure")
+            return original_rename(self_path, target)
+
+        with mock.patch.object(pathlib.Path, "rename", flaky_rename):
+            with self.assertRaises(OSError):
+                fri._atomic_replace(new, final)
+
+        # 置き換え失敗後も、元の内容(old.png)が失われず残っていること。
+        self.assertTrue((final / "old.png").is_file())
+        self.assertEqual((final / "old.png").read_bytes(), b"old")
+        self.assertFalse((self.root / "images.old-tmp").exists())
+
 
 class SafeExtractTest(unittest.TestCase):
     def setUp(self):

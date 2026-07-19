@@ -42,7 +42,15 @@ def parse_reference_image(reference_image):
     m = REFERENCE_IMAGE_RE.match(reference_image or "")
     if not m:
         raise ResolveError(f"reference_imageの形式が不正です: {reference_image!r}")
-    return m.group("character"), m.group("expression")
+    character, expression = m.group("character"), m.group("expression")
+    # "_"始まりはmanifest.json内の予約キー(例: "_comment")であり、実在の
+    # 表情タグではない。REFERENCE_IMAGE_REの文字クラスは"_"を許容する
+    # ため、ここで明示的に拒否する(Codexレビュー指摘:
+    # "haruto/_comment.png" がmanifest.get("_comment")の説明文字列へ
+    # 解決されてしまっていた)。
+    if expression.startswith("_") or character.startswith("_"):
+        raise ResolveError(f"reference_imageに予約語(_始まり)は使用できません: {reference_image!r}")
+    return character, expression
 
 
 def load_manifest(character):
