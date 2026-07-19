@@ -6,3 +6,4 @@ __pycache__/
 # scripts/fetch_reference_images.py取得後にのみ生成される(Git管理外)。
 profiles/sdxl/isekai_nihon_manga/reference_images/*/images/
 profiles/sdxl/isekai_nihon_manga/reference_images/*/index.html
+profiles/sdxl/isekai_nihon_manga/reference_images/*/.fetch.lock

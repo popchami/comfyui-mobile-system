@@ -28,13 +28,17 @@ ZIP本体・展開後のPNGはGit管理外(GitHub Release assetとして保管)�
   python3 scripts/fetch_reference_images.py --character haruto --force
 """
 import argparse
+import contextlib
+import fcntl
 import hashlib
 import json
+import os
 import shutil
 import struct
 import sys
 import tempfile
 import urllib.request
+import uuid
 import zipfile
 from pathlib import Path
 
@@ -145,13 +149,18 @@ def _atomic_replace(new_path, final_path):
     いずれかであり、消失・部分破損した状態にはならない(Codexレビュー
     指摘: 旧shutil.rmtree→shutil.moveの2段階処理は、異なるファイル
     システム間の移動失敗や処理中断時に旧アセットを失う恐れがあった)。
+
+    退避先のパスは呼び出しごとに一意な名前(pid+乱数)を使う。固定名
+    (例: ".old-tmp")だと、(1)処理が"final_path.rename(backup_path)"の
+    直後で中断した場合、次回呼び出しの冒頭でその固定名を無条件削除して
+    しまい、まだ復元されていない唯一の旧アセットを消してしまう、
+    (2)同時に複数回呼び出された場合に互いの退避内容を削除・混同する、
+    という2種類のデータ喪失経路があった(Codexレビュー再指摘、Critical)。
+    一意な名前にすることで、このメソッド自身が過去に作った退避以外には
+    一切触れない(古い中断済みの退避が残っていても放置するだけで、
+    誤って削除しない)。
     """
-    backup_path = final_path.parent / (final_path.name + ".old-tmp")
-    if backup_path.exists():
-        if backup_path.is_dir():
-            shutil.rmtree(backup_path)
-        else:
-            backup_path.unlink()
+    backup_path = final_path.parent / f"{final_path.name}.old-{os.getpid()}-{uuid.uuid4().hex[:8]}"
 
     had_existing = final_path.exists()
     if had_existing:
@@ -190,7 +199,34 @@ def verify_manifest_coverage(staging_dir, manifest_path):
         raise FetchError(f"manifest.jsonが参照するファイルが展開結果にありません: {missing}")
 
 
+@contextlib.contextmanager
+def _character_lock(character_dir):
+    """同一キャラクターに対するfetch_character()の同時実行を防ぐ
+    (Codexレビュー指摘: ロックなしでは、複数プロセスが同時に
+    _atomic_replace()を呼んだ場合、互いの退避内容や新配置を削除・
+    混同しうる)。
+
+    ロックファイルはcharacter_dir内(Git管理外、.gitignore対象)に作成
+    する。flock(2)ベースのため、プロセスが異常終了してもOSが自動的に
+    ロックを解放する(スタイルロックファイルの手動クリーンアップは
+    不要)。
+    """
+    character_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = character_dir / ".fetch.lock"
+    with lock_path.open("w") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
+
+
 def fetch_character(character_dir, force=False):
+    with _character_lock(character_dir):
+        _fetch_character_locked(character_dir, force=force)
+
+
+def _fetch_character_locked(character_dir, force=False):
     name = character_dir.name
     final_images_dir = character_dir / "images"
     if final_images_dir.exists() and not force:

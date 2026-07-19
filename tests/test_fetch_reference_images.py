@@ -240,7 +240,10 @@ class AtomicReplaceTest(unittest.TestCase):
         self.assertFalse((final / "old.png").exists())
         self.assertTrue((final / "new.png").is_file())
         self.assertFalse(new.exists())
-        self.assertFalse((self.root / "images.old-tmp").exists())
+        # 退避先は呼び出しごとに一意な名前("images.old-<pid>-<hex>")を
+        # 使うため、固定名では検査できない。成功後は残らないことを
+        # glob で確認する。
+        self.assertEqual(list(self.root.glob("images.old-*")), [])
 
     def test_places_new_directory_when_no_existing_final(self):
         final = self.root / "images"
@@ -285,7 +288,82 @@ class AtomicReplaceTest(unittest.TestCase):
         # 置き換え失敗後も、元の内容(old.png)が失われず残っていること。
         self.assertTrue((final / "old.png").is_file())
         self.assertEqual((final / "old.png").read_bytes(), b"old")
-        self.assertFalse((self.root / "images.old-tmp").exists())
+        # 復元後、このメソッド自身が作った退避は残らない。
+        self.assertEqual(list(self.root.glob("images.old-*")), [])
+
+    def test_stale_backup_from_previous_crash_is_not_deleted(self):
+        # Codexレビュー指摘(Critical)の回帰テスト: 旧実装は固定名の退避
+        # (例: "images.old-tmp")を呼び出し冒頭で無条件削除していたため、
+        # 「final_path.rename(backup_path)の直後で処理が中断し、まだ
+        # 復元されていない退避だけが唯一の旧アセットである」状況で、次回
+        # 呼び出しがその退避を復元前に消してしまう恐れがあった。新実装は
+        # 呼び出しごとに一意な名前を使うため、他の呼び出し(または過去の
+        # 中断した呼び出し)が残した退避には一切触れない。
+        final = self.root / "images"
+        final.mkdir()
+        (final / "current.png").write_bytes(b"current")
+
+        stale_backup = self.root / "images.old-99999-deadbeef"
+        stale_backup.mkdir()
+        (stale_backup / "crashed-run.png").write_bytes(b"from a previous crashed run")
+
+        new = self.root / "images.new"
+        new.mkdir()
+        (new / "new.png").write_bytes(b"new")
+
+        fri._atomic_replace(new, final)
+
+        self.assertTrue((final / "new.png").is_file())
+        # 今回の呼び出しとは無関係なstale_backupは、削除も上書きもされて
+        # いないこと。
+        self.assertTrue(stale_backup.is_dir())
+        self.assertTrue((stale_backup / "crashed-run.png").is_file())
+
+
+class CharacterLockTest(unittest.TestCase):
+    """fetch_character()の同時実行を防ぐ_character_lock()を検証する
+    (Codexレビュー指摘のCritical: ロックなしでは複数プロセスが
+    _atomic_replace()の退避・復元処理を同時に行い、互いの内容を
+    削除・混同しうる)。
+    """
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmpdir.cleanup)
+        self.character_dir = pathlib.Path(self._tmpdir.name) / "haruto"
+
+    def test_lock_file_created(self):
+        with fri._character_lock(self.character_dir):
+            pass
+        self.assertTrue((self.character_dir / ".fetch.lock").is_file())
+
+    def test_lock_serializes_concurrent_access(self):
+        import threading
+        import time
+
+        order = []
+        first_entered = threading.Event()
+
+        def first():
+            with fri._character_lock(self.character_dir):
+                order.append("first-enter")
+                first_entered.set()
+                time.sleep(0.2)
+                order.append("first-exit")
+
+        def second():
+            first_entered.wait(timeout=5)
+            with fri._character_lock(self.character_dir):
+                order.append("second-enter")
+
+        t1 = threading.Thread(target=first)
+        t2 = threading.Thread(target=second)
+        t1.start()
+        t2.start()
+        t1.join(timeout=5)
+        t2.join(timeout=5)
+
+        self.assertEqual(order, ["first-enter", "first-exit", "second-enter"])
 
 
 class SafeExtractTest(unittest.TestCase):
