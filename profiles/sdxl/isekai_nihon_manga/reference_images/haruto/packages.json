@@ -1,0 +1,24 @@
+{
+  "character": "haruto",
+  "packages": [
+    {
+      "package_id": "turnaround-v1",
+      "release_tag": "haruto-turnaround-v1",
+      "filename": "haruto_turnaround_for_claude_code_v1.zip",
+      "download_url": "https://github.com/popchami/comfyui-mobile-system/releases/download/haruto-turnaround-v1/haruto_turnaround_for_claude_code_v1.zip",
+      "sha256": "88ebe6095a830d410c4ad041460441bbe5932a4f66e83460b8e671514074aa30",
+      "size_bytes": 5680279,
+      "zip_internal_root": "haruto_turnaround_for_claude_code_v1",
+      "categories": [
+        {
+          "name": "turnaround",
+          "zip_subdir": "images",
+          "place_to": "turnaround/images",
+          "manifest": "turnaround/manifest.json",
+          "expected_png_count": 4,
+          "expected_image_size": [1024, 1536]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "character": "natsuki",
+  "packages": [
+    {
+      "package_id": "complete-set-v2",
+      "release_tag": "natsuki-complete-set-v2",
+      "filename": "natsuki_complete_set_v2.zip",
+      "download_url": "https://github.com/popchami/comfyui-mobile-system/releases/download/natsuki-complete-set-v2/natsuki_complete_set_v2.zip",
+      "sha256": "62be11c467c5ec59752a9413ea74268655e391becac7fa4cecb6da760a1c90cb",
+      "size_bytes": 67106972,
+      "zip_internal_root": "natsuki_complete_set_v2",
+      "categories": [
+        {
+          "name": "expressions",
+          "zip_subdir": "expressions",
+          "place_to": "images",
+          "manifest": "manifest.json",
+          "expected_png_count": 31,
+          "expected_image_size": [1254, 1254]
+        },
+        {
+          "name": "turnaround",
+          "zip_subdir": "turnaround",
+          "place_to": "turnaround/images",
+          "manifest": "turnaround/manifest.json",
+          "expected_png_count": 4,
+          "expected_image_size": null
+        },
+        {
+          "name": "equipment",
+          "zip_subdir": "equipment",
+          "place_to": "equipment/images",
+          "manifest": "equipment/manifest.json",
+          "expected_png_count": 2,
+          "expected_image_size": null
+        }
+      ]
+    }
+  ]
+}
