@@ -33,6 +33,16 @@ class ParseReferenceImageTest(unittest.TestCase):
         with self.assertRaises(rri.ResolveError):
             rri.parse_reference_image("haruto/surprise-medium.jpg")
 
+    def test_reserved_underscore_expression_rejected(self):
+        # manifest.jsonの予約キー(例: "_comment")を表情タグとして解決
+        # できてしまう問題の回帰テスト(Codexレビュー指摘)。
+        with self.assertRaises(rri.ResolveError):
+            rri.parse_reference_image("haruto/_comment.png")
+
+    def test_reserved_underscore_character_rejected(self):
+        with self.assertRaises(rri.ResolveError):
+            rri.parse_reference_image("_secret/neutral.png")
+
     def test_path_traversal_rejected(self):
         for bad in [
             "../etc/passwd.png",
@@ -59,7 +69,14 @@ class ResolveReferenceImageTest(unittest.TestCase):
         self.character_dir = self.root / "haruto"
         self.character_dir.mkdir(parents=True)
         with (self.character_dir / "manifest.json").open("w", encoding="utf-8") as f:
-            json.dump({"neutral": "00-neutral.png", "surprise-medium": "05-surprise-medium.png"}, f)
+            json.dump(
+                {
+                    "_comment": "これはドキュメント用の文字列であり、実ファイル名ではない",
+                    "neutral": "00-neutral.png",
+                    "surprise-medium": "05-surprise-medium.png",
+                },
+                f,
+            )
 
     def test_resolves_without_requiring_file_when_allowed(self):
         path = rri.resolve_reference_image("haruto/surprise-medium.png", require_file_exists=False)
@@ -81,6 +98,15 @@ class ResolveReferenceImageTest(unittest.TestCase):
     def test_unknown_expression_tag_raises(self):
         with self.assertRaises(rri.ResolveError):
             rri.resolve_reference_image("haruto/nonexistent-tag.png", require_file_exists=False)
+
+    def test_manifest_comment_key_not_resolvable_as_expression(self):
+        # manifest.jsonに実在する"_comment"キーを、表情タグとして解決
+        # できてしまわないことを確認する(Codexレビュー指摘の回帰テスト)。
+        # parse_reference_imageの時点で拒否されるため、resolve_reference_
+        # imageまで到達してもmanifest.get("_comment")の説明文字列が
+        # 画像パスとして返らないことを保証する。
+        with self.assertRaises(rri.ResolveError):
+            rri.resolve_reference_image("haruto/_comment.png", require_file_exists=False)
 
     def test_unknown_character_raises(self):
         with self.assertRaises(rri.ResolveError):
