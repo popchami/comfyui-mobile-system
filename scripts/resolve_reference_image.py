@@ -26,27 +26,10 @@ import re
 import sys
 from pathlib import Path
 
+from reference_image_categories import CATEGORY_MANIFEST_REL, CATEGORY_PLACE_TO, DEFAULT_CATEGORY, KNOWN_CATEGORIES
+
 ROOT = Path(__file__).resolve().parent.parent
 REFERENCE_IMAGES_ROOT = ROOT / "profiles" / "sdxl" / "isekai_nihon_manga" / "reference_images"
-
-DEFAULT_CATEGORY = "expressions"
-# 将来 poses / training 等を追加する際はfetch_reference_images.pyの
-# KNOWN_CATEGORIESと合わせてここにも追加する。
-KNOWN_CATEGORIES = {"expressions", "turnaround", "equipment"}
-
-# category配下の実ファイル配置(fetch_reference_images.pyのplace_toと
-# 対応させる。expressionsのみ既存互換のためcharacter直下"images/")。
-CATEGORY_PLACE_TO = {
-    "expressions": "images",
-    "turnaround": "turnaround/images",
-    "equipment": "equipment/images",
-}
-# category別manifest.jsonの、character_dirからの相対パス。
-CATEGORY_MANIFEST_REL = {
-    "expressions": "manifest.json",
-    "turnaround": "turnaround/manifest.json",
-    "equipment": "equipment/manifest.json",
-}
 
 # <character>/[<category>/]<tag>.png 形式のみを受け付ける
 # (ディレクトリトラバーサル対策。各セグメントはASCII英数字・._-のみ許可)。
@@ -66,6 +49,21 @@ _DOT_ONLY_RE = re.compile(r"^\.+$")
 
 class ResolveError(Exception):
     """reference_imageの解決に失敗したことを表す。"""
+
+
+def _resolve_contained(base_dir, relative_path, description):
+    """base_dir配下に厳密に収まる形でrelative_pathを解決する。
+
+    manifest.json内のファイル名は、reference_image自体の形式検証
+    (character/category/tagのセグメント制限)の対象外であり、
+    "../../../outside.png"のような値を書けばcategoryの画像ディレクトリの
+    外を指せてしまう(Codexレビュー指摘、Critical)。ここで別途検証する。
+    """
+    base_dir = base_dir.resolve()
+    target = (base_dir / relative_path).resolve()
+    if target != base_dir and base_dir not in target.parents:
+        raise ResolveError(f"{description}がベースディレクトリの外を指しています(拒否): {relative_path!r}")
+    return target
 
 
 def parse_reference_image(reference_image):
@@ -128,7 +126,8 @@ def resolve_reference_image(reference_image, require_file_exists=True):
         )
     filename = entry["file"] if isinstance(entry, dict) else entry
 
-    image_path = REFERENCE_IMAGES_ROOT / character / CATEGORY_PLACE_TO[category] / filename
+    images_dir = REFERENCE_IMAGES_ROOT / character / CATEGORY_PLACE_TO[category]
+    image_path = _resolve_contained(images_dir, filename, "manifestのファイル名")
     if require_file_exists and not image_path.is_file():
         raise ResolveError(
             f"解決した実ファイルが存在しません: {image_path}"

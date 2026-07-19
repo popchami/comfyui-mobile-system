@@ -74,15 +74,30 @@ import uuid
 import zipfile
 from pathlib import Path
 
+from reference_image_categories import CATEGORY_MANIFEST_REL, CATEGORY_PLACE_TO, KNOWN_CATEGORIES
+
 ROOT = Path(__file__).resolve().parent.parent
 REFERENCE_IMAGES_ROOT = ROOT / "profiles" / "sdxl" / "isekai_nihon_manga" / "reference_images"
-
-# 将来 poses / training 等を追加する際はここに列挙を追加する。
-KNOWN_CATEGORIES = {"expressions", "turnaround", "equipment"}
 
 
 class FetchError(Exception):
     """取得・検証・設定のいずれかの段階で失敗したことを表す。"""
+
+
+def _resolve_contained(base_dir, relative_path, description):
+    """base_dir配下に厳密に収まる形でrelative_pathを解決する。
+
+    ".."・絶対パス等でbase_dirの外を指す場合はFetchErrorを送出する
+    (Codexレビュー指摘、Critical: packages.json/manifest.json由来の
+    place_to・zip_subdir・manifest・ファイル名を無条件に信頼してパス
+    結合すると、設定ファイル経由でbase_dir外への書き込み・読み込みが
+    可能になってしまう)。
+    """
+    base_dir = base_dir.resolve()
+    target = (base_dir / relative_path).resolve()
+    if target != base_dir and base_dir not in target.parents:
+        raise FetchError(f"{description}がベースディレクトリの外を指しています(拒否): {relative_path!r}")
+    return target
 
 
 def download_file(url, dest_path):
@@ -269,6 +284,24 @@ def _validate_category_shape(package_id, category):
             f"(許可: {', '.join(sorted(KNOWN_CATEGORIES))})"
         )
 
+    # place_to・manifestは設定ファイル側の自由入力として信頼せず、
+    # category名に対応する正本値(reference_image_categories.py)と完全に
+    # 一致することを要求する。これにより、設定ファイル経由で
+    # "place_to": "../../outside" のような値を書いても、正本値と
+    # 一致しない時点で拒否される(Codexレビュー指摘、Critical)。
+    expected_place_to = CATEGORY_PLACE_TO[name]
+    expected_manifest = CATEGORY_MANIFEST_REL[name]
+    if category["place_to"] != expected_place_to:
+        raise FetchError(
+            f"package {package_id!r} のcategory {name!r} のplace_toが不正です: "
+            f"{category['place_to']!r}(期待: {expected_place_to!r})"
+        )
+    if category["manifest"] != expected_manifest:
+        raise FetchError(
+            f"package {package_id!r} のcategory {name!r} のmanifestが不正です: "
+            f"{category['manifest']!r}(期待: {expected_manifest!r})"
+        )
+
 
 def load_character_packages(character_dir):
     """character_dir配下のasset.json(旧形式・任意)とpackages.json
@@ -324,25 +357,31 @@ def load_character_packages(character_dir):
         for category in package["categories"]:
             _validate_category_shape(package["package_id"], category)
 
-    _validate_no_place_to_collisions(packages)
+    _validate_no_place_to_collisions(character_dir, packages)
     return packages
 
 
-def _validate_no_place_to_collisions(packages):
+def _validate_no_place_to_collisions(character_dir, packages):
     """同一キャラクター内で、複数のcategoryが同じ配置先(place_to)を
     指していないことを確認する。
+
+    比較は生の文字列ではなく、character_dir基準でresolve()した絶対パスで
+    行う(Codexレビュー指摘、Minor: "images"と"./images"のような表記違いが
+    文字列比較をすり抜ける可能性があったため)。place_to自体は
+    _validate_category_shapeで正本値との一致を既に強制しているため
+    現実的には表記揺れは起こらないが、防御を多重化する。
     """
     seen = {}
     for package in packages:
         for category in package["categories"]:
-            place_to = category["place_to"]
+            resolved = _resolve_contained(character_dir, category["place_to"], "categoryのplace_to")
             owner = f"{package['package_id']}/{category['name']}"
-            if place_to in seen:
+            if resolved in seen:
                 raise FetchError(
-                    f"カテゴリ間の配置先が衝突しています: {place_to!r}"
-                    f"({seen[place_to]!r} と {owner!r})"
+                    f"カテゴリ間の配置先が衝突しています: {category['place_to']!r}"
+                    f"({seen[resolved]!r} と {owner!r})"
                 )
-            seen[place_to] = owner
+            seen[resolved] = owner
 
 
 # ---------------------------------------------------------------------------
@@ -350,7 +389,7 @@ def _validate_no_place_to_collisions(packages):
 # ---------------------------------------------------------------------------
 
 def _load_category_manifest(character_dir, category):
-    manifest_path = character_dir / category["manifest"]
+    manifest_path = _resolve_contained(character_dir, category["manifest"], "categoryのmanifest")
     if not manifest_path.is_file():
         raise FetchError(f"manifest.jsonが見つかりません: {manifest_path}")
     with manifest_path.open(encoding="utf-8") as f:
@@ -358,8 +397,18 @@ def _load_category_manifest(character_dir, category):
 
 
 def _verify_category(character_dir, staging_dir, category):
-    """1つのcategoryについて、PNG枚数・manifest網羅・画像サイズを検証する。"""
-    zip_subdir_path = staging_dir / category["zip_subdir"]
+    """1つのcategoryについて、PNG枚数・manifest網羅・画像サイズを検証する。
+
+    expected_image_size(uniform_size)がNoneの場合、そのcategoryは
+    「ファイルごとに寸法が異なりうる」ことを意味し、manifestの全エントリ
+    がオブジェクト形式({"file", "width", "height"})でなければならない
+    (文字列形式のエントリは寸法検証が一切行われず、意図せず検証を
+    素通りしてしまうため。Codexレビュー指摘、Critical: 実際に
+    natsuki/equipmentがこの状態になっており、寸法検証が機能していな
+    かった)。逆にuniform_sizeが指定されている場合は、文字列形式の
+    エントリを許容し、category内の全PNGを一律サイズで検証する。
+    """
+    zip_subdir_path = _resolve_contained(staging_dir, category["zip_subdir"], "categoryのzip_subdir")
     if not zip_subdir_path.is_dir():
         raise FetchError(
             f"展開結果に{category['zip_subdir']}/ディレクトリがありません(category={category['name']})"
@@ -379,8 +428,17 @@ def _verify_category(character_dir, staging_dir, category):
     for tag, entry in manifest.items():
         if tag.startswith("_"):
             continue
+
+        if uniform_size is None:
+            if not (isinstance(entry, dict) and "width" in entry and "height" in entry):
+                raise FetchError(
+                    f"category={category['name']}はexpected_image_sizeがnullのため、"
+                    f"manifestの全エントリがfile/width/height形式である必要があります"
+                    f"(タグ{tag!r}が文字列形式または寸法欠落です)"
+                )
+
         filename = entry["file"] if isinstance(entry, dict) else entry
-        file_path = zip_subdir_path / filename
+        file_path = _resolve_contained(zip_subdir_path, filename, "manifestのファイル名")
         if not file_path.is_file():
             missing.append((tag, filename))
             continue
@@ -408,8 +466,8 @@ def _verify_category(character_dir, staging_dir, category):
 
 
 def _place_category(character_dir, staging_dir, category):
-    src = staging_dir / category["zip_subdir"]
-    dest = character_dir / category["place_to"]
+    src = _resolve_contained(staging_dir, category["zip_subdir"], "categoryのzip_subdir")
+    dest = _resolve_contained(character_dir, category["place_to"], "categoryのplace_to")
     dest.parent.mkdir(parents=True, exist_ok=True)
     _atomic_replace(src, dest)
 

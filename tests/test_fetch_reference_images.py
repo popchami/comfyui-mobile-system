@@ -444,6 +444,70 @@ class LoadCharacterPackagesTest(unittest.TestCase):
         with self.assertRaises(fri.FetchError):
             fri.load_character_packages(self.character_dir)
 
+    def test_place_to_not_matching_canonical_value_rejected(self):
+        # 既知category名("turnaround")でも、place_toが正本値
+        # ("turnaround/images")と一致しなければ拒否する。設定ファイル経由
+        # のpath traversal("../../outside"等)を、値そのものを信頼せず
+        # 正本値との一致を要求する形で防ぐ(Codexレビュー指摘、Critical)。
+        self.write_json(
+            "packages.json",
+            {
+                "packages": [
+                    {
+                        "package_id": "p1",
+                        "release_tag": "r1",
+                        "filename": "f.zip",
+                        "download_url": "https://example.com/f.zip",
+                        "sha256": "c" * 64,
+                        "size_bytes": 1,
+                        "zip_internal_root": "root",
+                        "categories": [
+                            {
+                                "name": "turnaround",
+                                "zip_subdir": "images",
+                                "place_to": "../../outside",
+                                "manifest": "turnaround/manifest.json",
+                                "expected_png_count": 1,
+                                "expected_image_size": None,
+                            }
+                        ],
+                    }
+                ]
+            },
+        )
+        with self.assertRaises(fri.FetchError):
+            fri.load_character_packages(self.character_dir)
+
+    def test_manifest_not_matching_canonical_value_rejected(self):
+        self.write_json(
+            "packages.json",
+            {
+                "packages": [
+                    {
+                        "package_id": "p1",
+                        "release_tag": "r1",
+                        "filename": "f.zip",
+                        "download_url": "https://example.com/f.zip",
+                        "sha256": "c" * 64,
+                        "size_bytes": 1,
+                        "zip_internal_root": "root",
+                        "categories": [
+                            {
+                                "name": "turnaround",
+                                "zip_subdir": "images",
+                                "place_to": "turnaround/images",
+                                "manifest": "../../outside/manifest.json",
+                                "expected_png_count": 1,
+                                "expected_image_size": None,
+                            }
+                        ],
+                    }
+                ]
+            },
+        )
+        with self.assertRaises(fri.FetchError):
+            fri.load_character_packages(self.character_dir)
+
     def test_reserved_category_name_rejected(self):
         self.write_json(
             "packages.json",
@@ -709,6 +773,107 @@ class VerifyCategoryTest(unittest.TestCase):
         }
         with self.assertRaises(fri.FetchError):
             fri._verify_category(self.character_dir, self.staging_dir, category)
+
+    def test_null_uniform_size_requires_object_form_manifest_entries(self):
+        # expected_image_size=nullなのにmanifestが文字列形式のエントリを
+        # 持つ場合、寸法検証が一切行われないまま素通りしていた
+        # (Codexレビュー指摘、Critical: 実際にnatsuki/equipmentがこの状態
+        # だった)。厳格化後は明示的にFetchErrorとする。
+        self.write_png("turnaround", "00-front.png", (873, 1801))
+        self.write_manifest("turnaround/manifest.json", {"front": "00-front.png"})
+        category = {
+            "name": "turnaround",
+            "zip_subdir": "turnaround",
+            "place_to": "turnaround/images",
+            "manifest": "turnaround/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": None,
+        }
+        with self.assertRaises(fri.FetchError) as ctx:
+            fri._verify_category(self.character_dir, self.staging_dir, category)
+        self.assertIn("file/width/height", str(ctx.exception))
+
+    def test_null_uniform_size_with_object_missing_width_rejected(self):
+        self.write_png("turnaround", "00-front.png", (873, 1801))
+        self.write_manifest("turnaround/manifest.json", {"front": {"file": "00-front.png"}})
+        category = {
+            "name": "turnaround",
+            "zip_subdir": "turnaround",
+            "place_to": "turnaround/images",
+            "manifest": "turnaround/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": None,
+        }
+        with self.assertRaises(fri.FetchError):
+            fri._verify_category(self.character_dir, self.staging_dir, category)
+
+    def test_manifest_filename_path_traversal_rejected(self):
+        # manifest.json内のファイル名自体が"../"等でcategoryの画像
+        # ディレクトリの外を指す場合を拒否する(Codexレビュー指摘、
+        # Critical)。
+        self.write_png("turnaround", "00-front.png", (1024, 1536))
+        outside_dir = self.tmp / "outside"
+        outside_dir.mkdir()
+        (outside_dir / "secret.png").write_bytes(make_fake_png(1, 1))
+        self.write_manifest(
+            "turnaround/manifest.json", {"front": "../../outside/secret.png"}
+        )
+        category = {
+            "name": "turnaround",
+            "zip_subdir": "turnaround",
+            "place_to": "turnaround/images",
+            "manifest": "turnaround/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": [1024, 1536],
+        }
+        with self.assertRaises(fri.FetchError):
+            fri._verify_category(self.character_dir, self.staging_dir, category)
+
+
+class ResolveContainedTest(unittest.TestCase):
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmpdir.cleanup)
+        self.base = pathlib.Path(self._tmpdir.name)
+
+    def test_normal_relative_path_allowed(self):
+        target = fri._resolve_contained(self.base, "sub/file.png", "test")
+        self.assertEqual(target, (self.base / "sub" / "file.png").resolve())
+
+    def test_parent_traversal_rejected(self):
+        with self.assertRaises(fri.FetchError):
+            fri._resolve_contained(self.base, "../outside.png", "test")
+
+    def test_deep_parent_traversal_rejected(self):
+        with self.assertRaises(fri.FetchError):
+            fri._resolve_contained(self.base, "sub/../../outside.png", "test")
+
+    def test_absolute_path_rejected(self):
+        with tempfile.TemporaryDirectory() as other:
+            with self.assertRaises(fri.FetchError):
+                fri._resolve_contained(self.base, str(pathlib.Path(other) / "x.png"), "test")
+
+    def test_base_dir_itself_allowed(self):
+        target = fri._resolve_contained(self.base, ".", "test")
+        self.assertEqual(target, self.base.resolve())
+
+
+class SharedCategoryConstantsTest(unittest.TestCase):
+    """fetch_reference_images.pyとresolve_reference_image.pyが、category
+    定義をscripts/reference_image_categories.pyから共有していることを
+    確認する(Codexレビュー指摘、Minor: 以前は2箇所に独立定義されており
+    drift〔片方だけ更新して不整合になる〕のリスクがあった)。
+    """
+
+    def test_known_categories_shared_with_resolver(self):
+        import resolve_reference_image as rri
+
+        self.assertIs(fri.KNOWN_CATEGORIES, rri.KNOWN_CATEGORIES)
+
+    def test_category_place_to_shared_with_resolver(self):
+        import resolve_reference_image as rri
+
+        self.assertIs(fri.CATEGORY_PLACE_TO, rri.CATEGORY_PLACE_TO)
 
 
 # ---------------------------------------------------------------------------
@@ -995,7 +1160,9 @@ class FetchCharacterSingleZipMultiCategoryTest(unittest.TestCase):
             json.dump({"front": {"file": "00-front.png", "width": 873, "height": 1801}}, f)
         (self.character_dir / "equipment").mkdir()
         with (self.character_dir / "equipment" / "manifest.json").open("w", encoding="utf-8") as f:
-            json.dump({"crest-hariyumi-himawari": "crest.png"}, f)
+            # expected_image_size=Noneのcategoryはfile/width/height形式が
+            # 必須(uniform_size=None時の厳格化、Codexレビュー指摘の回帰確認)。
+            json.dump({"crest-hariyumi-himawari": {"file": "crest.png", "width": 30, "height": 30}}, f)
 
     def write_packages_json(self, **package_overrides):
         package = {

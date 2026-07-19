@@ -170,6 +170,16 @@ class ResolveReferenceImageTest(unittest.TestCase):
         with self.assertRaises(rri.ResolveError):
             rri.resolve_reference_image("haruto/turnaround/diagonal.png", require_file_exists=False)
 
+    def test_manifest_filename_path_traversal_rejected(self):
+        # manifest.json自体に"../"を含むファイル名が書かれていても、
+        # reference_image文字列の形式検証(セグメント制限)はここを
+        # 通らないため、別途manifest側の値も検証する必要がある
+        # (Codexレビュー指摘、Critical)。
+        with (self.character_dir / "manifest.json").open("w", encoding="utf-8") as f:
+            json.dump({"neutral": "../../../etc/passwd.png"}, f)
+        with self.assertRaises(rri.ResolveError):
+            rri.resolve_reference_image("haruto/neutral.png", require_file_exists=False)
+
 
 class NatsukiEquipmentResolveTest(unittest.TestCase):
     """ナツキ装備カテゴリ(2論理ID)の解決を検証する。"""
