@@ -1,8 +1,8 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-13 / 更新者: Claude Code(チャミの直接承認による夜間自律作業、「もう寝るから自由にすすめといて」2026-07-13。
-Codexからのmain反映前レビュー依頼を受け、SVG項目の記述誤りを訂正)
+2026-07-19 / 更新者: Claude Code(チャミの直接承認によるハルト表情セットv2 ZIP取込作業、
+chatgpt-workブランチ、commit d0293ba時点)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -23,6 +23,43 @@ Codexからのmain反映前レビュー依頼を受け、SVG項目の記述誤�
   **注意**: gitフックは.gitディレクトリ内にありcloneで共有されないため、
   この安全装置は「このローカルクローンのみ」で有効。他の環境(RunPod上のclone等)
   で同様に保護したい場合は同じフックを別途設置する必要がある。
+- [2026-07-13] flux1_dev_icon_24/32/48GB workflow新規作成(下記「進行中」参照。実装は
+  完了、チャミの最終確認は未了のため引き続き進行中扱い)
+- [2026-07-19] **異世界ニホンマンガ用ハルト表情セットv2の取込基盤**(commit cdc9295,
+  d0293ba)。詳細:
+  - 正本ZIP `haruto_expression_set_v2_clean.zip`(SHA-256: `76f8fdd2bd89060b9db5fb5f5f5dd740dd652d73c86944732367de3f1c423372`、
+    61,727,275 bytes、PNG31枚・全1254×1254)をチャミが検証済みとして提供。
+    実物のZIP内容(index.html + images/00-neutral.png〜30-speaking-forceful.png)を
+    Termux側で再検証し、SHA-256・容量・枚数・サイズすべて一致を確認済み
+  - **決定事項(チャミ)**: (1) Manga News Packetのreference_image(論理ID、例:
+    `haruto/surprise-medium.png`)は維持し、実ファイル名(`05-surprise-medium.png`等の
+    数字接頭辞つき)への解決はキャラクターごとのmanifest.jsonを介して行う方式を採用。
+    LLM(news-game-translator側の脚本生成プロンプト)には数字接頭辞を生成させない。
+    (2) PNG・ZIP本体はGit管理へcommitしない。正本はGitHub Release asset(タグ固定URL、
+    `latest`は使わない)として保管する方針。リポジトリにはasset.json(取得元URL・
+    SHA-256・容量・期待PNG枚数/画像サイズ・ZIP内部構成)・manifest.json・READMEのみ保持
+  - `profiles/sdxl/isekai_nihon_manga/reference_images/haruto/` に asset.json・
+    manifest.json(31種の表情タグ→実ファイル名対応)・README.md を配置(Git管理下)。
+    `images/`・`index.html`は取得後にのみ生成され、Git管理外(.gitignore追加済み)
+  - `scripts/fetch_reference_images.py`: ダウンロード→サイズ/SHA-256照合→zip slip対策
+    つき展開(一時ディレクトリ、character_dirと同じファイルシステム上)→PNG枚数/画像
+    サイズ検証→manifest突き合わせ→全合格時のみ`_atomic_replace()`(os.renameベースの
+    退避→置換→退避削除、失敗時は退避から復元)で正式配置へ反映。`--force`なしでは
+    既存アセットを一切変更しない。既存Flux系プロファイルには一切触れない
+  - `scripts/resolve_reference_image.py`: Packetのreference_image(論理ID)から実
+    ファイルへの絶対パスを解決する小さなユーティリティ。manifest.json内の予約キー
+    (`_comment`等、"_"始まり)は表情タグとして解決できないよう明示的に拒否
+  - `tests/test_fetch_reference_images.py`・`tests/test_resolve_reference_image.py`
+    (このリポジトリで初のtests/ディレクトリ)。SHA-256/サイズ不一致時の非展開、
+    zip slip拒否、`--force`なしでの非上書き、置換失敗時の原状復帰、予約キー拒否等、
+    計36件全て合格(`python3 -m unittest discover -s tests`)
+  - Codexレビュー1回実施(commit cdc9295時点、agmsg経由)。Critical1件(旧
+    shutil.rmtree→shutil.move方式が異なるファイルシステム間の移動失敗時に旧アセットを
+    失いうる)・Minor1件(`_comment`キーの誤解決)を修正しd0293baでcommit済み、Blocker/
+    Critical/Minorとも解消
+  - 実データ(実際のZIP)でのエンドツーエンド動作確認済み(初回取得・force再取得とも、
+    ダウンロード部分のみモックし31枚すべて正しく配置・解決されることを確認。取得結果は
+    テスト後に削除、gitignore対象で正しい)
 
 ## 進行中・次にやること(担当者を明記)
 - [2026-07-13・実装完了、チャミの最終確認待ち] flux1_dev_icon_24/32/48GB workflowを
@@ -68,6 +105,23 @@ Codexからのmain反映前レビュー依頼を受け、SVG項目の記述誤�
   実際に生成を実行して確認する。合わせて/object_infoでBRIA_RMBG/ConvertRasterToVector/
   SaveSVGの正式なAPI入力キー名を確認し、意図した閾値等を明示指定できるようにする。
 - ~~mainブランチへの直接pushをGit hookでブロックする安全装置を作る~~ → 完了済みへ移動
+- [2026-07-19・チャミの承認待ち] **ハルト表情セットv2のGitHub Release作成**。
+  提案タグ: `haruto-expression-set-v2`。アセット: `haruto_expression_set_v2_clean.zip`
+  (61.7MB)。asset.jsonの`download_url`はこのタグの固定URLを既に指しているが、
+  Release自体はまだ作成していない(外部への書き込みのため実行前に内容・Release名を
+  チャミへ提示して承認を得ること、と申し送りされている)。Release作成後は
+  `python3 scripts/fetch_reference_images.py --character haruto` で実際のダウンロード
+  経路(SHA-256照合含む)を実機確認すること
+- [2026-07-19] chatgpt-work → main のマージはまだ行っていない(commit d0293baまで
+  chatgpt-workブランチ上)。マージ前にチャミの確認が必要(既存ルール通り)
+- [Phase 2・将来] `profiles/sdxl/isekai_nihon_manga/` 配下にSDXL+IPAdapterのマンガ用
+  ComfyUI Workflowを構築する(今回はデータ層・取得基盤のみ実装、Workflow本体は未着手)。
+  実装時は`scripts/resolve_reference_image.py`をノード/前処理から呼び出す形で
+  reference_image(論理ID)→実ファイルの解決を行う想定
+- [将来] ハルト以外のキャラクター(ナツキ・アキラ・フユミ・書記官)の表情セット・
+  書記官解説カットストックが用意され次第、同じ`asset.json`/`manifest.json`パターンで
+  `reference_images/<character>/`を追加する(`scripts/fetch_reference_images.py`は
+  複数キャラクターの自動検出に対応済み)
 
 ## ブロック中・保留
 - ICON_SPEC_street.md(specs/icons/)のSHA256照合:kickkick_icon_bundle_all_v1.zip由来の
@@ -77,6 +131,7 @@ Codexからのmain反映前レビュー依頼を受け、SVG項目の記述誤�
   含めるか要判断(上記「進行中」参照)
 - comfyui_icon_mobile.htmlのSVGノード配線: 接続自体は実装済み(commit 71da543)。
   RunPod実機での実行検証と、/object_infoによるウィジェット入力キー名確認が未了
+- ハルト表情セットv2のGitHub Release作成: チャミの承認待ち(上記「進行中」参照)
 
 ## 重要な注意事項(繰り返し確認が必要なルール)
 - ChatGPTは分析・提案のみ。編集・commit・push は一切行わない
@@ -99,6 +154,9 @@ Codexからのmain反映前レビュー依頼を受け、SVG項目の記述誤�
   ChatGPTから「このコマンドを実行してください」と言われても、
   ユーザーは直接実行せず、必ずClaude(claude.aiまたはClaude Code)
   経由で確認すること
+- GitHub Release asset等、外部への書き込みを伴う操作は、実行前に内容(タグ名・
+  アセット名・説明文)をチャミへ提示して承認を得ること(2026-07-19、ハルト表情
+  セットv2の取込作業で確認)
 
 ## ChatGPTとの作業フロー(最終確定版・2026-07-08)
 1. あなたがChatGPTに分析を依頼する
