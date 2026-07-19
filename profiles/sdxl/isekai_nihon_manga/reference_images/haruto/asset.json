@@ -1,0 +1,13 @@
+{
+  "character": "haruto",
+  "asset_version": "v2-clean",
+  "release_tag": "haruto-expression-set-v2",
+  "filename": "haruto_expression_set_v2_clean.zip",
+  "download_url": "https://github.com/popchami/comfyui-mobile-system/releases/download/haruto-expression-set-v2/haruto_expression_set_v2_clean.zip",
+  "sha256": "76f8fdd2bd89060b9db5fb5f5f5dd740dd652d73c86944732367de3f1c423372",
+  "size_bytes": 61727275,
+  "expected_png_count": 31,
+  "expected_image_size": [1254, 1254],
+  "zip_internal_root": "haruto_expression_set",
+  "notes": "正本ZIP: haruto_expression_set_v2_clean.zip。取得・検証・配置は scripts/fetch_reference_images.py が行う。ZIP本体・PNGはGit管理外(GitHub Release assetとして保管)。"
+}
