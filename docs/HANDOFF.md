@@ -1,7 +1,7 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-20 / 更新者: Claude Code(ハルト4方向立ち絵・ナツキ正本の複数package/複数category対応、Draft PR作成)
+2026-07-20 / 更新者: Claude Code(ハルト4方向立ち絵・ナツキ正本の複数package/複数category対応、GitHub Release3件作成・実URL検証完了、PR #3はマージ可能な状態)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -96,12 +96,29 @@
   - 実データ(実ZIP)での再検証済み: ハルトturnaround4枚・ナツキ37枚
     (31表情+4方向+装備2)、いずれも全論理ID解決成功、equipmentのファイル別
     寸法検証も実データで正しく動作確認済み
-  - ブランチ`multi-character-reference-images`(48867f3から分岐、2commit:
-    `5380550`実装→`e1da8ca`Codex指摘修正)をpush、**Draft PR #3作成済み**:
-    https://github.com/popchami/comfyui-mobile-system/pull/3
-    (mainへのマージ・GitHub Release作成(`haruto-turnaround-v1`・
-    `natsuki-complete-set-v2`・`haruto-complete-archive-v1`)はいずれも
-    チャミの承認待ち、未実施)
+  - ブランチ`multi-character-reference-images`(48867f3から分岐、3commit:
+    `5380550`実装→`e1da8ca`Codex指摘修正→`d36e29d`HANDOFF更新)をpush、
+    **Draft PR #3作成済み**: https://github.com/popchami/comfyui-mobile-system/pull/3
+    (mainへのマージはチャミの確認待ち、未実施)
+  - **GitHub Release3件作成済み・実URL検証完了**(2026-07-20、チャミ承認後に実施):
+    全てmainのコミット`48867f3107bc2a4743ec387f2eee541708e5dc4a`から作成、
+    公開・非Draft・非Prerelease。
+    - `haruto-turnaround-v1`(https://github.com/popchami/comfyui-mobile-system/releases/tag/haruto-turnaround-v1)、
+      SHA-256: `88ebe6095a830d410c4ad041460441bbe5932a4f66e83460b8e671514074aa30`、5,680,279 bytes
+    - `natsuki-complete-set-v2`(https://github.com/popchami/comfyui-mobile-system/releases/tag/natsuki-complete-set-v2)、
+      SHA-256: `62be11c467c5ec59752a9413ea74268655e391becac7fa4cecb6da760a1c90cb`、67,106,972 bytes
+    - `haruto-complete-archive-v1`(https://github.com/popchami/comfyui-mobile-system/releases/tag/haruto-complete-archive-v1、
+      保存・復旧専用・CMS自動取得対象外)、
+      SHA-256: `7f43840d46cbd6ba8512c1a6233a93aaa950e3100869c5b247c0b00616b2ecdf`、67,409,393 bytes
+    - 初回`haruto-turnaround-v1`作成時にAssetアップロードでHTTP 404が発生し、
+      `gh`がRelease自体を自動ロールバック(タグ・Release未作成の状態に復帰)。
+      上書きではなく、クリーンな未作成状態から再実行して成功
+    - 検証済み: 各Asset直接URLがHTTP 200・ダウンロード後の容量/SHA-256が完全一致・
+      `unzip -t`3件とも成功・`multi-character-reference-images`ブランチ上で
+      実URL経由の`fetch_reference_images.py`取得(ハルト35論理ID・ナツキ37論理ID
+      全解決成功)・`haruto-complete-archive-v1`は`asset.json`/`packages.json`に
+      一切未登録(README記載のみ)・テスト88件再実行して全合格
+    - 既存Release`haruto-expression-set-v2`のタグ・Assetは無変更
 
 ## 進行中・次にやること(担当者を明記)
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
@@ -126,23 +143,17 @@
   ハルト表情セットv2 PRとは別スコープのため、mainへは別途chatgpt-workブランチ全体の
   マージ(またはそれらのcommit単位でのPR)で反映する想定。詳細はchatgpt-workブランチの
   git logおよびそちらのHANDOFF.mdを参照。
-- [2026-07-20・Draft PR作成済み、レビュー・マージ待ち] ハルト4方向立ち絵・
+- [2026-07-20・マージ可能な状態、チャミの最終承認待ち] ハルト4方向立ち絵・
   ナツキ正本の複数package/複数category対応拡張(PR #3、
   https://github.com/popchami/comfyui-mobile-system/pull/3 )。
-  チャミの確認後、Draft解除・マージを行う想定
-- [チャミ承認待ち・実行前に必ず内容提示] 上記PRとは別に、GitHub Release
-  3件の新規作成が未実施のまま残っている: `haruto-turnaround-v1`
-  (`haruto_turnaround_for_claude_code_v1.zip`)、`natsuki-complete-set-v2`
-  (`natsuki_complete_set_v2.zip`)、`haruto-complete-archive-v1`(保存用、
-  `haruto_complete_archive_v1.zip`・CMS自動取得対象外)。タグ名・タイトル・
-  本文・SHA-256・容量はdocs/HANDOFF.mdの完了済みセクションおよびPR #3本文に
-  記載済み。既存Release`haruto-expression-set-v2`は変更・削除しないこと
+  GitHub Release3件の作成・実URL検証(完了済みセクション参照)も完了済み。
+  チャミの確認後、Draft解除・mainへのマージを行う想定
 - [Phase 2・将来] `profiles/sdxl/isekai_nihon_manga/` 配下にSDXL+IPAdapterのマンガ用
   ComfyUI Workflowを構築する(今回はデータ層・取得基盤のみ実装、Workflow本体は未着手)。
   実装時は`scripts/resolve_reference_image.py`をノード/前処理から呼び出す形で
   reference_image(論理ID)→実ファイルの解決を行う想定
 - [将来] ナツキは今回の複数package/複数category拡張で表情・4方向立ち絵・装備まで
-  対応済み(Draft PR #3、Release未作成)。アキラ・フユミ・書記官の表情セット・
+  対応済み(PR #3、Release作成・実URL検証済み)。アキラ・フユミ・書記官の表情セット・
   書記官解説カットストックが用意され次第、同じ`packages.json`/category別
   manifest.jsonパターンで`reference_images/<character>/`を追加する
   (`scripts/fetch_reference_images.py`は複数キャラクター・複数package・
