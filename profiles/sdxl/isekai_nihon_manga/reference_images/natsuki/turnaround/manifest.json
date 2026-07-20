@@ -1,0 +1,7 @@
+{
+  "_comment": "ナツキ4方向立ち絵の論理タグ(front/left-profile/back/right-profile、ハルトと共通の標準タグ)から実ファイル名への対応表。4枚とも構図差により画像サイズが異なるため、file/width/heightのオブジェクト形式でファイルごとの期待サイズを個別に指定する。",
+  "front": {"file": "00-front.png", "width": 873, "height": 1801},
+  "left-profile": {"file": "01-left-profile.png", "width": 853, "height": 1844},
+  "back": {"file": "02-back.png", "width": 864, "height": 1821},
+  "right-profile": {"file": "03-right-profile.png", "width": 836, "height": 1881}
+}

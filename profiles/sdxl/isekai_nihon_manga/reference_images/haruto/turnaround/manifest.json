@@ -1,0 +1,7 @@
+{
+  "_comment": "ハルト4方向立ち絵の論理タグ(front/left-profile/back/right-profile、全キャラクター共通の標準タグ)から実ファイル名への対応表。実ファイル名の表記揺れ(例: left-facing-profile)はここで吸収し、論理IDは標準タグへ統一する。",
+  "front": "00-front.png",
+  "left-profile": "01-left-facing-profile.png",
+  "back": "02-back.png",
+  "right-profile": "03-right-facing-profile.png"
+}

@@ -1,0 +1,5 @@
+{
+  "_comment": "ナツキの装備・紋の論理タグから実ファイル名への対応表。2枚は寸法が異なる(紋1536x1536・三つ弽1024x1536)ため、file/width/heightのオブジェクト形式でファイルごとの期待サイズを個別に指定する。",
+  "crest-hariyumi-himawari": {"file": "crest-hariyumi-himawari.png", "width": 1536, "height": 1536},
+  "mitsugake-right": {"file": "mitsugake-right.png", "width": 1024, "height": 1536}
+}
