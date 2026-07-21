@@ -1,0 +1,16 @@
+{
+  "_comment": "アキラの装備(符槌・陣札・符釘)の論理タグ→配置後ファイル名対応表。ZIP内ではequipment/hammer・equipment/talisman・equipment/nailの3サブフォルダに分かれているが、fetch_reference_images.pyのflatten機能により配置後はhammer-/talisman-/nail-のプレフィックスを付けてequipment/images/直下へフラット化する。fileは配置後のファイル名、source_fileはZIP内(zip_subdir=equipment基準)での実際の相対パス。expected_image_sizeがnull(nail-ranged-flight-longのみ1024x1536で他と異なるため)のため、全エントリがfile/width/height形式。",
+  "hammer-broad-maple-face": {"file": "hammer-00-broad-maple-face.png", "source_file": "hammer/00-broad-maple-face.png", "width": 887, "height": 1774},
+  "hammer-broad-talisman-face": {"file": "hammer-01-broad-talisman-face.png", "source_file": "hammer/01-broad-talisman-face.png", "width": 887, "height": 1774},
+  "hammer-left-side": {"file": "hammer-02-left-side.png", "source_file": "hammer/02-left-side.png", "width": 887, "height": 1774},
+  "hammer-right-side": {"file": "hammer-03-right-side.png", "source_file": "hammer/03-right-side.png", "width": 887, "height": 1774},
+  "talisman-buff-front": {"file": "talisman-00-buff-front.png", "source_file": "talisman/00-buff-front.png", "width": 887, "height": 1774},
+  "talisman-debuff-front": {"file": "talisman-01-debuff-front.png", "source_file": "talisman/01-debuff-front.png", "width": 887, "height": 1774},
+  "talisman-plain-back": {"file": "talisman-02-plain-back.png", "source_file": "talisman/02-plain-back.png", "width": 887, "height": 1774},
+  "talisman-preloaded-front-nail-head-only": {"file": "talisman-03-preloaded-front-nail-head-only.png", "source_file": "talisman/03-preloaded-front-nail-head-only.png", "width": 887, "height": 1774},
+  "talisman-buff-side": {"file": "talisman-04-buff-side.png", "source_file": "talisman/04-buff-side.png", "width": 887, "height": 1774},
+  "talisman-debuff-side": {"file": "talisman-05-debuff-side.png", "source_file": "talisman/05-debuff-side.png", "width": 887, "height": 1774},
+  "nail-preloaded-side-left-long": {"file": "nail-00-preloaded-side-left-long.png", "source_file": "nail/00-preloaded-side-left-long.png", "width": 887, "height": 1774},
+  "nail-preloaded-side-right-long": {"file": "nail-01-preloaded-side-right-long.png", "source_file": "nail/01-preloaded-side-right-long.png", "width": 887, "height": 1774},
+  "nail-ranged-flight-long": {"file": "nail-02-ranged-flight-long.png", "source_file": "nail/02-ranged-flight-long.png", "width": 1024, "height": 1536}
+}

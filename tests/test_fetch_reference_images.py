@@ -508,6 +508,71 @@ class LoadCharacterPackagesTest(unittest.TestCase):
         with self.assertRaises(fri.FetchError):
             fri.load_character_packages(self.character_dir)
 
+    def test_flatten_non_bool_value_rejected(self):
+        # flatten(任意フィールド)は文字列"true"等ではなくbool型を要求する
+        # (Codexレビュー指摘: 実装は正しくstr型を拒否するが、専用テストが
+        # 無かったため追加)。
+        self.write_json(
+            "packages.json",
+            {
+                "packages": [
+                    {
+                        "package_id": "p1",
+                        "release_tag": "r1",
+                        "filename": "f.zip",
+                        "download_url": "https://example.com/f.zip",
+                        "sha256": "c" * 64,
+                        "size_bytes": 1,
+                        "zip_internal_root": "root",
+                        "categories": [
+                            {
+                                "name": "equipment",
+                                "zip_subdir": "equipment",
+                                "place_to": "equipment/images",
+                                "manifest": "equipment/manifest.json",
+                                "expected_png_count": 1,
+                                "expected_image_size": None,
+                                "flatten": "true",
+                            }
+                        ],
+                    }
+                ]
+            },
+        )
+        with self.assertRaises(fri.FetchError):
+            fri.load_character_packages(self.character_dir)
+
+    def test_flatten_bool_true_accepted(self):
+        self.write_json(
+            "packages.json",
+            {
+                "packages": [
+                    {
+                        "package_id": "p1",
+                        "release_tag": "r1",
+                        "filename": "f.zip",
+                        "download_url": "https://example.com/f.zip",
+                        "sha256": "c" * 64,
+                        "size_bytes": 1,
+                        "zip_internal_root": "root",
+                        "categories": [
+                            {
+                                "name": "equipment",
+                                "zip_subdir": "equipment",
+                                "place_to": "equipment/images",
+                                "manifest": "equipment/manifest.json",
+                                "expected_png_count": 1,
+                                "expected_image_size": None,
+                                "flatten": True,
+                            }
+                        ],
+                    }
+                ]
+            },
+        )
+        packages = fri.load_character_packages(self.character_dir)  # 例外なしでOK
+        self.assertTrue(packages[0]["categories"][0]["flatten"])
+
     def test_reserved_category_name_rejected(self):
         self.write_json(
             "packages.json",
@@ -828,6 +893,276 @@ class VerifyCategoryTest(unittest.TestCase):
         }
         with self.assertRaises(fri.FetchError):
             fri._verify_category(self.character_dir, self.staging_dir, category)
+
+    # -------------------------------------------------------------------
+    # flatten対応category(アキラのequipment: hammer/talisman/nailの
+    # 3サブフォルダに分かれたPNGを、manifestのsource_file/fileで対応づける)
+    # -------------------------------------------------------------------
+
+    def test_flatten_category_counts_nested_pngs_via_rglob(self):
+        # zip_subdir直下ではなくさらにサブフォルダに分かれている場合、
+        # 従来の非再帰globでは0枚と誤判定してしまう(rglobで正しく数える)。
+        self.write_png("equipment/hammer", "00-a.png", (887, 1774))
+        self.write_png("equipment/talisman", "00-b.png", (887, 1774))
+        self.write_manifest(
+            "equipment/manifest.json",
+            {
+                "hammer-a": {
+                    "file": "hammer-00-a.png",
+                    "source_file": "hammer/00-a.png",
+                    "width": 887,
+                    "height": 1774,
+                },
+                "talisman-b": {
+                    "file": "talisman-00-b.png",
+                    "source_file": "talisman/00-b.png",
+                    "width": 887,
+                    "height": 1774,
+                },
+            },
+        )
+        category = {
+            "name": "equipment",
+            "zip_subdir": "equipment",
+            "place_to": "equipment/images",
+            "manifest": "equipment/manifest.json",
+            "expected_png_count": 2,
+            "expected_image_size": None,
+            "flatten": True,
+        }
+        fri._verify_category(self.character_dir, self.staging_dir, category)  # 例外なしでOK
+
+    def test_flatten_category_missing_nested_source_file_rejected(self):
+        self.write_png("equipment/hammer", "00-a.png", (887, 1774))
+        self.write_manifest(
+            "equipment/manifest.json",
+            {
+                "hammer-a": {
+                    "file": "hammer-00-a.png",
+                    "source_file": "hammer/00-a.png",
+                    "width": 887,
+                    "height": 1774,
+                },
+                "hammer-ghost": {
+                    "file": "hammer-99-ghost.png",
+                    "source_file": "hammer/99-ghost.png",
+                    "width": 887,
+                    "height": 1774,
+                },
+            },
+        )
+        category = {
+            "name": "equipment",
+            "zip_subdir": "equipment",
+            "place_to": "equipment/images",
+            "manifest": "equipment/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": None,
+            "flatten": True,
+        }
+        with self.assertRaises(fri.FetchError):
+            fri._verify_category(self.character_dir, self.staging_dir, category)
+
+    def test_flatten_category_source_file_path_traversal_rejected(self):
+        # source_fileも通常のfileと同様、zip_subdirの外を指す値は拒否する。
+        self.write_png("equipment/hammer", "00-a.png", (887, 1774))
+        outside_dir = self.tmp / "outside"
+        outside_dir.mkdir()
+        (outside_dir / "secret.png").write_bytes(make_fake_png(1, 1))
+        self.write_manifest(
+            "equipment/manifest.json",
+            {
+                "hammer-a": {
+                    "file": "hammer-00-a.png",
+                    "source_file": "../../outside/secret.png",
+                    "width": 887,
+                    "height": 1774,
+                }
+            },
+        )
+        category = {
+            "name": "equipment",
+            "zip_subdir": "equipment",
+            "place_to": "equipment/images",
+            "manifest": "equipment/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": None,
+            "flatten": True,
+        }
+        with self.assertRaises(fri.FetchError):
+            fri._verify_category(self.character_dir, self.staging_dir, category)
+
+    def test_non_flatten_category_without_source_file_still_works(self):
+        # flatten指定なしのcategory(既存のexpressions/turnaround)は、
+        # source_fileが未指定でも従来通りfileと同じパスで解決される
+        # (既存挙動の回帰確認)。
+        self.write_png("turnaround", "00-front.png", (1024, 1536))
+        self.write_manifest("turnaround/manifest.json", {"front": "00-front.png"})
+        category = {
+            "name": "turnaround",
+            "zip_subdir": "turnaround",
+            "place_to": "turnaround/images",
+            "manifest": "turnaround/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": [1024, 1536],
+        }
+        fri._verify_category(self.character_dir, self.staging_dir, category)  # 例外なしでOK
+
+    def test_flatten_category_entry_without_source_file_falls_back_to_file(self):
+        # flatten=Trueのcategoryでも、個々のエントリがsource_fileを持たない
+        # 場合はfileと同じパスへフォールバックする(Codexレビュー指摘:
+        # この後方互換フォールバックがflatten=True下でも機能することの
+        # テストが無かったため追加)。
+        self.write_png("equipment", "flat-already.png", (887, 1774))
+        self.write_manifest(
+            "equipment/manifest.json",
+            {"flat-already": {"file": "flat-already.png", "width": 887, "height": 1774}},
+        )
+        category = {
+            "name": "equipment",
+            "zip_subdir": "equipment",
+            "place_to": "equipment/images",
+            "manifest": "equipment/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": None,
+            "flatten": True,
+        }
+        fri._verify_category(self.character_dir, self.staging_dir, category)  # 例外なしでOK
+
+    def test_destination_file_path_traversal_rejected_even_with_safe_source_file(self):
+        # source_fileが正当な値でも、配置後ファイル名(file)自体が
+        # categoryの配置先ディレクトリの外を指す場合は検証段階で拒否する
+        # (Codexレビュー指摘: 従来は配置段階でしか検出されず、全カテゴリ
+        # 検証完了後にのみ配置するという原子性の前提が崩れていた)。
+        self.write_png("equipment/hammer", "00-a.png", (887, 1774))
+        self.write_manifest(
+            "equipment/manifest.json",
+            {
+                "hammer-a": {
+                    "file": "../../../outside.png",
+                    "source_file": "hammer/00-a.png",
+                    "width": 887,
+                    "height": 1774,
+                }
+            },
+        )
+        category = {
+            "name": "equipment",
+            "zip_subdir": "equipment",
+            "place_to": "equipment/images",
+            "manifest": "equipment/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": None,
+            "flatten": True,
+        }
+        with self.assertRaises(fri.FetchError):
+            fri._verify_category(self.character_dir, self.staging_dir, category)
+
+    def test_duplicate_destination_filename_rejected(self):
+        # 異なるタグが同じ配置後ファイル名(file)を指す場合、後勝ちで
+        # 無言に上書きされてしまうため検証段階で拒否する(Codexレビュー
+        # 指摘、Minor)。
+        self.write_png("equipment/hammer", "00-a.png", (887, 1774))
+        self.write_png("equipment/talisman", "00-b.png", (887, 1774))
+        self.write_manifest(
+            "equipment/manifest.json",
+            {
+                "hammer-a": {
+                    "file": "same-name.png",
+                    "source_file": "hammer/00-a.png",
+                    "width": 887,
+                    "height": 1774,
+                },
+                "talisman-b": {
+                    "file": "same-name.png",
+                    "source_file": "talisman/00-b.png",
+                    "width": 887,
+                    "height": 1774,
+                },
+            },
+        )
+        category = {
+            "name": "equipment",
+            "zip_subdir": "equipment",
+            "place_to": "equipment/images",
+            "manifest": "equipment/manifest.json",
+            "expected_png_count": 2,
+            "expected_image_size": None,
+            "flatten": True,
+        }
+        with self.assertRaises(fri.FetchError) as ctx:
+            fri._verify_category(self.character_dir, self.staging_dir, category)
+        self.assertIn("重複", str(ctx.exception))
+
+
+class PlaceCategoryFlattenTest(unittest.TestCase):
+    """_place_category()のflatten対応(ネスト元→フラット配置先)を検証する。"""
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmpdir.cleanup)
+        self.tmp = pathlib.Path(self._tmpdir.name)
+        self.character_dir = self.tmp / "akira"
+        self.character_dir.mkdir()
+        self.staging_dir = self.tmp / "staging"
+        self.staging_dir.mkdir()
+
+    def write_manifest(self, relpath, data):
+        path = self.character_dir / relpath
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8") as f:
+            json.dump(data, f)
+
+    def write_png(self, subdir, filename, size):
+        d = self.staging_dir / subdir
+        d.mkdir(parents=True, exist_ok=True)
+        (d / filename).write_bytes(make_fake_png(*size))
+
+    def test_flatten_places_files_with_manifest_file_names(self):
+        self.write_png("equipment/hammer", "00-a.png", (887, 1774))
+        self.write_png("equipment/talisman", "00-b.png", (887, 1774))
+        self.write_manifest(
+            "equipment/manifest.json",
+            {
+                "hammer-a": {"file": "hammer-00-a.png", "source_file": "hammer/00-a.png", "width": 887, "height": 1774},
+                "talisman-b": {"file": "talisman-00-b.png", "source_file": "talisman/00-b.png", "width": 887, "height": 1774},
+            },
+        )
+        category = {
+            "name": "equipment",
+            "zip_subdir": "equipment",
+            "place_to": "equipment/images",
+            "manifest": "equipment/manifest.json",
+            "expected_png_count": 2,
+            "expected_image_size": None,
+            "flatten": True,
+        }
+        fri._place_category(self.character_dir, self.staging_dir, category)
+
+        dest = self.character_dir / "equipment" / "images"
+        self.assertTrue((dest / "hammer-00-a.png").is_file())
+        self.assertTrue((dest / "talisman-00-b.png").is_file())
+        # ネスト構造(hammer/talisman サブフォルダ)は配置先には持ち込まれない。
+        self.assertFalse((dest / "hammer").exists())
+        self.assertFalse((dest / "talisman").exists())
+
+    def test_non_flatten_moves_whole_directory_unchanged(self):
+        # flatten指定なしのcategoryは、既存挙動(ディレクトリごと原子的に
+        # 配置)のまま変わらないことを確認する(回帰確認)。
+        self.write_png("turnaround", "00-front.png", (1024, 1536))
+        self.write_manifest("turnaround/manifest.json", {"front": "00-front.png"})
+        category = {
+            "name": "turnaround",
+            "zip_subdir": "turnaround",
+            "place_to": "turnaround/images",
+            "manifest": "turnaround/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": [1024, 1536],
+        }
+        fri._place_category(self.character_dir, self.staging_dir, category)
+
+        dest = self.character_dir / "turnaround" / "images"
+        self.assertTrue((dest / "00-front.png").is_file())
 
 
 class ResolveContainedTest(unittest.TestCase):
@@ -1236,24 +1571,254 @@ class FetchCharacterSingleZipMultiCategoryTest(unittest.TestCase):
 
 
 class CompleteArchiveNotAutoFetchedTest(unittest.TestCase):
-    """haruto_complete_archive_v1.zip(保存・退避用完全版)が、asset.json・
-    packages.jsonのいずれからも参照されておらず、自動取得の対象になって
-    いないことを確認する。
+    """haruto_complete_archive_v1.zip(ハルトの保存・退避用完全版)が、
+    ハルトのasset.json・packages.jsonのいずれからも参照されておらず、
+    自動取得の対象になっていないことを確認する。
+
+    注意(スコープをハルトに限定する理由): 他キャラクターは、
+    "_complete_archive"という命名のZIPそのものを唯一の正本ソースとして
+    意図的にpackages.jsonへ登録する設計を採用する場合がある(例: アキラの
+    akira_complete_archive_v1.zipは、チャミの明示的な決定によりexpressions/
+    turnaround/equipmentの3カテゴリの正式な取得元として登録されている)。
+    そのため「complete_archiveという文字列がどの設定ファイルにも一切
+    存在しない」という全体チェックではなく、「ハルト自身の設定がハルト
+    自身の保存用完全版アーカイブを参照していない」というハルト固有の
+    検査に限定する。
     """
 
-    def test_archive_filename_not_referenced_in_any_character_config(self):
-        config_paths = list(fri.REFERENCE_IMAGES_ROOT.glob("*/asset.json")) + list(
-            fri.REFERENCE_IMAGES_ROOT.glob("*/packages.json")
-        )
-        self.assertTrue(config_paths, "検証対象のasset.json/packages.jsonが見つかりません")
+    def test_haruto_config_does_not_reference_its_own_archive(self):
+        haruto_dir = fri.REFERENCE_IMAGES_ROOT / "haruto"
+        config_paths = [
+            p for p in (haruto_dir / "asset.json", haruto_dir / "packages.json") if p.is_file()
+        ]
+        self.assertTrue(config_paths, "ハルトのasset.json/packages.jsonが見つかりません")
 
         offenders = []
         for path in config_paths:
-            with path.open(encoding="utf-8") as f:
-                text = f.read()
+            text = path.read_text(encoding="utf-8")
             if "complete_archive" in text or "complete-archive" in text:
                 offenders.append(str(path))
-        self.assertEqual(offenders, [], f"完全版Archiveが取得設定に混入しています: {offenders}")
+        self.assertEqual(offenders, [], f"ハルトの保存用完全版Archiveが取得設定に混入しています: {offenders}")
+
+
+class RealCharacterConfigsLoadTest(unittest.TestCase):
+    """実際にコミットされている全キャラクターの設定(asset.json/
+    packages.json)が、load_character_packages()でエラーなく読み込める
+    ことを確認する(ネットワークアクセスなし、既存ハルト・ナツキとの
+    後方互換の回帰確認を兼ねる)。
+    """
+
+    def test_all_real_character_dirs_load_without_error(self):
+        character_dirs = fri.discover_character_dirs()
+        self.assertTrue(character_dirs, "reference_images配下にキャラクターが見つかりません")
+        names = sorted(d.name for d in character_dirs)
+        self.assertIn("haruto", names)
+        self.assertIn("natsuki", names)
+        self.assertIn("akira", names)
+
+        for character_dir in character_dirs:
+            with self.subTest(character=character_dir.name):
+                packages = fri.load_character_packages(character_dir)
+                self.assertTrue(packages)
+
+
+class AkiraRealConfigTest(unittest.TestCase):
+    """アキラの実際の設定ファイル(packages.json・各manifest.json)の
+    内容を検証する。ネットワークアクセスは行わない。
+    """
+
+    def setUp(self):
+        self.character_dir = fri.REFERENCE_IMAGES_ROOT / "akira"
+
+    def test_three_categories_registered_with_expected_counts(self):
+        packages = fri.load_character_packages(self.character_dir)
+        self.assertEqual(len(packages), 1)
+        categories = {c["name"]: c for c in packages[0]["categories"]}
+        self.assertEqual(set(categories), {"expressions", "turnaround", "equipment"})
+        self.assertEqual(categories["expressions"]["expected_png_count"], 31)
+        self.assertEqual(categories["turnaround"]["expected_png_count"], 4)
+        self.assertEqual(categories["equipment"]["expected_png_count"], 13)
+        self.assertTrue(categories["equipment"].get("flatten"))
+        self.assertFalse(categories["expressions"].get("flatten"))
+        self.assertFalse(categories["turnaround"].get("flatten"))
+
+    def test_expressions_manifest_has_31_tags_matching_haruto(self):
+        with (self.character_dir / "manifest.json").open(encoding="utf-8") as f:
+            akira_tags = {k for k in json.load(f) if not k.startswith("_")}
+        with (fri.REFERENCE_IMAGES_ROOT / "haruto" / "manifest.json").open(encoding="utf-8") as f:
+            haruto_tags = {k for k in json.load(f) if not k.startswith("_")}
+        self.assertEqual(len(akira_tags), 31)
+        self.assertEqual(akira_tags, haruto_tags)
+
+    def test_equipment_manifest_has_13_entries_with_source_file_and_dimensions(self):
+        with (self.character_dir / "equipment" / "manifest.json").open(encoding="utf-8") as f:
+            manifest = json.load(f)
+        entries = {k: v for k, v in manifest.items() if not k.startswith("_")}
+        self.assertEqual(len(entries), 13)
+        for tag, entry in entries.items():
+            with self.subTest(tag=tag):
+                self.assertIsInstance(entry, dict)
+                self.assertIn("file", entry)
+                self.assertIn("source_file", entry)
+                self.assertIn("width", entry)
+                self.assertIn("height", entry)
+                # フラット化後のfileには"/"を含まない(サブフォルダ構造が
+                # 持ち込まれていないこと)。source_fileはネストを含んでよい。
+                self.assertNotIn("/", entry["file"])
+
+    def test_equipment_nail_ranged_flight_keeps_original_1024x1536(self):
+        # チャミの決定(7): 画像寸法は変更しない。02-ranged-flight-long.png
+        # も1024x1536のまま使用する。
+        with (self.character_dir / "equipment" / "manifest.json").open(encoding="utf-8") as f:
+            manifest = json.load(f)
+        entry = manifest["nail-ranged-flight-long"]
+        self.assertEqual((entry["width"], entry["height"]), (1024, 1536))
+
+    def test_archival_only_assets_not_registered_in_any_config(self):
+        # character/reference・crest・previews・ZIP独自README/manifest/
+        # SHA256SUMS.txtは保存用資料であり、packages.json・カテゴリ
+        # manifestのいずれにも登録しない(チャミの決定5)。
+        packages = fri.load_character_packages(self.character_dir)
+        forbidden_zip_subdirs = {"character/reference", "crest", "previews"}
+        for package in packages:
+            for category in package["categories"]:
+                self.assertNotIn(category["zip_subdir"], forbidden_zip_subdirs)
+
+        manifest_paths = [
+            self.character_dir / "manifest.json",
+            self.character_dir / "turnaround" / "manifest.json",
+            self.character_dir / "equipment" / "manifest.json",
+        ]
+        for path in manifest_paths:
+            with path.open(encoding="utf-8") as f:
+                manifest = json.load(f)
+            for tag, entry in manifest.items():
+                if tag.startswith("_"):
+                    continue
+                filename = entry["file"] if isinstance(entry, dict) else entry
+                source_rel = fri._source_rel_for_entry(entry, filename)
+                with self.subTest(path=str(path), tag=tag):
+                    self.assertNotIn("crest", source_rel)
+                    self.assertNotIn("reference", source_rel)
+                    self.assertNotIn("preview", source_rel)
+
+
+class FetchCharacterFlattenEquipmentTest(unittest.TestCase):
+    """1つのZIP内でcategoryがさらにサブフォルダ(hammer/talisman等)に
+    分かれている場合(アキラのequipment方式)を、fetch_character()経由の
+    end-to-endで検証する。
+    """
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmpdir.cleanup)
+        self.tmp = pathlib.Path(self._tmpdir.name)
+        self.character_dir = self.tmp / "reference_images" / "akira"
+        self.character_dir.mkdir(parents=True)
+
+        self.zip_path = self.tmp / "akira.zip"
+        with zipfile.ZipFile(self.zip_path, "w") as zf:
+            zf.writestr("akira_set/expressions/", "")
+            zf.writestr("akira_set/expressions/00-neutral.png", make_fake_png(10, 10))
+            zf.writestr("akira_set/character/turnaround/", "")
+            zf.writestr("akira_set/character/turnaround/00-front.png", make_fake_png(887, 1774))
+            zf.writestr("akira_set/equipment/hammer/", "")
+            zf.writestr("akira_set/equipment/hammer/00-a.png", make_fake_png(887, 1774))
+            zf.writestr("akira_set/equipment/talisman/", "")
+            zf.writestr("akira_set/equipment/talisman/00-b.png", make_fake_png(887, 1774))
+            zf.writestr("akira_set/equipment/nail/", "")
+            zf.writestr("akira_set/equipment/nail/00-c.png", make_fake_png(1024, 1536))
+        self.sha256 = hashlib.sha256(self.zip_path.read_bytes()).hexdigest()
+        self.size_bytes = self.zip_path.stat().st_size
+
+        package = {
+            "package_id": "complete-archive-v1",
+            "release_tag": "akira-complete-archive-v1",
+            "filename": "akira.zip",
+            "download_url": "https://example.com/akira.zip",
+            "sha256": self.sha256,
+            "size_bytes": self.size_bytes,
+            "zip_internal_root": "akira_set",
+            "categories": [
+                {
+                    "name": "expressions",
+                    "zip_subdir": "expressions",
+                    "place_to": "images",
+                    "manifest": "manifest.json",
+                    "expected_png_count": 1,
+                    "expected_image_size": [10, 10],
+                },
+                {
+                    "name": "turnaround",
+                    "zip_subdir": "character/turnaround",
+                    "place_to": "turnaround/images",
+                    "manifest": "turnaround/manifest.json",
+                    "expected_png_count": 1,
+                    "expected_image_size": [887, 1774],
+                },
+                {
+                    "name": "equipment",
+                    "zip_subdir": "equipment",
+                    "place_to": "equipment/images",
+                    "manifest": "equipment/manifest.json",
+                    "expected_png_count": 3,
+                    "expected_image_size": None,
+                    "flatten": True,
+                },
+            ],
+        }
+        with (self.character_dir / "packages.json").open("w", encoding="utf-8") as f:
+            json.dump({"packages": [package]}, f)
+        with (self.character_dir / "manifest.json").open("w", encoding="utf-8") as f:
+            json.dump({"neutral": "00-neutral.png"}, f)
+        (self.character_dir / "turnaround").mkdir()
+        with (self.character_dir / "turnaround" / "manifest.json").open("w", encoding="utf-8") as f:
+            json.dump({"front": "00-front.png"}, f)
+        (self.character_dir / "equipment").mkdir()
+        with (self.character_dir / "equipment" / "manifest.json").open("w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "hammer-a": {"file": "hammer-00-a.png", "source_file": "hammer/00-a.png", "width": 887, "height": 1774},
+                    "talisman-b": {"file": "talisman-00-b.png", "source_file": "talisman/00-b.png", "width": 887, "height": 1774},
+                    "nail-c": {"file": "nail-00-c.png", "source_file": "nail/00-c.png", "width": 1024, "height": 1536},
+                },
+                f,
+            )
+
+    def _mock_download(self, url, dest_path):
+        shutil.copy(self.zip_path, dest_path)
+
+    def test_fetch_character_flattens_nested_equipment(self):
+        with mock.patch.object(fri, "download_file", side_effect=self._mock_download):
+            fri.fetch_character(self.character_dir)
+
+        self.assertTrue((self.character_dir / "images" / "00-neutral.png").is_file())
+        self.assertTrue((self.character_dir / "turnaround" / "images" / "00-front.png").is_file())
+
+        equipment_dir = self.character_dir / "equipment" / "images"
+        self.assertTrue((equipment_dir / "hammer-00-a.png").is_file())
+        self.assertTrue((equipment_dir / "talisman-00-b.png").is_file())
+        self.assertTrue((equipment_dir / "nail-00-c.png").is_file())
+        # ネストされたサブフォルダ自体は配置先に持ち込まれない。
+        self.assertFalse((equipment_dir / "hammer").exists())
+        self.assertFalse((equipment_dir / "talisman").exists())
+        self.assertFalse((equipment_dir / "nail").exists())
+
+    def test_equipment_dimension_mismatch_still_detected_after_flatten(self):
+        # nail-cの期待寸法を誤らせ、flatten対応でも寸法検証が正しく
+        # 機能していることを確認する(回帰確認)。
+        with (self.character_dir / "equipment" / "manifest.json").open(encoding="utf-8") as f:
+            manifest = json.load(f)
+        manifest["nail-c"]["width"] = 1
+        with (self.character_dir / "equipment" / "manifest.json").open("w", encoding="utf-8") as f:
+            json.dump(manifest, f)
+
+        with mock.patch.object(fri, "download_file", side_effect=self._mock_download):
+            with self.assertRaises(fri.FetchError):
+                fri.fetch_character(self.character_dir)
+
+        self.assertFalse((self.character_dir / "images").exists())
+        self.assertFalse((self.character_dir / "equipment" / "images").exists())
 
 
 if __name__ == "__main__":
