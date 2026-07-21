@@ -284,6 +284,17 @@ def _validate_category_shape(package_id, category):
             f"(許可: {', '.join(sorted(KNOWN_CATEGORIES))})"
         )
 
+    # flatten(任意・既定False): ZIP内でcategoryがさらにサブフォルダへ
+    # 分かれている場合(例: アキラのequipment = hammer/talisman/nailの
+    # 3サブフォルダ)に、配置時にファイル名衝突を避けるためフラット化する
+    # ことを示すフラグ。Trueの場合、manifestの各エントリは"source_file"
+    # (zip_subdir内での実際の相対パス、ネスト可)を持てる(省略時は"file"
+    # と同じ、既存category互換)。
+    if "flatten" in category and not isinstance(category["flatten"], bool):
+        raise FetchError(
+            f"package {package_id!r} のcategory {name!r} のflattenはbool型である必要があります"
+        )
+
     # place_to・manifestは設定ファイル側の自由入力として信頼せず、
     # category名に対応する正本値(reference_image_categories.py)と完全に
     # 一致することを要求する。これにより、設定ファイル経由で
@@ -396,6 +407,19 @@ def _load_category_manifest(character_dir, category):
         return json.load(f)
 
 
+def _source_rel_for_entry(entry, filename):
+    """manifestエントリのZIP内実パス(source_file)を返す。
+
+    flatten対応category向け: オブジェクト形式エントリが"source_file"を
+    持つ場合はそちらを使う(zip_subdir内でのネストされた相対パスを許容)。
+    持たない場合、および文字列形式エントリの場合は、従来通りfileと
+    同じパス(既存category互換、ネストなし)を使う。
+    """
+    if isinstance(entry, dict) and "source_file" in entry:
+        return entry["source_file"]
+    return filename
+
+
 def _verify_category(character_dir, staging_dir, category):
     """1つのcategoryについて、PNG枚数・manifest網羅・画像サイズを検証する。
 
@@ -407,6 +431,13 @@ def _verify_category(character_dir, staging_dir, category):
     natsuki/equipmentがこの状態になっており、寸法検証が機能していな
     かった)。逆にuniform_sizeが指定されている場合は、文字列形式の
     エントリを許容し、category内の全PNGを一律サイズで検証する。
+
+    PNG枚数はzip_subdir配下を再帰的に数える(rglob)。flatten対応
+    category(例: アキラのequipment)はzip_subdir自体の直下ではなく
+    さらにサブフォルダ〔hammer/talisman/nail等〕に分かれているため、
+    非再帰globでは0枚と誤判定してしまう。ネストのない既存category
+    (expressions/turnaround)ではrglobとglobの結果は一致するため、
+    この変更による既存挙動への影響はない。
     """
     zip_subdir_path = _resolve_contained(staging_dir, category["zip_subdir"], "categoryのzip_subdir")
     if not zip_subdir_path.is_dir():
@@ -414,7 +445,7 @@ def _verify_category(character_dir, staging_dir, category):
             f"展開結果に{category['zip_subdir']}/ディレクトリがありません(category={category['name']})"
         )
 
-    pngs = sorted(zip_subdir_path.glob("*.png"))
+    pngs = sorted(zip_subdir_path.rglob("*.png"))
     expected_count = category["expected_png_count"]
     if len(pngs) != expected_count:
         raise FetchError(
@@ -438,15 +469,16 @@ def _verify_category(character_dir, staging_dir, category):
                 )
 
         filename = entry["file"] if isinstance(entry, dict) else entry
-        file_path = _resolve_contained(zip_subdir_path, filename, "manifestのファイル名")
+        source_rel = _source_rel_for_entry(entry, filename)
+        file_path = _resolve_contained(zip_subdir_path, source_rel, "manifestのファイル名(source_file)")
         if not file_path.is_file():
-            missing.append((tag, filename))
+            missing.append((tag, source_rel))
             continue
         if isinstance(entry, dict) and "width" in entry and "height" in entry:
             w, h = read_png_size(file_path)
             if (w, h) != (entry["width"], entry["height"]):
                 raise FetchError(
-                    f"画像サイズが不正です(category={category['name']}): {filename} = {w}x{h}"
+                    f"画像サイズが不正です(category={category['name']}): {source_rel} = {w}x{h}"
                     f"(期待: {entry['width']}x{entry['height']})"
                 )
     if missing:
@@ -466,10 +498,39 @@ def _verify_category(character_dir, staging_dir, category):
 
 
 def _place_category(character_dir, staging_dir, category):
+    """categoryの検証済み画像を正式配置へ反映する。
+
+    通常のcategory(flatten指定なし)は、zip_subdir配下をディレクトリ
+    ごとそのまま原子的に配置する(既存挙動、無変更)。
+
+    flatten指定のcategory(例: アキラのequipment)は、ZIP内でサブフォルダ
+    に分かれたファイル(hammer/00-xxx.png等)を、manifestの"file"
+    (配置後のフラットなファイル名、例: hammer-00-xxx.png)へ個別に
+    コピーしてから、そのフラット化済みディレクトリ全体を原子的に配置する。
+    一時ディレクトリはstaging_dirと同じ親(character_dir.parent)配下に
+    作るため、最終的な入れ替え(os.rename)は真に原子的なまま維持される。
+    """
     src = _resolve_contained(staging_dir, category["zip_subdir"], "categoryのzip_subdir")
     dest = _resolve_contained(character_dir, category["place_to"], "categoryのplace_to")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    _atomic_replace(src, dest)
+
+    if not category.get("flatten"):
+        _atomic_replace(src, dest)
+        return
+
+    manifest = _load_category_manifest(character_dir, category)
+    flat_dir = staging_dir.parent / f"flat_{category['name']}"
+    flat_dir.mkdir(parents=True, exist_ok=True)
+    for tag, entry in manifest.items():
+        if tag.startswith("_"):
+            continue
+        filename = entry["file"] if isinstance(entry, dict) else entry
+        source_rel = _source_rel_for_entry(entry, filename)
+        source_path = _resolve_contained(src, source_rel, "manifestのファイル名(source_file)")
+        dest_path = _resolve_contained(flat_dir, filename, "manifestのファイル名(file)")
+        shutil.copyfile(source_path, dest_path)
+
+    _atomic_replace(flat_dir, dest)
 
 
 def _package_already_fetched(character_dir, package):

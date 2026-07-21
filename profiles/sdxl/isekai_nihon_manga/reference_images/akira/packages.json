@@ -1,0 +1,41 @@
+{
+  "character": "akira",
+  "packages": [
+    {
+      "package_id": "complete-archive-v1",
+      "release_tag": "akira-complete-archive-v1",
+      "filename": "akira_complete_archive_v1.zip",
+      "download_url": "https://github.com/popchami/comfyui-mobile-system/releases/download/akira-complete-archive-v1/akira_complete_archive_v1.zip",
+      "sha256": "1c34b24d830902ff3f63aa748956deed9da0d687e5177ef4ebda209200d8ffd7",
+      "size_bytes": 119070569,
+      "zip_internal_root": "akira_complete_archive_v1",
+      "categories": [
+        {
+          "name": "expressions",
+          "zip_subdir": "expressions",
+          "place_to": "images",
+          "manifest": "manifest.json",
+          "expected_png_count": 31,
+          "expected_image_size": [1254, 1254]
+        },
+        {
+          "name": "turnaround",
+          "zip_subdir": "character/turnaround",
+          "place_to": "turnaround/images",
+          "manifest": "turnaround/manifest.json",
+          "expected_png_count": 4,
+          "expected_image_size": [887, 1774]
+        },
+        {
+          "name": "equipment",
+          "zip_subdir": "equipment",
+          "place_to": "equipment/images",
+          "manifest": "equipment/manifest.json",
+          "expected_png_count": 13,
+          "expected_image_size": null,
+          "flatten": true
+        }
+      ]
+    }
+  ]
+}
