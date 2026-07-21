@@ -508,6 +508,71 @@ class LoadCharacterPackagesTest(unittest.TestCase):
         with self.assertRaises(fri.FetchError):
             fri.load_character_packages(self.character_dir)
 
+    def test_flatten_non_bool_value_rejected(self):
+        # flatten(任意フィールド)は文字列"true"等ではなくbool型を要求する
+        # (Codexレビュー指摘: 実装は正しくstr型を拒否するが、専用テストが
+        # 無かったため追加)。
+        self.write_json(
+            "packages.json",
+            {
+                "packages": [
+                    {
+                        "package_id": "p1",
+                        "release_tag": "r1",
+                        "filename": "f.zip",
+                        "download_url": "https://example.com/f.zip",
+                        "sha256": "c" * 64,
+                        "size_bytes": 1,
+                        "zip_internal_root": "root",
+                        "categories": [
+                            {
+                                "name": "equipment",
+                                "zip_subdir": "equipment",
+                                "place_to": "equipment/images",
+                                "manifest": "equipment/manifest.json",
+                                "expected_png_count": 1,
+                                "expected_image_size": None,
+                                "flatten": "true",
+                            }
+                        ],
+                    }
+                ]
+            },
+        )
+        with self.assertRaises(fri.FetchError):
+            fri.load_character_packages(self.character_dir)
+
+    def test_flatten_bool_true_accepted(self):
+        self.write_json(
+            "packages.json",
+            {
+                "packages": [
+                    {
+                        "package_id": "p1",
+                        "release_tag": "r1",
+                        "filename": "f.zip",
+                        "download_url": "https://example.com/f.zip",
+                        "sha256": "c" * 64,
+                        "size_bytes": 1,
+                        "zip_internal_root": "root",
+                        "categories": [
+                            {
+                                "name": "equipment",
+                                "zip_subdir": "equipment",
+                                "place_to": "equipment/images",
+                                "manifest": "equipment/manifest.json",
+                                "expected_png_count": 1,
+                                "expected_image_size": None,
+                                "flatten": True,
+                            }
+                        ],
+                    }
+                ]
+            },
+        )
+        packages = fri.load_character_packages(self.character_dir)  # 例外なしでOK
+        self.assertTrue(packages[0]["categories"][0]["flatten"])
+
     def test_reserved_category_name_rejected(self):
         self.write_json(
             "packages.json",
@@ -942,6 +1007,92 @@ class VerifyCategoryTest(unittest.TestCase):
             "expected_image_size": [1024, 1536],
         }
         fri._verify_category(self.character_dir, self.staging_dir, category)  # 例外なしでOK
+
+    def test_flatten_category_entry_without_source_file_falls_back_to_file(self):
+        # flatten=Trueのcategoryでも、個々のエントリがsource_fileを持たない
+        # 場合はfileと同じパスへフォールバックする(Codexレビュー指摘:
+        # この後方互換フォールバックがflatten=True下でも機能することの
+        # テストが無かったため追加)。
+        self.write_png("equipment", "flat-already.png", (887, 1774))
+        self.write_manifest(
+            "equipment/manifest.json",
+            {"flat-already": {"file": "flat-already.png", "width": 887, "height": 1774}},
+        )
+        category = {
+            "name": "equipment",
+            "zip_subdir": "equipment",
+            "place_to": "equipment/images",
+            "manifest": "equipment/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": None,
+            "flatten": True,
+        }
+        fri._verify_category(self.character_dir, self.staging_dir, category)  # 例外なしでOK
+
+    def test_destination_file_path_traversal_rejected_even_with_safe_source_file(self):
+        # source_fileが正当な値でも、配置後ファイル名(file)自体が
+        # categoryの配置先ディレクトリの外を指す場合は検証段階で拒否する
+        # (Codexレビュー指摘: 従来は配置段階でしか検出されず、全カテゴリ
+        # 検証完了後にのみ配置するという原子性の前提が崩れていた)。
+        self.write_png("equipment/hammer", "00-a.png", (887, 1774))
+        self.write_manifest(
+            "equipment/manifest.json",
+            {
+                "hammer-a": {
+                    "file": "../../../outside.png",
+                    "source_file": "hammer/00-a.png",
+                    "width": 887,
+                    "height": 1774,
+                }
+            },
+        )
+        category = {
+            "name": "equipment",
+            "zip_subdir": "equipment",
+            "place_to": "equipment/images",
+            "manifest": "equipment/manifest.json",
+            "expected_png_count": 1,
+            "expected_image_size": None,
+            "flatten": True,
+        }
+        with self.assertRaises(fri.FetchError):
+            fri._verify_category(self.character_dir, self.staging_dir, category)
+
+    def test_duplicate_destination_filename_rejected(self):
+        # 異なるタグが同じ配置後ファイル名(file)を指す場合、後勝ちで
+        # 無言に上書きされてしまうため検証段階で拒否する(Codexレビュー
+        # 指摘、Minor)。
+        self.write_png("equipment/hammer", "00-a.png", (887, 1774))
+        self.write_png("equipment/talisman", "00-b.png", (887, 1774))
+        self.write_manifest(
+            "equipment/manifest.json",
+            {
+                "hammer-a": {
+                    "file": "same-name.png",
+                    "source_file": "hammer/00-a.png",
+                    "width": 887,
+                    "height": 1774,
+                },
+                "talisman-b": {
+                    "file": "same-name.png",
+                    "source_file": "talisman/00-b.png",
+                    "width": 887,
+                    "height": 1774,
+                },
+            },
+        )
+        category = {
+            "name": "equipment",
+            "zip_subdir": "equipment",
+            "place_to": "equipment/images",
+            "manifest": "equipment/manifest.json",
+            "expected_png_count": 2,
+            "expected_image_size": None,
+            "flatten": True,
+        }
+        with self.assertRaises(fri.FetchError) as ctx:
+            fri._verify_category(self.character_dir, self.staging_dir, category)
+        self.assertIn("重複", str(ctx.exception))
 
 
 class PlaceCategoryFlattenTest(unittest.TestCase):

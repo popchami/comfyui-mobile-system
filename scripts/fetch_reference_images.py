@@ -455,6 +455,21 @@ def _verify_category(character_dir, staging_dir, category):
     manifest = _load_category_manifest(character_dir, category)
     uniform_size = category.get("expected_image_size")
 
+    # 配置後のファイル名(file)がmanifest内で重複していないか確認する
+    # (Codexレビュー指摘、Minor: flatten配置は"file"の値でコピー先を
+    # 決めるため、重複があると後勝ちで無言に上書きされてしまう)。
+    seen_files = {}
+    for tag, entry in manifest.items():
+        if tag.startswith("_"):
+            continue
+        filename = entry["file"] if isinstance(entry, dict) else entry
+        if filename in seen_files:
+            raise FetchError(
+                f"manifest.jsonの配置後ファイル名(file)が重複しています(category={category['name']}): "
+                f"{filename!r}({seen_files[filename]!r} と {tag!r})"
+            )
+        seen_files[filename] = tag
+
     missing = []
     for tag, entry in manifest.items():
         if tag.startswith("_"):
@@ -471,6 +486,16 @@ def _verify_category(character_dir, staging_dir, category):
         filename = entry["file"] if isinstance(entry, dict) else entry
         source_rel = _source_rel_for_entry(entry, filename)
         file_path = _resolve_contained(zip_subdir_path, source_rel, "manifestのファイル名(source_file)")
+
+        # 配置後ファイル名(file)についても、実際に配置に使う前(検証段階)
+        # でパス封じ込めを確認する。flatten対応categoryは"file"を
+        # _place_category内でコピー先の組み立てに使うため、ここで検証
+        # しておかないと、他のcategoryが先に配置された後で初めて
+        # このcategoryの不正なfileが判明する(全カテゴリ検証完了後にのみ
+        # 配置する、という原子性の前提が崩れる)。Codexレビュー指摘。
+        place_to_dir = _resolve_contained(character_dir, category["place_to"], "categoryのplace_to")
+        _resolve_contained(place_to_dir, filename, "manifestの配置後ファイル名(file)")
+
         if not file_path.is_file():
             missing.append((tag, source_rel))
             continue
