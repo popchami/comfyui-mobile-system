@@ -1,0 +1,32 @@
+{
+  "character": "fuyumi",
+  "packages": [
+    {
+      "package_id": "complete-archive-v1",
+      "release_tag": "fuyumi-complete-archive-v1",
+      "filename": "fuyumi_complete_archive_v1.zip",
+      "download_url": "https://github.com/popchami/comfyui-mobile-system/releases/download/fuyumi-complete-archive-v1/fuyumi_complete_archive_v1.zip",
+      "sha256": "7711b6efe5535564a3f6c13c39d957685ea3390fb75d2dd197d2ad1d151c9eca",
+      "size_bytes": 72783398,
+      "zip_internal_root": "fuyumi_complete_archive_v1",
+      "categories": [
+        {
+          "name": "expressions",
+          "zip_subdir": "expression_set/images",
+          "place_to": "images",
+          "manifest": "manifest.json",
+          "expected_png_count": 31,
+          "expected_image_size": [1254, 1254]
+        },
+        {
+          "name": "turnaround",
+          "zip_subdir": "turnaround",
+          "place_to": "turnaround/images",
+          "manifest": "turnaround/manifest.json",
+          "expected_png_count": 4,
+          "expected_image_size": [887, 1774]
+        }
+      ]
+    }
+  ]
+}
