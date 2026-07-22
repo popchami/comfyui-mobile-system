@@ -159,7 +159,9 @@
     (https://github.com/popchami/comfyui-mobile-system/releases/tag/fuyumi-complete-archive-v1)、
     mainのコミット`d654ae412d4213fc1b7f57075da716c2b7cd9d91`から作成。
     公開URLからHTTP 200で取得・SHA-256一致・`unzip -t`正常・35論理ID全解決、
-    既存Release4件は無変更
+    既存Release5件(haruto-expression-set-v2・haruto-turnaround-v1・
+    natsuki-complete-set-v2・haruto-complete-archive-v1・
+    akira-complete-archive-v1)は無変更
   - **PR #5としてmainへsquash-merge済み**(コミット`d654ae4`)。
     マージ後もブランチ`fuyumi-reference-images`は削除せず維持
 
