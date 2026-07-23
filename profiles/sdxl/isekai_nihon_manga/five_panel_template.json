@@ -1,0 +1,143 @@
+{
+  "template_version": 1,
+  "canvas": {
+    "width": 1080,
+    "height": 1920,
+    "background": "white"
+  },
+  "border": {
+    "color": "black",
+    "width_px": 6
+  },
+  "panel_gap_px": 19,
+  "panel_count": 5,
+  "panels": [
+    {
+      "panel_no": 1,
+      "outer": {
+        "x": 30,
+        "y": 30,
+        "width": 1021,
+        "height": 357
+      },
+      "inner": {
+        "x": 36,
+        "y": 36,
+        "width": 1009,
+        "height": 345
+      },
+      "safe_area": {
+        "x": 61,
+        "y": 61,
+        "width": 959,
+        "height": 295
+      }
+    },
+    {
+      "panel_no": 2,
+      "outer": {
+        "x": 30,
+        "y": 406,
+        "width": 1021,
+        "height": 357
+      },
+      "inner": {
+        "x": 36,
+        "y": 412,
+        "width": 1009,
+        "height": 345
+      },
+      "safe_area": {
+        "x": 61,
+        "y": 437,
+        "width": 959,
+        "height": 295
+      }
+    },
+    {
+      "panel_no": 3,
+      "outer": {
+        "x": 30,
+        "y": 782,
+        "width": 1021,
+        "height": 357
+      },
+      "inner": {
+        "x": 36,
+        "y": 788,
+        "width": 1009,
+        "height": 345
+      },
+      "safe_area": {
+        "x": 61,
+        "y": 813,
+        "width": 959,
+        "height": 295
+      }
+    },
+    {
+      "panel_no": 4,
+      "outer": {
+        "x": 30,
+        "y": 1158,
+        "width": 1021,
+        "height": 357
+      },
+      "inner": {
+        "x": 36,
+        "y": 1164,
+        "width": 1009,
+        "height": 345
+      },
+      "safe_area": {
+        "x": 61,
+        "y": 1189,
+        "width": 959,
+        "height": 295
+      }
+    },
+    {
+      "panel_no": 5,
+      "outer": {
+        "x": 30,
+        "y": 1534,
+        "width": 1021,
+        "height": 357
+      },
+      "inner": {
+        "x": 36,
+        "y": 1540,
+        "width": 1009,
+        "height": 345
+      },
+      "safe_area": {
+        "x": 61,
+        "y": 1565,
+        "width": 959,
+        "height": 295
+      }
+    }
+  ],
+  "compositing_order": [
+    "background_per_panel",
+    "black_frame_overlay"
+  ],
+  "ai_generation_exclusions": [
+    "panel_border",
+    "speech_bubble",
+    "japanese_text",
+    "caption_text",
+    "onomatopoeia"
+  ],
+  "font_size_px_min": {
+    "dialogue": 42,
+    "scribe_heading": 36,
+    "scribe_body": 32
+  },
+  "scribe_panel_layout": {
+    "layout_id": "scribe-left_note-right",
+    "scribe_area_fraction_of_safe_area": 0.32,
+    "note_area_fraction_of_safe_area": 0.66,
+    "heading_fixed_text": "書記官の解説"
+  }
+}

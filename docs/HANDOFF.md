@@ -1,7 +1,7 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-23 / 更新者: Claude Code(PR #3・#4・#5・#7をmainへsquash-merge、アキラ・フユミ・書記官のGitHub Release作成・実URL検証完了)
+2026-07-24 / 更新者: Claude Code(PR #3・#4・#5・#7をmainへsquash-merge、アキラ・フユミ・書記官のGitHub Release作成・実URL検証完了。5コマ正本テンプレート仕様・Manga News Packet v2を実装ブランチ`five-panel-template-v2`・実装commit`e0791f1b50760a5e5f31abad0e4fab1f5b1490d8`・PR #9〔https://github.com/popchami/comfyui-mobile-system/pull/9〕で実装。分割CodexレビューC/D完了、レビュー時点でBlocker/Critical/Major/Minor残件0、レビュー時点で125件全合格、news-game-translator側との接続契約18項目すべてMATCH。**最新のマージ状態はGitHub PR #9とgit履歴を正とする**)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -199,6 +199,60 @@
     fuyumi-complete-archive-v1)は無変更(書記官分を加え合計7件)
   - **PR #7としてmainへsquash-merge済み**(コミット`407dda1`)。
     マージ後もブランチ`scribe-reference-images`は削除せず維持
+- **5コマ正本テンプレート仕様の確定、Manga News Packet v2への対応
+  (news-game-translator側との連携)**。詳細:
+  - チャミが提示した5コマテンプレート仕様(完成画像1080×1920px、白背景、
+    黒枠6px、コマ間隔19px、5コマの外枠・内側・安全領域座標)を、
+    `profiles/sdxl/isekai_nihon_manga/five_panel_template.json`
+    (数値の正本)として新規追加。実在するテンプレートPNG
+    (`/sdcard/Download/manga_panel_template_v3.png`、1080×1920)を
+    Pillow(この検証専用に一時venvへインストール、リポジトリへの依存追加
+    ではない)で実測し、全5コマの座標・枠線6px・コマ間隔19pxが指定仕様と
+    完全一致することを確認済み。PNG自体はGit管理へ追加していない
+    (数値正本はJSON側のため)
+  - `scripts/generate_five_panel_template_doc.py`(新規): JSONから人間向け
+    Markdown(`five_panel_template.md`)を生成する。Markdownは手書きせず
+    必ずこのスクリプトで生成し、`--check`モードでJSON⇔Markdownの数値
+    不一致をドリフト検出できるようにした(チャミの指示「数値の正本はJSON、
+    Markdownとの不一致を検出するテストを追加するか生成構造にする」に対応)
+  - `profiles/sdxl/isekai_nihon_manga/MANGA_PACKET_CONNECTION.md`(新規):
+    news-game-translator側Manga News Packet v2との接続契約書。Packetの
+    日本語表示名(ハルト等)→このリポジトリのローマ字フォルダ名
+    (`haruto`等)の対応表、`reference_image`論理ID形式、5人全員の
+    完成状況一覧を記載
+  - `tests/test_five_panel_template.py`(新規、15件): 完成画像サイズ・
+    枠線・コマ間隔・5コマ全ての外枠/内側/安全領域座標・安全領域が内側へ
+    完全に収まること・各コマがキャンバス外へ出ないこと・
+    `five_panel_template.md`が`five_panel_template.json`からの生成結果と
+    一致すること(ドリフト検出)を検証
+  - 既存の`scripts/fetch_reference_images.py`・
+    `scripts/resolve_reference_image.py`・
+    `scripts/reference_image_categories.py`・既存キャラクターのmanifest・
+    既存Flux系プロファイルは無変更。既存110件+新規15件、
+    **計125件全て合格**(`python3 -m unittest discover -s tests`)
+  - news-game-translator側では、Manga News PacketをPACKET_VERSION 1→2へ
+    全面移行(実運用中のv1データなしを確認の上、後方互換コードなしで
+    一括移行)。1コマ1人固定を`performers`(最大2人)・`dialogues`
+    (最大2個)へ拡張、`role`をsetup/development/turn/resolutionの固定
+    4値化、第1〜4コマの登場人物を「ハルト・ナツキ専任」から「ハルト・
+    ナツキ・アキラ・フユミの4人から2〜3人選択」へ拡張、第5コマに
+    `scribe_panel`(書記官の正本画像を初めて参照)を新設。詳細は
+    news-game-translator側`docs/HANDOFF.md`参照
+  - manga/characters.mdの装備欄(ナツキ・アキラ・フユミ・書記官)が、
+    実際にこのリポジトリで完成させた正本画像と食い違っていたことが
+    今回判明し、news-game-translator側で修正済み(このリポジトリ側の
+    READMEの記載が常に実体の正本であることを再確認)
+  - **分割Codexレビュー完了**(2026-07-24): C(comfyui-mobile-system側
+    テンプレート仕様・接続契約文書)・D(news-game-translatorとの接続契約
+    18項目)を実施。Blocker/Critical/Major/Minor**残件0**まで指摘を
+    修正済み(HANDOFF.mdの最終更新日ずれ等の軽微な指摘含め、発見した指摘は
+    全て妥当と確認の上で採用)
+  - **実装ブランチ**: `five-panel-template-v2`(mainから分岐)
+  - **実装commit**: `e0791f1b50760a5e5f31abad0e4fab1f5b1490d8`
+  - **PR**: #9(https://github.com/popchami/comfyui-mobile-system/pull/9)
+  - **最新のマージ状態はGitHub PR #9とgit履歴を正とする**(このファイルの
+    記載は実装時点のスナップショットであり、マージ・Release状況を都度
+    上書きする運用はしない)
 
 ## 進行中・次にやること(担当者を明記)
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
@@ -223,15 +277,19 @@
   ハルト表情セットv2 PRとは別スコープのため、mainへは別途chatgpt-workブランチ全体の
   マージ(またはそれらのcommit単位でのPR)で反映する想定。詳細はchatgpt-workブランチの
   git logおよびそちらのHANDOFF.mdを参照。
-- [Phase 2・将来] `profiles/sdxl/isekai_nihon_manga/` 配下にSDXL+IPAdapterのマンガ用
-  ComfyUI Workflowを構築する(今回はデータ層・取得基盤のみ実装、Workflow本体は未着手)。
-  実装時は`scripts/resolve_reference_image.py`をノード/前処理から呼び出す形で
-  reference_image(論理ID)→実ファイルの解決を行う想定
-- [将来] ハルト・ナツキ・アキラ・フユミ・書記官は表情/turnaround(+アキラ・書記官は
-  equipmentも)まで登録・Release作成・実URL検証済み。書記官解説カットストックが
-  用意され次第、同じ`packages.json`/category別manifest.jsonパターンで追加する
-  (`scripts/fetch_reference_images.py`は複数キャラクター・複数package・
-  複数category・flattenの自動検出に対応済み)
+- **PR #9(https://github.com/popchami/comfyui-mobile-system/pull/9)の
+  マージ判断**。最新状態はGitHub PRとgit履歴を参照すること
+- [Phase 2・将来] `profiles/sdxl/isekai_nihon_manga/` 配下にSDXL+IPAdapterの
+  マンガ用ComfyUI Workflowを構築する(データ層・取得基盤・5コマテンプレート
+  仕様は確定済み、Workflow本体・RunPod接続・画像生成は未着手)。実装時は
+  `scripts/resolve_reference_image.py`をノード/前処理から呼び出す形で
+  reference_image(論理ID)→実ファイルの解決を行う想定。完成画像の
+  座標配置は`five_panel_template.json`を正本として使う
+- [将来] ハルト・ナツキ・アキラ・フユミ・書記官は表情/turnaround(+ナツキ・
+  アキラ・書記官はequipmentも)まで登録・Release作成・実URL検証済み。
+  書記官は表情31種+書記局章の正本画像が完成済みのため、旧計画にあった
+  「解説カットストック(5〜10枚)の別途作成」は不要になった
+  (news-game-translator側`docs/HANDOFF.md`参照)
 - [将来] フユミのequipment(装備)が用意され次第、既存equipmentカテゴリパターン
   (アキラのflatten機構含む)で追加を検討する
 
