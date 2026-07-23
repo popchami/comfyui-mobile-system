@@ -1,7 +1,7 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-22 / 更新者: Claude Code(PR #3・#4・#5をmainへsquash-merge、アキラ・フユミのGitHub Release作成・実URL検証完了)
+2026-07-23 / 更新者: Claude Code(PR #3・#4・#5・#7をmainへsquash-merge、アキラ・フユミ・書記官のGitHub Release作成・実URL検証完了)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -164,6 +164,41 @@
     akira-complete-archive-v1)は無変更
   - **PR #5としてmainへsquash-merge済み**(コミット`d654ae4`)。
     マージ後もブランチ`fuyumi-reference-images`は削除せず維持
+- **書記官正本(表情/turnaround/equipment)の追加**。詳細:
+  - 正本ZIP `scribe_complete_archive_v1.zip`(SHA-256:
+    `e1674d69d81f6a72edf2156e7cf6e6d8854ac2ada19b5d4420564df9433ec476`、70,937,890 bytes)。
+    表情31枚(`expression_set/images/`、1254×1254)+turnaround4枚
+    (`turnaround/images/`、887×1774)+書記局章1枚(`emblem/`、1254×1254)の計36枚
+  - 書記局章は新規`emblem` categoryを作らず、**既存の`equipment` category**として
+    論理タグ`official-scribe-bureau-emblem`で登録(単一ファイルが`emblem/`直下に
+    あり、ネスト構造がないためアキラのflatten機構は不要)
+  - 固定仕様(README.md記載): 濃い中間紫のロングアウター(金縁・地紋)、赤いボブ
+    +編み込み、丸眼鏡、鳩のかんざし、左手にタブレット・右手にペン。書記局章は
+    円形枠+中央の筆+左右対称の巻物で構成し、腕章・タブレット・背面上部に同一の
+    書記局章を使用
+  - 初回転送分`scribe_complete_archive_v1.zip`・再転送分`scribe_complete_archive_v1-1.zip`
+    (いずれもSHA-256`a38de4da...`で同一内容)は、EOCD(セントラルディレクトリ終端)
+    レコード欠落により不正なZIPと判明(転送/保存段階での破損、ストレージ容量は
+    問題なし)。新ファイル名で再構築された`scribe_complete_archive_v1_rebuilt.zip`
+    (SHA-256`e1674d69...`)のみを正本として採用、旧2ファイルは不採用として
+    README.mdに明記
+  - 既存の複数package/複数category方式(ハルト・ナツキ・アキラ・フユミと同一
+    パターン)をそのまま流用。新規category・独自構成の追加なし。
+    `scripts/fetch_reference_images.py`・`scripts/resolve_reference_image.py`・
+    `scripts/reference_image_categories.py`は無変更
+  - 実データ(実ZIP)で36論理ID全解決を確認、テスト**110件全て合格**
+    (既存の複数package/category機構をそのまま利用したため件数変化なし)
+  - **GitHub Release作成済み・実URL検証完了**: タグ`scribe-complete-archive-v1`
+    (https://github.com/popchami/comfyui-mobile-system/releases/tag/scribe-complete-archive-v1)、
+    mainのコミット`407dda1da1b758c54b5a7329e99f875e96009e71`から作成。アップロード元は
+    `_rebuilt.zip`を新規一時ディレクトリへコピー・改名した実体を、改名後に容量・
+    SHA-256・`unzip -t`を再確認してから使用(破損した旧ファイルは未使用)。
+    公開URLからHTTP 200で取得・容量/SHA-256一致・`unzip -t`正常・36論理ID全解決、
+    既存Release6件(haruto-expression-set-v2・haruto-turnaround-v1・
+    natsuki-complete-set-v2・haruto-complete-archive-v1・akira-complete-archive-v1・
+    fuyumi-complete-archive-v1)は無変更(書記官分を加え合計7件)
+  - **PR #7としてmainへsquash-merge済み**(コミット`407dda1`)。
+    マージ後もブランチ`scribe-reference-images`は削除せず維持
 
 ## 進行中・次にやること(担当者を明記)
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
@@ -192,11 +227,11 @@
   ComfyUI Workflowを構築する(今回はデータ層・取得基盤のみ実装、Workflow本体は未着手)。
   実装時は`scripts/resolve_reference_image.py`をノード/前処理から呼び出す形で
   reference_image(論理ID)→実ファイルの解決を行う想定
-- [将来] ハルト・ナツキ・アキラ・フユミは表情/turnaround(+アキラのみequipment)まで
-  登録・Release作成・実URL検証済み。書記官の表情セット・書記官解説カットストックが
-  用意され次第、同じ`packages.json`/category別manifest.jsonパターンで
-  `reference_images/<character>/`を追加する(`scripts/fetch_reference_images.py`は
-  複数キャラクター・複数package・複数category・flattenの自動検出に対応済み)
+- [将来] ハルト・ナツキ・アキラ・フユミ・書記官は表情/turnaround(+アキラ・書記官は
+  equipmentも)まで登録・Release作成・実URL検証済み。書記官解説カットストックが
+  用意され次第、同じ`packages.json`/category別manifest.jsonパターンで追加する
+  (`scripts/fetch_reference_images.py`は複数キャラクター・複数package・
+  複数category・flattenの自動検出に対応済み)
 - [将来] フユミのequipment(装備)が用意され次第、既存equipmentカテゴリパターン
   (アキラのflatten機構含む)で追加を検討する
 
@@ -232,7 +267,7 @@
 - キャラクター参照画像の正本ZIPはGit管理へ一切commitしない(取得後生成の
   images/等は.gitignore対象)。マージ・Release作成・ブランチ削除等の外部影響
   操作は、チャミの明示的な指示があるまで実行しない(ハルト・ナツキ・アキラ・
-  フユミいずれもこの手順で運用、2026-07-19〜22)
+  フユミ・書記官いずれもこの手順で運用、2026-07-19〜23)
 
 ## ChatGPTとの作業フロー(最終確定版・2026-07-08)
 1. あなたがChatGPTに分析を依頼する
