@@ -1,0 +1,16 @@
+{
+  "_comment": "1コマ生成試験(ハルト1人・第1コマ)のComfyUI Workflow設定例。実値はシークレットではないが、実環境のComfyUI/RunPod構成によって変わるため、決め打ちせず設定ファイルまたは環境変数で差し替え可能にする(scripts/one_panel_pilot.py参照)。デフォルト値はprofiles/sdxl/chibi/comfyui_sdxl_chibi.htmlで実際に使用されている値を踏襲しており、根拠のない当て推量ではないが、対象RunPod環境に実在するモデル名であることは未検証。実行前に必ずComfyUIの/object_infoやモデルフォルダで実在確認すること。",
+  "checkpoint_name": "animagine_xl4_opt.safetensors",
+  "clip_vision_name": "clip_vision_sdxl.safetensors",
+  "ipadapter_preset": "PLUS (high strength)",
+  "ipadapter_weight": 0.8,
+  "sampler_name": "euler_ancestral",
+  "scheduler": "simple",
+  "steps": 20,
+  "cfg": 5.0,
+  "seed": 0,
+  "batch_size": 1,
+  "generation_width": 1536,
+  "generation_height": 640,
+  "filename_prefix": "one_panel_pilot_haruto"
+}

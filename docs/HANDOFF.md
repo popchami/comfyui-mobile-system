@@ -253,8 +253,85 @@
   - **最新のマージ状態はGitHub PR #9とgit履歴を正とする**(このファイルの
     記載は実装時点のスナップショットであり、マージ・Release状況を都度
     上書きする運用はしない)
+- **「ハルト1人・1コマ生成試験」の事前実装(dry-runのみ、RunPod未起動・
+  課金なし)**。詳細は
+  `profiles/sdxl/isekai_nihon_manga/ONE_PANEL_PILOT.md`参照
+  - **実装ブランチ**: `one-panel-pilot-v1`(mainから分岐)
+  - Manga News Packet v2の第1コマ(panel_no=1、登場人物をハルト1人に
+    限定した試験fixture)を入力に、正本画像取得→ComfyUI(SDXL+IPAdapter)
+    向けAPI形式Workflow構築→RunPodへ送る予定のリクエストJSON構築までを
+    dry-runで検証できる状態にした(`scripts/one_panel_pilot.py`)。
+    RunPod API送信・GPU画像生成・モデルダウンロードは一切行っていない
+  - Packet v2構造検証・enum・`CHARACTER_REFERENCE_ID`はnews-game-translator側
+    `scripts/manga_schema.py`を正本としてそのままimportして再利用、
+    reference_image解決はこのリポジトリの既存
+    `scripts/resolve_reference_image.py`をそのまま再利用(重複実装なし)
+  - ComfyUI Workflowのノード名・既定パラメータは、既存
+    `profiles/sdxl/chibi/comfyui_sdxl_chibi.html`が実際に使用している
+    構成(CheckpointLoaderSimple→CLIPTextEncode×2→CLIPVisionLoader+
+    LoadImage→IPAdapterUnifiedLoader→IPAdapterAdvanced→
+    EmptyLatentImage→KSampler→VAEDecode→SaveImage)を踏襲。モデル名・
+    IPAdapterプリセットはコードへ決め打ちせず
+    `profiles/sdxl/isekai_nihon_manga/one_panel_pilot/config.example.json`
+    経由で差し替え可能にした
+  - 必須Custom Node`ComfyUI_IPAdapter_plus`
+    (`https://github.com/cubiq/ComfyUI_IPAdapter_plus`、既存
+    `profiles/sdxl/chibi/setup_sdxl.ipynb`で実際にclone対象になっている
+    ことを確認済み)を文書化。バージョン固定は現時点で未実施であることも
+    明記(推測でcommit hashを記載していない)
+  - Negative promptは既存`profiles/sdxl/chibi`の正本(textarea初期値)を
+    基礎とし、今回必須の概念(letters/japanese characters/speech bubble/
+    caption/onomatopoeia/manga panel border/logo/malformed hands/
+    extra fingers/missing fingers/wrong costume/wrong accessories/
+    chinese-style clothing/korean-style clothing/romance)のうち未収録の
+    ものだけを追加
+  - 生成解像度は1536×640(Stability AIがSDXL 1.0向けのoptimal inference
+    resolutionとして公式文書に掲載する解像度のうち、対象コマ〔1009×345、
+    縦横比約2.93:1〕に最も近いもの。対象checkpoint・対象RunPod環境での
+    個別検証は未実施と明記)を採用し、対象コマ内側(1009×345)への
+    リサイズ+中央クロップ(クロップ比率約17.9%)による変換仕様を実装
+    (寸法計算のみ、実ピクセル処理はこの段階では未実装)。`compute_panel_fit()`
+    は連続座標の参考値に加え、実ピクセル処理を将来実装する際に一意な
+    結果を再現するための整数ピクセル契約(`resize_to_px`/`crop_box_px`/
+    `resampling_method`、1536×640→1009×345の場合`resize_to_px=1009×421`・
+    `crop_box_px=(0,38,1009,383)`・`LANCZOS`固定)も返す
+  - RunPod接続先・APIキーは環境変数(`RUNPOD_API_KEY`・
+    `RUNPOD_ENDPOINT_URL`)経由の設計とし、値はコード・設定ファイル・
+    ログ・dry-run結果のいずれにも一切出力しない(存在確認〔真偽値〕のみ)
+  - このpilotが現時点で正しく動作するキャラクターはハルトのみ
+    (`SUPPORTED_TEST_CHARACTERS`)。positive promptの固定サフィックスが
+    ハルトの外見を決め打ちしているため、`--character`でハルト以外を
+    指定すると明確な`PilotError`で拒否される
+  - `tests/test_one_panel_pilot.py`(新規、78件)を追加。既存テストは
+    削除・弱体化していない。既存125件+新規分含め
+    **comfyui-mobile-system側は203件全合格**
+    (`python3 -m unittest discover -s tests`)。外部通信を伴うテストは
+    一切なし(reference_image解決は既存tests/test_resolve_reference_image.py
+    と同じ隔離手法〔tempdir+REFERENCE_IMAGES_ROOT差し替え〕を使用)
+  - **Codexレビュー実施済み**(Review A: Python実装・テスト・安全性、
+    Review B: 画像生成契約・寸法・既存CMSとの整合。各2ラウンドで打ち切り、
+    直接ブロッキング実行・10分ハードタイムアウトの方針を厳守)。
+    Review Aで5件(Major 2・Minor 3)、1回目修正後の2回目レビューで
+    追加2件(Major 1・Minor 1)、Review Bで7件(Major 2・Minor 5)、
+    1回目修正後の2回目レビューで追加2件(Major 1・Minor 1)を検出し、
+    合計16件すべてを検証・修正・回帰テスト追加済み(Blocker/Critical
+    0件)。ブランチ`one-panel-pilot-v1`(commit `b46dfb5`)へpush済み、
+    **Draft PR #10**(https://github.com/popchami/comfyui-mobile-system/pull/10、
+    base=main・head=one-panel-pilot-v1)を作成済み(最新のマージ状態は
+    GitHub PRとgit履歴を正本とする)
 
 ## 進行中・次にやること(担当者を明記)
+- **PR #9(https://github.com/popchami/comfyui-mobile-system/pull/9)の
+  マージ判断**。最新状態はGitHub PRとgit履歴を参照すること
+- **Draft PR #10(https://github.com/popchami/comfyui-mobile-system/pull/10)
+  のマージ判断**。ブランチ`one-panel-pilot-v1`(ハルト1人・1コマ生成試験、
+  dry-runのみ実装済み)、base=main・head=one-panel-pilot-v1。
+  Codexレビュー(Review A・B、各2ラウンド)完了、検出16件すべて修正・
+  回帰テスト追加・自己検証済み(Blocker/Critical/Major/Minor残件0)。
+  最新のマージ状態はGitHub PRとgit履歴を参照すること。マージ後は、
+  実際にRunPodを起動しての実接続検証(モデル名の実在確認・組み合わせ
+  互換性確認・Custom Nodeバージョン固定・実際の1コマ生成、画像アップロード
+  〔/upload/image〕と実ピクセル処理の実装)を行う想定
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
   (normal/のTIER差分:weight_dtypeがflux1-dev-fp8.safetensors[16/24/32GB]→
   flux1-dev.safetensors[48GBのみ]、workflow内weight_dtypeはfp8_e4m3fn[16/24/32GB]→
@@ -277,14 +354,12 @@
   ハルト表情セットv2 PRとは別スコープのため、mainへは別途chatgpt-workブランチ全体の
   マージ(またはそれらのcommit単位でのPR)で反映する想定。詳細はchatgpt-workブランチの
   git logおよびそちらのHANDOFF.mdを参照。
-- **PR #9(https://github.com/popchami/comfyui-mobile-system/pull/9)の
-  マージ判断**。最新状態はGitHub PRとgit履歴を参照すること
 - [Phase 2・将来] `profiles/sdxl/isekai_nihon_manga/` 配下にSDXL+IPAdapterの
-  マンガ用ComfyUI Workflowを構築する(データ層・取得基盤・5コマテンプレート
-  仕様は確定済み、Workflow本体・RunPod接続・画像生成は未着手)。実装時は
-  `scripts/resolve_reference_image.py`をノード/前処理から呼び出す形で
-  reference_image(論理ID)→実ファイルの解決を行う想定。完成画像の
-  座標配置は`five_panel_template.json`を正本として使う
+  マンガ用ComfyUI Workflowを本格構築する(データ層・取得基盤・5コマ
+  テンプレート仕様・1コマ生成試験〔dry-runのみ、ハルト限定〕は確定・
+  実装済み。RunPod実接続・実際の画像生成・全キャラクター/全コマ対応・
+  実ピクセルのリサイズ/クロップ処理は未着手)。`scripts/
+  one_panel_pilot.py`のWorkflow構築ロジックを土台に拡張する想定
 - [将来] ハルト・ナツキ・アキラ・フユミ・書記官は表情/turnaround(+ナツキ・
   アキラ・書記官はequipmentも)まで登録・Release作成・実URL検証済み。
   書記官は表情31種+書記局章の正本画像が完成済みのため、旧計画にあった
