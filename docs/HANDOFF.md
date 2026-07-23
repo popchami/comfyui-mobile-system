@@ -1,7 +1,7 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-24 / 更新者: Claude Code(PR #3・#4・#5・#7をmainへsquash-merge、アキラ・フユミ・書記官のGitHub Release作成・実URL検証完了。5コマ正本テンプレート仕様・Manga News Packet v2をfeature branch `five-panel-template-v2`上で実装・分割CodexレビューC・D完了、Blocker/Critical/Major/Minor残件0、テスト125件全合格、news-game-translator側との接続契約18項目すべてMATCH。**mainにはまだ未反映**〔merge・Release未実施〕。次はDraft PRの確認待ち)
+2026-07-24 / 更新者: Claude Code(PR #3・#4・#5・#7をmainへsquash-merge、アキラ・フユミ・書記官のGitHub Release作成・実URL検証完了。5コマ正本テンプレート仕様・Manga News Packet v2を実装ブランチ`five-panel-template-v2`・実装commit`e0791f1b50760a5e5f31abad0e4fab1f5b1490d8`・PR #9〔https://github.com/popchami/comfyui-mobile-system/pull/9〕で実装。分割CodexレビューC/D完了、レビュー時点でBlocker/Critical/Major/Minor残件0、レビュー時点で125件全合格、news-game-translator側との接続契約18項目すべてMATCH。**最新のマージ状態はGitHub PR #9とgit履歴を正とする**)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -247,8 +247,12 @@
     18項目)を実施。Blocker/Critical/Major/Minor**残件0**まで指摘を
     修正済み(HANDOFF.mdの最終更新日ずれ等の軽微な指摘含め、発見した指摘は
     全て妥当と確認の上で採用)
-  - feature branch `five-panel-template-v2`上で実装・レビュー・修正まで
-    完了。**mainへのマージ・Release作成はチャミの指示があるまで実施しない**
+  - **実装ブランチ**: `five-panel-template-v2`(mainから分岐)
+  - **実装commit**: `e0791f1b50760a5e5f31abad0e4fab1f5b1490d8`
+  - **PR**: #9(https://github.com/popchami/comfyui-mobile-system/pull/9)
+  - **最新のマージ状態はGitHub PR #9とgit履歴を正とする**(このファイルの
+    記載は実装時点のスナップショットであり、マージ・Release状況を都度
+    上書きする運用はしない)
 
 ## 進行中・次にやること(担当者を明記)
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
@@ -273,10 +277,8 @@
   ハルト表情セットv2 PRとは別スコープのため、mainへは別途chatgpt-workブランチ全体の
   マージ(またはそれらのcommit単位でのPR)で反映する想定。詳細はchatgpt-workブランチの
   git logおよびそちらのHANDOFF.mdを参照。
-- [2026-07-24・チャミの確認待ち] ブランチ`five-panel-template-v2`(5コマ正本
-  テンプレート仕様・Manga News Packet v2対応、分割Codexレビュー完了・
-  Blocker/Critical/Major/Minor残件0・テスト125件全合格)の、Draft PR
-  内容の確認とmainへのマージ判断
+- **PR #9(https://github.com/popchami/comfyui-mobile-system/pull/9)の
+  マージ判断**。最新状態はGitHub PRとgit履歴を参照すること
 - [Phase 2・将来] `profiles/sdxl/isekai_nihon_manga/` 配下にSDXL+IPAdapterの
   マンガ用ComfyUI Workflowを構築する(データ層・取得基盤・5コマテンプレート
   仕様は確定済み、Workflow本体・RunPod接続・画像生成は未着手)。実装時は
