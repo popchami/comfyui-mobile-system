@@ -1,0 +1,7 @@
+{
+  "_comment": "書記官4方向立ち絵の論理タグ(front/left-profile/back/right-profile、全キャラクター共通の標準タグ)から実ファイル名への対応表。実ファイル名がすでに標準タグと一致しているため表記揺れの吸収は不要。4枚とも887x1774で寸法均一(category定義側でexpected_image_sizeを一律指定)。",
+  "front": "00-front.png",
+  "left-profile": "01-left-profile.png",
+  "back": "02-back.png",
+  "right-profile": "03-right-profile.png"
+}
