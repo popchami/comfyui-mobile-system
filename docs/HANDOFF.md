@@ -315,21 +315,23 @@
     追加2件(Major 1・Minor 1)、Review Bで7件(Major 2・Minor 5)、
     1回目修正後の2回目レビューで追加2件(Major 1・Minor 1)を検出し、
     合計16件すべてを検証・修正・回帰テスト追加済み(Blocker/Critical
-    0件)。ブランチ`one-panel-pilot-v1`へcommit・push済み、
-    base=main・head=one-panel-pilot-v1のDraft PRを作成予定
-    (最新のマージ状態はGitHub PRとgit履歴を正本とする)
+    0件)。ブランチ`one-panel-pilot-v1`(commit `b46dfb5`)へpush済み、
+    **Draft PR #10**(https://github.com/popchami/comfyui-mobile-system/pull/10、
+    base=main・head=one-panel-pilot-v1)を作成済み(最新のマージ状態は
+    GitHub PRとgit履歴を正本とする)
 
 ## 進行中・次にやること(担当者を明記)
 - **PR #9(https://github.com/popchami/comfyui-mobile-system/pull/9)の
   マージ判断**。最新状態はGitHub PRとgit履歴を参照すること
-- [2026-07-24] ブランチ`one-panel-pilot-v1`(ハルト1人・1コマ生成試験、
-  dry-runのみ実装済み)のCodexレビュー(Review A・B、各2ラウンド)完了、
-  検出16件すべて修正・回帰テスト追加・自己検証済み。commit・push・
-  Draft PR作成後のマージ判断待ち(最新状態はGitHub PRとgit履歴を
-  参照すること)。マージ後は、実際にRunPodを起動しての実接続検証
-  (モデル名の実在確認・組み合わせ互換性確認・Custom Nodeバージョン固定・
-  実際の1コマ生成、画像アップロード〔/upload/image〕と実ピクセル処理の
-  実装)を行う想定
+- **Draft PR #10(https://github.com/popchami/comfyui-mobile-system/pull/10)
+  のマージ判断**。ブランチ`one-panel-pilot-v1`(ハルト1人・1コマ生成試験、
+  dry-runのみ実装済み)、base=main・head=one-panel-pilot-v1。
+  Codexレビュー(Review A・B、各2ラウンド)完了、検出16件すべて修正・
+  回帰テスト追加・自己検証済み(Blocker/Critical/Major/Minor残件0)。
+  最新のマージ状態はGitHub PRとgit履歴を参照すること。マージ後は、
+  実際にRunPodを起動しての実接続検証(モデル名の実在確認・組み合わせ
+  互換性確認・Custom Nodeバージョン固定・実際の1コマ生成、画像アップロード
+  〔/upload/image〕と実ピクセル処理の実装)を行う想定
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
   (normal/のTIER差分:weight_dtypeがflux1-dev-fp8.safetensors[16/24/32GB]→
   flux1-dev.safetensors[48GBのみ]、workflow内weight_dtypeはfp8_e4m3fn[16/24/32GB]→
