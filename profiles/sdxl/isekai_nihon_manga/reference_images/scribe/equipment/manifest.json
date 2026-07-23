@@ -1,0 +1,4 @@
+{
+  "_comment": "書記官の装備(書記局章)の論理タグ→配置後ファイル名対応表。ZIP内ではemblem/official-scribe-bureau-emblem.pngの1枚のみで、equipmentカテゴリ(place_to=equipment/images)へそのまま配置する(ネスト構造なし、flatten不要)。1254x1254で表情画像と同一寸法のため、category定義側でexpected_image_sizeを一律指定できる。",
+  "official-scribe-bureau-emblem": "official-scribe-bureau-emblem.png"
+}

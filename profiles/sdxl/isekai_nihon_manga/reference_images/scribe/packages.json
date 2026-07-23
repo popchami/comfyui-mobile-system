@@ -1,0 +1,40 @@
+{
+  "character": "scribe",
+  "packages": [
+    {
+      "package_id": "complete-archive-v1",
+      "release_tag": "scribe-complete-archive-v1",
+      "filename": "scribe_complete_archive_v1.zip",
+      "download_url": "https://github.com/popchami/comfyui-mobile-system/releases/download/scribe-complete-archive-v1/scribe_complete_archive_v1.zip",
+      "sha256": "e1674d69d81f6a72edf2156e7cf6e6d8854ac2ada19b5d4420564df9433ec476",
+      "size_bytes": 70937890,
+      "zip_internal_root": "scribe_complete_archive_v1",
+      "categories": [
+        {
+          "name": "expressions",
+          "zip_subdir": "expression_set/images",
+          "place_to": "images",
+          "manifest": "manifest.json",
+          "expected_png_count": 31,
+          "expected_image_size": [1254, 1254]
+        },
+        {
+          "name": "turnaround",
+          "zip_subdir": "turnaround/images",
+          "place_to": "turnaround/images",
+          "manifest": "turnaround/manifest.json",
+          "expected_png_count": 4,
+          "expected_image_size": [887, 1774]
+        },
+        {
+          "name": "equipment",
+          "zip_subdir": "emblem",
+          "place_to": "equipment/images",
+          "manifest": "equipment/manifest.json",
+          "expected_png_count": 1,
+          "expected_image_size": [1254, 1254]
+        }
+      ]
+    }
+  ]
+}
