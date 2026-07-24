@@ -1,7 +1,7 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-24 / 更新者: Claude Code(PR #3・#4・#5・#7をmainへsquash-merge、アキラ・フユミ・書記官のGitHub Release作成・実URL検証完了。5コマ正本テンプレート仕様・Manga News Packet v2を実装ブランチ`five-panel-template-v2`・実装commit`e0791f1b50760a5e5f31abad0e4fab1f5b1490d8`・PR #9〔https://github.com/popchami/comfyui-mobile-system/pull/9〕で実装。分割CodexレビューC/D完了、レビュー時点でBlocker/Critical/Major/Minor残件0、レビュー時点で125件全合格、news-game-translator側との接続契約18項目すべてMATCH。**最新のマージ状態はGitHub PR #9とgit履歴を正とする**)
+2026-07-24 / 更新者: Claude Code(ハルト1人・1コマ生成試験のdry-run基盤〔PR #10〕をmainへsquash-merge済み〔squash commit `6b8c49cbbd47997beb3f6b3e687068dbc48d5438`〕。続けて次工程として「画像アップロード準備」(`scripts/comfyui_upload.py`)と「実ピクセル変換」(`scripts/panel_pixel_convert.py`)をブランチ`one-panel-runtime-prep-v1`で実装。Codexレビュー(Review A・B、各2ラウンド)完了、検出28件すべて修正・回帰テスト追加済み(Blocker/Critical/Major/Minor残件0)、305件全合格、未コミットのまま停止。**最新のマージ状態はGitHub PRとgit履歴を正とする**)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -315,23 +315,87 @@
     追加2件(Major 1・Minor 1)、Review Bで7件(Major 2・Minor 5)、
     1回目修正後の2回目レビューで追加2件(Major 1・Minor 1)を検出し、
     合計16件すべてを検証・修正・回帰テスト追加済み(Blocker/Critical
-    0件)。ブランチ`one-panel-pilot-v1`(commit `b46dfb5`)へpush済み、
-    **Draft PR #10**(https://github.com/popchami/comfyui-mobile-system/pull/10、
-    base=main・head=one-panel-pilot-v1)を作成済み(最新のマージ状態は
-    GitHub PRとgit履歴を正本とする)
+    0件)。**PR #10としてmainへsquash-merge済み**
+    (https://github.com/popchami/comfyui-mobile-system/pull/10、
+    squash commit `6b8c49cbbd47997beb3f6b3e687068dbc48d5438`)。
+    マージ後もブランチ`one-panel-pilot-v1`は削除せず維持
+- **「画像アップロード準備」と「実ピクセル変換」の実装(dry-run/mock検証・
+  RunPod未起動)**。詳細は
+  `profiles/sdxl/isekai_nihon_manga/ONE_PANEL_PILOT.md`11・12節参照
+  - **実装ブランチ**: `one-panel-runtime-prep-v1`(main、commit
+    `6b8c49cbbd47997beb3f6b3e687068dbc48d5438`〔PR #10マージ後〕から分岐)
+  - `scripts/comfyui_upload.py`: ComfyUIの`/upload/image`へ正本参照画像を
+    送るリクエスト構築・応答検証。実送信関数(`send_upload_request()`)は
+    実装したが、このリポジトリのどこからも呼び出していない(テストは
+    `requests.post`相当をmockしてのみ検証、実通信なし)。既存の
+    `resolve_performer_reference_image()`が返す検証済みPathのみを受け付け、
+    シンボリックリンク・正本ディレクトリ外・非PNG・PNGシグネチャ不一致・
+    サイズ上限超過(16MB、既存正本PNG実測最大値の約7倍)を拒否。応答の
+    `name`/`subfolder`/`type`を検証し、パストラバーサル・絶対パス・制御
+    文字を拒否した上でWorkflowの`LoadImage.image`へ反映
+  - `scripts/panel_pixel_convert.py`: Pillow(新規実行依存。Debian/Ubuntu系
+    apt環境では`python3-pil`、venv/pip環境では`python -m pip install
+    Pillow`等、環境に応じた導入方法がある)を用いて、PR #10で確定した
+    整数ピクセル契約(`resize_to_px`/`crop_box_px`/`resampling_method`)を
+    実際に適用し、1536×640→1009×345への実リサイズ・実クロップを実装
+    (実際にローカルファイルへピクセル処理を行う、ネットワーク通信なし)。
+    EXIF orientation正規化(寸法一致判定は正規化後の寸法に対して行う)・
+    RGB/RGBA統一・decompression bomb対策(`DecompressionBombError`/
+    `DecompressionBombWarning`の両方を変換)・入力寸法不一致の明示的拒否
+    (黙って別計算しない)・複数フレーム画像(APNG等)拒否・
+    置換/リンク前の一時ファイル検証・原子的書き込み(`overwrite=False`は
+    `os.link()`のアトミックな存在チェック、`overwrite=True`は
+    `os.replace()`)・保存後の寸法再検証を実装。対象コマinner座標は
+    `one_panel_pilot.py`の既存関数(`compute_panel_fit()`/
+    `load_five_panel_template()`/`get_panel_geometry()`)を再利用し、
+    重複実装していない
+  - **RunPod方式について判明した内容**: 既存実装(chibi HTML UI・本pilotの
+    env var説明)はいずれもRunPod Serverless API
+    (`api.runpod.ai/v2/...`)ではなく、RunPod Pod上のComfyUIサーバーへ
+    直接HTTPアクセスする方式(Podのプロキシ経由URL)を前提にしていると
+    読み取れた。ただしこれは既存コード・文書からの読み取りに基づく理解
+    であり、実際にServerless API経由が必要になる可能性は排除していない
+    (未確定事項として文書化、実接続前チェックリストに確認項目を追加)
+  - **Codexレビュー実施済み**(Review A: Python実装・HTTP境界・安全性、
+    Review B: ComfyUI契約・ピクセル幾何・統合・文書整合。各2ラウンドで
+    打ち切り、直接ブロッキング実行・10分ハードタイムアウトの方針を厳守)。
+    Review Aで14件(Critical 1・Major 9・Minor 4)検出、うち13件を修正・
+    1件(生成解像度を1536×640固定にすべきという指摘)は既存設計
+    〔`compute_panel_fit()`との一貫性〕を優先し不採用、1回目修正後の
+    2回目レビューで追加5件(Major 3・Minor 2、resolverの
+    manifest未登録ファイル拒否・`/proc/self/fd`経由の中間ディレクトリ
+    symlink対策・`os.link()`によるoverwrite保護再設計等)を検出・修正。
+    Review Bで6件(Major 1・Minor 5、アップロード`type=temp/output`時の
+    LoadImage注釈欠落・subfolder区切り不整合・EXIF契約の文書明確化・
+    Pillow導入方法の記載・テスト件数の記載更新)を検出・修正、1回目修正後の
+    2回目レビューで追加3件(Major 1・Minor 2、name/subfolderへの
+    ComfyUI予約末尾注釈`[input]`/`[temp]`/`[output]`埋め込みによる
+    type検証迂回・テスト件数記載の再更新・EXIF寸法契約のONE_PANEL_PILOT.md
+    本文への明記漏れ)を検出・修正。
+    合計28件検出、27件を検証・修正・回帰テスト追加済み、1件は既存設計との
+    一貫性を優先し理由を記録した上で不採用(Blocker/Critical残件0、
+    Major/Minor残件0)
+  - `tests/test_comfyui_upload.py`(新規72件)・
+    `tests/test_panel_pixel_convert.py`(新規29件)・
+    `tests/test_one_panel_runtime_prep_integration.py`(新規1件、
+    resolver解決→upload mock→Workflow反映→実ピクセル変換までを外部通信
+    なしでend-to-end再現)を追加。既存テストは削除・弱体化していない。
+    **comfyui-mobile-system側は305件全合格**
+    (`python3 -m unittest discover -s tests`)。外部通信を伴うテストは
+    一切なし
+  - commit・push・PR作成は未実施、ブランチ上の未コミット変更として存置
 
 ## 進行中・次にやること(担当者を明記)
 - **PR #9(https://github.com/popchami/comfyui-mobile-system/pull/9)の
   マージ判断**。最新状態はGitHub PRとgit履歴を参照すること
-- **Draft PR #10(https://github.com/popchami/comfyui-mobile-system/pull/10)
-  のマージ判断**。ブランチ`one-panel-pilot-v1`(ハルト1人・1コマ生成試験、
-  dry-runのみ実装済み)、base=main・head=one-panel-pilot-v1。
-  Codexレビュー(Review A・B、各2ラウンド)完了、検出16件すべて修正・
-  回帰テスト追加・自己検証済み(Blocker/Critical/Major/Minor残件0)。
-  最新のマージ状態はGitHub PRとgit履歴を参照すること。マージ後は、
-  実際にRunPodを起動しての実接続検証(モデル名の実在確認・組み合わせ
-  互換性確認・Custom Nodeバージョン固定・実際の1コマ生成、画像アップロード
-  〔/upload/image〕と実ピクセル処理の実装)を行う想定
+- ブランチ`one-panel-runtime-prep-v1`(画像アップロード準備・実ピクセル
+  変換、上記完了済み参照)のcommit・PR判断。Codexレビュー(Review A・B、
+  各2ラウンド)完了、検出28件すべて修正・回帰テスト追加・自己検証済み
+  (Blocker/Critical/Major/Minor残件0)。commit後は、実際にRunPodを
+  起動しての実接続検証(到達経路・認証方式の確定、モデル名の実在確認・
+  組み合わせ互換性確認・Custom Nodeバージョン固定・実際に
+  `send_upload_request()`を試験的に呼び出す・ハルト1枚だけの実生成)を
+  行う想定
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
   (normal/のTIER差分:weight_dtypeがflux1-dev-fp8.safetensors[16/24/32GB]→
   flux1-dev.safetensors[48GBのみ]、workflow内weight_dtypeはfp8_e4m3fn[16/24/32GB]→
@@ -356,10 +420,12 @@
   git logおよびそちらのHANDOFF.mdを参照。
 - [Phase 2・将来] `profiles/sdxl/isekai_nihon_manga/` 配下にSDXL+IPAdapterの
   マンガ用ComfyUI Workflowを本格構築する(データ層・取得基盤・5コマ
-  テンプレート仕様・1コマ生成試験〔dry-runのみ、ハルト限定〕は確定・
-  実装済み。RunPod実接続・実際の画像生成・全キャラクター/全コマ対応・
-  実ピクセルのリサイズ/クロップ処理は未着手)。`scripts/
-  one_panel_pilot.py`のWorkflow構築ロジックを土台に拡張する想定
+  テンプレート仕様・1コマ生成試験〔dry-runのみ、ハルト限定〕・画像
+  アップロード契約(mock検証まで)・実ピクセルのリサイズ/クロップ処理
+  (ローカルfixtureで実装・検証済み、実生成画像への適用は未検証)は
+  確定・実装済み。RunPod実接続・実際の画像生成・全キャラクター/全コマ
+  対応は未着手)。`scripts/one_panel_pilot.py`のWorkflow構築ロジックを
+  土台に拡張する想定
 - [将来] ハルト・ナツキ・アキラ・フユミ・書記官は表情/turnaround(+ナツキ・
   アキラ・書記官はequipmentも)まで登録・Release作成・実URL検証済み。
   書記官は表情31種+書記局章の正本画像が完成済みのため、旧計画にあった
