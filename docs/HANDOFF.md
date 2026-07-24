@@ -1,7 +1,8 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-24 / 更新者: Claude Code(「画像アップロード準備」と「実ピクセル変換」〔PR #11〕をmainへsquash-merge済み〔squash commit `4eceb7ae9616c87db5b600983ed6fd2397824469`〕。続けて次工程として、これらを1回の明示操作で順番に実行できる単発実行経路(`scripts/comfyui_run_once.py`)をブランチ`one-panel-runtime-wire-v1`で実装。既定は常にdry-run、`execute=True`を明示した場合のみ実通信する設計。今回もすべて`session`をmockして検証、実通信・GPU生成は一切実施していない。**commit前の最終Codexレビュー(Review A・Review Bとも各2ラウンドで完了)を実施済み**。Review A(Python実装・HTTP・安全性)はround 1でCritical 2件・Major 9件・Minor 3件、round 2でさらにCritical 2件・Major 4件・Minor 3件。Review B(ComfyUI契約・Workflow・統合・文書)はround 1でMajor 5件・Minor 5件、round 2でさらにMajor 1件・Minor 1件を検出・個別再現・最小修正済み(詳細は完了済みセクション参照)。修正後377件全合格、`git diff --check`もexit 0、実通信・GPU生成は一度も行っていない、未コミットのまま停止。**残存Blocker/Critical/Major/Minorは0件**。次はcommit・PR判断、その後の実RunPod接続検証待ち。**最新のマージ状態はGitHub PRとgit履歴を正とする**)
+2026-07-24 / 更新者: Claude Code(「画像アップロード準備」と「実ピクセル変換」〔PR #11〕をmainへsquash-merge済み〔squash commit `4eceb7ae9616c87db5b600983ed6fd2397824469`〕。続けて次工程として、ハルト・panel_no=1・生成1枚に固定した単発実行経路(`scripts/comfyui_run_once.py`)をブランチ`one-panel-runtime-wire-v1`で実装完了。既定は常にdry-run、`execute=True`を明示した場合のみ実通信する設計。**commit前の最終Codexレビュー(Review A・Review Bとも各2ラウンドで完了)を実施し、Blocker 0件・Critical 4件・Major 19件・Minor 12件(actionableな指摘35件)をすべて個別に再現・最小修正済み、残件0件**(詳細は完了済みセクション参照)。修正後377件全合格、`git diff --check`もexit 0。今回もすべて`session`をmockして検証しており、RunPod・ComfyUIへの実通信・GPU生成は一度も行っていない。対象7ファイルをcommit(`a5d582d68e16f944821225b72e094925b9609edb`)・push済みで、main向けDraft PR #12
+(https://github.com/popchami/comfyui-mobile-system/pull/12)を作成済み(state=OPEN, isDraft=true)。次は、Draft PRのレビュー・承認判断、その後の実RunPod接続検証待ち。**最新の状態はGitHub PR #12とgit履歴を正とする**)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -536,18 +537,28 @@
           新規回帰テストが実際に失敗することを個別に確認した上で復元済み
         - **Review B round 2で打ち切り(2回上限)。Review A・Review Bとも
           完了、残存Blocker/Critical/Major/Minorは0件**
-      - commit・push・PR作成も未実施、ブランチ上の未コミット変更として存置
+      - Review A・Review Bともに完了(各2ラウンド、残存Blocker/Critical/
+        Major/Minorは0件)。対象7ファイル(`docs/HANDOFF.md`・
+        `profiles/sdxl/isekai_nihon_manga/ONE_PANEL_PILOT.md`・
+        `scripts/comfyui_run_once.py`・`scripts/comfyui_upload.py`・
+        `tests/test_comfyui_run_once.py`・`tests/test_comfyui_upload.py`・
+        `tests/test_one_panel_runtime_prep_integration.py`)をcommit
+        (`a5d582d68e16f944821225b72e094925b9609edb`)・
+        `origin/one-panel-runtime-wire-v1`へpush済み。main向けDraft PR #12
+        (https://github.com/popchami/comfyui-mobile-system/pull/12)を
+        作成済み(state=OPEN, isDraft=true)。`.codex/`はスコープ外の
+        既存未追跡物のままcommit対象に含めていない
 
 ## 進行中・次にやること(担当者を明記)
 - **PR #9(https://github.com/popchami/comfyui-mobile-system/pull/9)の
   マージ判断**。最新状態はGitHub PRとgit履歴を参照すること
 - ブランチ`one-panel-runtime-wire-v1`(単発実行経路の接続、上記完了済み
-  参照)のcommit・PR判断。**Review A(Python実装・HTTP・安全性、2ラウンド)は
-  完了済み**(詳細は完了済みセクション参照)。Review B(ComfyUI契約・
-  Workflow・統合・文書)は本レビュー結果への対応待ち。両レビュー完了後、
-  実際にRunPodを1回起動しての実接続検証(到達経路・認証方式の確定、
-  モデル名の実在確認・組み合わせ互換性確認・Custom Nodeバージョン固定・
-  実際に`comfyui_run_once.py --execute`を試験的に呼び出す)を行い、
+  参照)は**Review A・Review Bとも完了(各2ラウンド、残件0件)、
+  commit・push・main向けDraft PR #12作成まで完了済み**(詳細は完了済み
+  セクション参照)。次はDraft PR #12のレビュー・承認判断待ち。承認・
+  マージ後、実際にRunPodを1回起動しての実接続検証(到達経路・認証方式の
+  確定、モデル名の実在確認・組み合わせ互換性確認・Custom Nodeバージョン
+  固定・実際に`comfyui_run_once.py --execute`を試験的に呼び出す)を行い、
   同一セッション内でハルト1枚だけの実生成を試みる想定
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
   (normal/のTIER差分:weight_dtypeがflux1-dev-fp8.safetensors[16/24/32GB]→
