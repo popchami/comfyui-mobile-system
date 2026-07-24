@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Comfy Mobile Prototype</title>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="./profile-storage.js"></script>
+  <script src="./stored-profile-ui.js"></script>
+  <script src="./comfy-progress.js"></script>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #f5f5f5; }
+    header { padding: 16px; background: #191919; position: sticky; top: 0; z-index: 1; }
+    main { padding: 16px; display: grid; gap: 16px; }
+    section { background: #1b1b1b; border: 1px solid #333; border-radius: 14px; padding: 14px; }
+    label { display: block; font-size: 13px; color: #bbb; margin-bottom: 6px; }
+    input, textarea, select, button { width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid #444; padding: 10px; background: #101010; color: #f5f5f5; }
+    input[type="file"] { padding: 12px; background: #151515; }
+    textarea { min-height: 90px; resize: vertical; }
+    button { background: #ff7a00; color: #111; border: none; font-weight: 700; margin-top: 8px; }
+    button.secondary { background: #333; color: #f5f5f5; }
+    .field { margin-bottom: 12px; }
+    .hint { font-size: 12px; color: #888; margin-top: 4px; }
+    .status { font-size: 13px; color: #ccc; white-space: pre-wrap; }
+    .warn { color: #ffcc66; }
+    img { max-width: 100%; border-radius: 12px; margin-top: 8px; border: 1px solid #333; }
+    pre { overflow: auto; background: #0b0b0b; padding: 10px; border-radius: 10px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Comfy Mobile Prototype</strong>
+    <div class="status" id="status">未接続</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. 接続</h2>
+      <label>ComfyUI URL</label>
+      <input id="comfyUrl" placeholder="https://xxxxx-8188.proxy.runpod.net" />
+      <button onclick="checkConnection()">接続確認</button>
+      <button class="secondary" onclick="fetchProfiles()">Profile一覧取得</button>
+    </section>
+
+    <section>
+      <h2>2. Profile</h2>
+      <label>Remote Profiles</label>
+      <select id="profileSelect"></select>
+      <button onclick="downloadSelectedProfile()">選択Profileを取得して読み込む</button>
+      <label>Local profile zip</label>
+      <input id="profileZipInput" type="file" accept=".zip" onchange="importLocalZip()" />
+      <p class="status warn">ZIP内に workflow.json と app_profile.json が必要。</p>
+    </section>
+
+    <section>
+      <h2>3. 手動Profile読み込み</h2>
+      <label>app_profile.json</label>
+      <textarea id="appProfileText" placeholder="app_profile.jsonを貼り付け"></textarea>
+      <label>workflow.json</label>
+      <textarea id="workflowText" placeholder="workflow.jsonを貼り付け"></textarea>
+      <button onclick="loadManualProfile()">Profileを読み込む</button>
+    </section>
+
+    <section>
+      <h2>4. Simple UI</h2>
+      <div id="simpleUi"></div>
+      <button onclick="previewPatch()">Patch確認</button>
+      <button onclick="submitPrompt()">生成実行</button>
+    </section>
+
+    <section>
+      <h2>5. 結果</h2>
+      <div class="status" id="resultStatus"></div>
+      <div id="images"></div>
+      <details>
+        <summary>patched workflow</summary>
+        <pre id="patchedOutput"></pre>
+      </details>
+      <details>
+        <summary>history response</summary>
+        <pre id="historyOutput"></pre>
+      </details>
+    </section>
+  </main>
+
+<script>
+let appProfile = null;
+let workflow = null;
+let patchedWorkflow = null;
+let profiles = [];
+let lastPromptId = null;
+
+function baseUrl() { return document.getElementById('comfyUrl').value.replace(/\/$/, ''); }
+function setStatus(text) { document.getElementById('status').textContent = text; }
+function setResult(text) { document.getElementById('resultStatus').textContent = text; }
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+function handleProgressMessage(data) {
+  if (!data || !data.type) return;
+  if (data.type === 'progress' && data.data) {
+    const value = data.data.value ?? '?';
+    const max = data.data.max ?? '?';
+    setResult('生成中... ' + value + ' / ' + max);
+    return;
+  }
+  if (data.type === 'executing' && data.data) {
+    if (data.data.node === null && lastPromptId) {
+      setResult('実行完了通知。履歴取得中...');
+    } else if (data.data.node) {
+      setResult('実行中 node: ' + data.data.node);
+    }
+    return;
+  }
+  if (data.type === 'execution_error') {
+    setResult('ComfyUI実行エラー: ' + JSON.stringify(data.data || data));
+  }
+}
+
+async function checkConnection() {
+  try {
+    const res = await fetch(baseUrl() + '/system_stats');
+    if (!res.ok) throw new Error(res.status);
+    if (window.ComfyMobileProgress) window.ComfyMobileProgress.connectComfyProgress(baseUrl(), handleProgressMessage);
+    setStatus('接続OK / WebSocket準備OK');
+  } catch (e) { setStatus('接続失敗: ' + e.message); }
+}
+
+async function fetchProfiles() {
+  try {
+    const res = await fetch(baseUrl() + '/mobile_analyzer/profiles');
+    if (!res.ok) throw new Error(res.status);
+    profiles = await res.json();
+    const select = document.getElementById('profileSelect');
+    select.innerHTML = '';
+    profiles.forEach((p, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = p.name || p.id || p.file || ('profile ' + i);
+      select.appendChild(opt);
+    });
+    setStatus('Profile一覧取得OK: ' + profiles.length + '件');
+  } catch (e) { setStatus('Profile一覧取得失敗: ' + e.message); }
+}
+
+async function downloadSelectedProfile() {
+  try {
+    const selected = profiles[document.getElementById('profileSelect').value];
+    if (!selected) return setStatus('Profile未選択');
+    const downloadUrl = baseUrl() + '/mobile_analyzer/profiles/' + selected.id + '/download';
+    setStatus('Profile ZIP取得中...');
+    const res = await fetch(downloadUrl);
+    if (!res.ok) throw new Error('/download ' + res.status);
+    const blob = await res.blob();
+    await importProfileZipBlob(blob);
+  } catch (e) { setStatus('Profile ZIP取得失敗: ' + e.message); }
+}
+
+async function importLocalZip() {
+  try {
+    const input = document.getElementById('profileZipInput');
+    if (!input.files || input.files.length === 0) return;
+    await importProfileZipBlob(input.files[0]);
+  } catch (e) { setStatus('ZIP読み込み失敗: ' + e.message); }
+}
+
+async function importProfileZipBlob(blob) {
+  if (typeof JSZip === 'undefined') throw new Error('JSZipが読み込まれていません');
+  const zip = await JSZip.loadAsync(blob);
+  const appProfileFile = zip.file('app_profile.json');
+  const workflowFile = zip.file('workflow.json');
+  if (!appProfileFile) throw new Error('zip内に app_profile.json がありません');
+  if (!workflowFile) throw new Error('zip内に workflow.json がありません');
+  const appProfileText = await appProfileFile.async('string');
+  const workflowText = await workflowFile.async('string');
+  document.getElementById('appProfileText').value = appProfileText;
+  document.getElementById('workflowText').value = workflowText;
+  appProfile = JSON.parse(appProfileText);
+  workflow = JSON.parse(workflowText);
+  validateProfile(appProfile, workflow);
+  renderSimpleUi();
+  setStatus('Profile ZIP読み込みOK: ' + (appProfile.profile_name || appProfile.profile_id || 'profile'));
+}
+
+function loadManualProfile() {
+  try {
+    appProfile = JSON.parse(document.getElementById('appProfileText').value);
+    workflow = JSON.parse(document.getElementById('workflowText').value);
+    validateProfile(appProfile, workflow);
+    renderSimpleUi();
+    setStatus('手動Profile読み込みOK: ' + (appProfile.profile_name || appProfile.profile_id || 'profile'));
+  } catch (e) { setStatus('JSON読み込み失敗: ' + e.message); }
+}
+
+function validateProfile(profile, wf) {
+  if (!profile.schema_version) throw new Error('app_profile.json に schema_version がありません');
+  if (!profile.ui || !Array.isArray(profile.ui.simple)) throw new Error('app_profile.json に ui.simple がありません');
+  if (!Array.isArray(profile.patch_targets)) throw new Error('app_profile.json に patch_targets がありません');
+  if (!wf || typeof wf !== 'object') throw new Error('workflow.json が不正です');
+}
+
+function renderSimpleUi() {
+  const root = document.getElementById('simpleUi');
+  root.innerHTML = '';
+  const fields = (appProfile.ui && appProfile.ui.simple) || [];
+  fields.forEach(field => {
+    const wrap = document.createElement('div');
+    wrap.className = 'field';
+    const label = document.createElement('label');
+    label.textContent = field.label || field.field_id;
+    wrap.appendChild(label);
+    let input;
+    if (field.type === 'textarea') {
+      input = document.createElement('textarea');
+    } else if (field.type === 'select') {
+      input = document.createElement('select');
+      const options = field.options && field.options.length ? field.options : [field.default].filter(v => v !== undefined);
+      options.forEach(v => {
+        const opt = document.createElement('option'); opt.value = v; opt.textContent = v; input.appendChild(opt);
+      });
+    } else if (field.type === 'switch') {
+      input = document.createElement('select');
+      ['true', 'false'].forEach(v => {
+        const opt = document.createElement('option'); opt.value = v; opt.textContent = v; input.appendChild(opt);
+      });
+    } else if (field.type === 'image') {
+      input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      const hint = document.createElement('div');
+      hint.className = 'hint';
+      hint.textContent = '未選択の場合は元の画像名を使う: ' + (field.default || 'なし');
+      wrap.appendChild(hint);
+    } else {
+      input = document.createElement('input');
+      input.type = field.type === 'number' || field.type === 'slider' ? 'number' : 'text';
+      if (field.min !== undefined) input.min = field.min;
+      if (field.max !== undefined) input.max = field.max;
+      if (field.step !== undefined) input.step = field.step;
+    }
+    input.id = 'field_' + field.field_id;
+    if (field.type !== 'image') input.value = field.default ?? '';
+    input.dataset.defaultValue = field.default ?? '';
+    input.dataset.fieldType = field.type || '';
+    wrap.appendChild(input);
+    root.appendChild(wrap);
+  });
+}
+
+async function previewPatch() {
+  try { await buildPatchedWorkflow(); } catch (e) { setStatus('Patch失敗: ' + e.message); }
+}
+
+async function buildPatchedWorkflow() {
+  if (!appProfile || !workflow) { setStatus('Profile未読み込み'); return null; }
+  patchedWorkflow = JSON.parse(JSON.stringify(workflow));
+  const targets = appProfile.patch_targets || [];
+  for (const target of targets) {
+    const el = document.getElementById('field_' + target.field_id);
+    if (!el) continue;
+    const node = patchedWorkflow[target.node_id];
+    if (!node || !node.inputs || !(target.input in node.inputs)) {
+      throw new Error('patch先が存在しません: node ' + target.node_id + ' input ' + target.input);
+    }
+    if (target.value_type === 'IMAGE') node.inputs[target.input] = await resolveImageValue(el);
+    else node.inputs[target.input] = castValue(el.value, target.value_type);
+  }
+  document.getElementById('patchedOutput').textContent = JSON.stringify(patchedWorkflow, null, 2);
+  setStatus('Patch作成OK');
+  return patchedWorkflow;
+}
+
+async function resolveImageValue(fileInput) {
+  if (fileInput.files && fileInput.files.length > 0) {
+    const uploaded = await uploadImage(fileInput.files[0]);
+    return uploaded.name || uploaded.filename || fileInput.files[0].name;
+  }
+  const current = fileInput.dataset.defaultValue;
+  if (!current) throw new Error('画像が未選択で、元画像名もありません');
+  return current;
+}
+
+async function uploadImage(file) {
+  setStatus('画像アップロード中: ' + file.name);
+  const form = new FormData();
+  form.append('image', file, file.name);
+  form.append('type', 'input');
+  form.append('overwrite', 'true');
+  const res = await fetch(baseUrl() + '/upload/image', { method: 'POST', body: form });
+  if (!res.ok) throw new Error('/upload/image ' + res.status);
+  const data = await res.json();
+  setStatus('画像アップロードOK: ' + (data.name || data.filename || file.name));
+  return data;
+}
+
+function castValue(value, type) {
+  if (type === 'INT') return parseInt(value, 10);
+  if (type === 'FLOAT') return parseFloat(value);
+  if (type === 'BOOLEAN') return value === 'true' || value === true;
+  return value;
+}
+
+async function submitPrompt() {
+  try {
+    const wf = await buildPatchedWorkflow();
+    if (!wf) return;
+    if (window.ComfyMobileProgress) window.ComfyMobileProgress.connectComfyProgress(baseUrl(), handleProgressMessage);
+    setResult('生成送信中...');
+    document.getElementById('images').innerHTML = '';
+    document.getElementById('historyOutput').textContent = '';
+    const payload = window.ComfyMobileProgress
+      ? window.ComfyMobileProgress.getPromptPayloadWithClientId(wf)
+      : { prompt: wf };
+    const res = await fetch(baseUrl() + '/prompt', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('/prompt ' + res.status);
+    const data = await res.json();
+    lastPromptId = data.prompt_id;
+    if (window.ComfyMobileProgress) window.ComfyMobileProgress.setProgressPromptId(lastPromptId);
+    setResult('送信OK prompt_id: ' + lastPromptId + '\n生成完了待ち...');
+    await waitForHistory(lastPromptId);
+  } catch (e) { setResult('生成失敗: ' + e.message); }
+}
+
+async function waitForHistory(promptId) {
+  const maxTries = 90;
+  for (let i = 0; i < maxTries; i++) {
+    await sleep(1000);
+    const history = await fetchHistory(promptId);
+    if (history && history[promptId]) {
+      document.getElementById('historyOutput').textContent = JSON.stringify(history[promptId], null, 2);
+      const imageUrls = extractImageUrls(history[promptId]);
+      if (imageUrls.length > 0) { renderImages(imageUrls); setResult('生成完了: ' + imageUrls.length + '枚'); return; }
+      setResult('履歴取得OK。画像出力待ち... ' + (i + 1) + '/' + maxTries);
+    } else setResult('生成待ち... ' + (i + 1) + '/' + maxTries);
+  }
+  throw new Error('生成結果の取得がタイムアウトしました');
+}
+
+async function fetchHistory(promptId) {
+  const res = await fetch(baseUrl() + '/history/' + promptId);
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+function extractImageUrls(historyItem) {
+  const urls = [];
+  const outputs = historyItem.outputs || {};
+  Object.keys(outputs).forEach(nodeId => {
+    const images = outputs[nodeId].images || [];
+    images.forEach(img => {
+      const params = new URLSearchParams();
+      params.set('filename', img.filename);
+      params.set('subfolder', img.subfolder || '');
+      params.set('type', img.type || 'output');
+      urls.push(baseUrl() + '/view?' + params.toString());
+    });
+  });
+  return urls;
+}
+
+function renderImages(urls) {
+  const root = document.getElementById('images');
+  root.innerHTML = '';
+  urls.forEach(url => {
+    const a = document.createElement('a'); a.href = url; a.target = '_blank';
+    const img = document.createElement('img'); img.src = url;
+    a.appendChild(img); root.appendChild(a);
+  });
+}
+</script>
+</body>
+</html>
