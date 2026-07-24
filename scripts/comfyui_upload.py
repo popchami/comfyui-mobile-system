@@ -57,7 +57,16 @@ ALLOWED_UPLOAD_SUFFIXES = (".png",)
 # 許可しないための、実測値に基づく具体的根拠のある値)。
 MAX_UPLOAD_FILE_SIZE_BYTES = 16 * 1024 * 1024
 
+# `/upload/image`のJSON応答(name/subfolder/typeのみを含む小さなメタデータ)
+# の受信サイズ上限(2回目のCodexレビュー指摘、Major対応: 以前は
+# `response.json()`を直接呼んでおり、サイズ上限もContent-Type検証もなく
+# 応答全体を無条件にメモリへ読み込んでいた)。
+MAX_UPLOAD_RESPONSE_BYTES = 1 * 1024 * 1024  # 1MB
+
 DEFAULT_UPLOAD_TIMEOUT_SECONDS = 30
+# timeoutの上限(Codexレビュー指摘、Major対応: 以前は有限であることのみ
+# 検証しており、巨大値〔例: 10**9秒〕を拒否できていなかった)。
+MAX_UPLOAD_TIMEOUT_SECONDS = 120.0
 DEFAULT_UPLOAD_IMAGE_TYPE = "input"
 # ComfyUI本体が実際に使うフォルダ種別(input/temp/output)。これ以外の値は
 # 応答・リクエストのどちらでも許可しない。
@@ -189,6 +198,20 @@ def validate_upload_source_path(path, resolve_module):
     return size
 
 
+def _default_session():
+    """session省略時に使う内部Session。
+
+    requestsモジュールのグローバルなtrust_env(HTTP_PROXY/HTTPS_PROXY/
+    NO_PROXY環境変数や~/.netrcの自動読み込み)を無効化し、呼び出し元が
+    意図しないproxy・認証設定を継承しないようにする(Codexレビュー指摘、
+    Major対応)。呼び出し元が独自のsessionを渡した場合、そのsessionの
+    trust_env・proxy設定は呼び出し元自身の責任とする。
+    """
+    session = requests.Session()
+    session.trust_env = False
+    return session
+
+
 def _validate_image_type(image_type):
     if image_type not in ALLOWED_UPLOAD_IMAGE_TYPES:
         raise ComfyUIUploadError(
@@ -203,6 +226,10 @@ def _validate_timeout(timeout):
         raise ComfyUIUploadError(f"timeoutは有限の数値である必要があります: {timeout!r}")
     if timeout <= 0:
         raise ComfyUIUploadError(f"timeoutは正の数値である必要があります: {timeout!r}")
+    if timeout > MAX_UPLOAD_TIMEOUT_SECONDS:
+        raise ComfyUIUploadError(
+            f"timeoutが上限({MAX_UPLOAD_TIMEOUT_SECONDS}秒)を超えています: {timeout!r}"
+        )
 
 
 def _build_upload_filename_from_content(content, stem, suffix):
@@ -515,7 +542,7 @@ def send_upload_request(
     content = _read_and_verify_source_bytes(path, resolve_module)
     filename = _build_upload_filename_from_content(content, path.stem, path.suffix.lower())
     url = f"{base_url.rstrip('/')}/upload/image"
-    http = session or requests
+    http = session or _default_session()
 
     try:
         response = http.post(
@@ -523,6 +550,8 @@ def send_upload_request(
             files={"image": (filename, content, "image/png")},
             data={"type": image_type, "overwrite": "true" if overwrite else "false"},
             timeout=timeout,
+            allow_redirects=False,
+            stream=True,
         )
     except requests.exceptions.Timeout:
         raise ComfyUIUploadError("アップロードリクエストがタイムアウトしました") from None
@@ -531,12 +560,44 @@ def send_upload_request(
             "アップロードリクエストが失敗しました(接続先・認証情報の詳細はここには含めません)"
         ) from None
 
+    # 2回目のCodexレビュー指摘、Major対応: uploadだけredirectに追従して
+    # いたため、他の境界(submit_prompt/poll_history/download_generated_image)
+    # と同様にすべてのredirect応答を一律拒否する。
+    if 300 <= response.status_code < 400:
+        raise ComfyUIUploadError(
+            f"予期しないredirect応答です(HTTP {response.status_code}、リダイレクト先は追従しません)"
+        )
     if response.status_code != 200:
         raise ComfyUIUploadError(f"アップロードが失敗しました(HTTP {response.status_code})")
 
+    content_type = (response.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+    if content_type != "application/json":
+        raise ComfyUIUploadError("アップロード応答のContent-Typeが許可されていません")
+
+    body_chunks = []
+    total = 0
     try:
-        response_json = response.json()
-    except ValueError:
+        # `stream=True`化後、応答本文の読み込み中にもrequestsの例外が
+        # 送出され得る(3回目のCodexレビュー指摘、Major対応: 以前はこの
+        # 読み込みループが上のHTTP例外捕捉の外にあり、接続先URLを含む
+        # 生の例外メッセージがそのまま漏れ得た)。
+        for chunk in response.iter_content(chunk_size=65536):
+            if not chunk:
+                continue
+            total += len(chunk)
+            if total > MAX_UPLOAD_RESPONSE_BYTES:
+                raise ComfyUIUploadError(
+                    f"アップロード応答サイズが上限({MAX_UPLOAD_RESPONSE_BYTES}バイト)を超えています"
+                )
+            body_chunks.append(chunk)
+    except requests.exceptions.RequestException:
+        raise ComfyUIUploadError("アップロード応答本文の読み込みに失敗しました") from None
+    finally:
+        response.close()
+
+    try:
+        response_json = json.loads(b"".join(body_chunks).decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
         raise ComfyUIUploadError("アップロード応答のJSON解析に失敗しました") from None
 
     return validate_upload_response(response_json)
