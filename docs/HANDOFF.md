@@ -1,7 +1,7 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-24 / 更新者: Claude Code(ハルト1人・1コマ生成試験のdry-run基盤〔PR #10〕をmainへsquash-merge済み〔squash commit `6b8c49cbbd47997beb3f6b3e687068dbc48d5438`〕。続けて次工程として「画像アップロード準備」(`scripts/comfyui_upload.py`)と「実ピクセル変換」(`scripts/panel_pixel_convert.py`)をブランチ`one-panel-runtime-prep-v1`で実装。Codexレビュー(Review A・B、各2ラウンド)完了、検出28件すべて修正・回帰テスト追加済み(Blocker/Critical/Major/Minor残件0)、305件全合格、未コミットのまま停止。**最新のマージ状態はGitHub PRとgit履歴を正とする**)
+2026-07-24 / 更新者: Claude Code(ハルト1人・1コマ生成試験のdry-run基盤〔PR #10〕をmainへsquash-merge済み〔squash commit `6b8c49cbbd47997beb3f6b3e687068dbc48d5438`〕。続けて次工程として「画像アップロード準備」(`scripts/comfyui_upload.py`)と「実ピクセル変換」(`scripts/panel_pixel_convert.py`)をブランチ`one-panel-runtime-prep-v1`で実装。Codexレビュー(Review A・B、各2ラウンド)完了、検出28件のうち27件を修正・回帰テスト追加済み、1件は既存設計〔`compute_panel_fit()`との一貫性〕を優先し不採用(Blocker/Critical/Major/Minor残件0)、305件全合格。**Draft PR #11**(https://github.com/popchami/comfyui-mobile-system/pull/11)を作成済み。**最新のマージ状態はGitHub PRとgit履歴を正とする**)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -383,17 +383,23 @@
     **comfyui-mobile-system側は305件全合格**
     (`python3 -m unittest discover -s tests`)。外部通信を伴うテストは
     一切なし
-  - commit・push・PR作成は未実施、ブランチ上の未コミット変更として存置
+  - ブランチ`one-panel-runtime-prep-v1`(commit `0ef041d`)へpush済み、
+    **Draft PR #11**(https://github.com/popchami/comfyui-mobile-system/pull/11、
+    base=main・head=one-panel-runtime-prep-v1)を作成済み(最新のマージ
+    状態はGitHub PRとgit履歴を正本とする)
 
 ## 進行中・次にやること(担当者を明記)
 - **PR #9(https://github.com/popchami/comfyui-mobile-system/pull/9)の
   マージ判断**。最新状態はGitHub PRとgit履歴を参照すること
-- ブランチ`one-panel-runtime-prep-v1`(画像アップロード準備・実ピクセル
-  変換、上記完了済み参照)のcommit・PR判断。Codexレビュー(Review A・B、
-  各2ラウンド)完了、検出28件すべて修正・回帰テスト追加・自己検証済み
-  (Blocker/Critical/Major/Minor残件0)。commit後は、実際にRunPodを
-  起動しての実接続検証(到達経路・認証方式の確定、モデル名の実在確認・
-  組み合わせ互換性確認・Custom Nodeバージョン固定・実際に
+- **Draft PR #11(https://github.com/popchami/comfyui-mobile-system/pull/11)
+  のマージ判断**。ブランチ`one-panel-runtime-prep-v1`(画像アップロード
+  準備・実ピクセル変換、上記完了済み参照)、base=main・
+  head=one-panel-runtime-prep-v1。Codexレビュー(Review A・B、各2ラウンド)
+  完了、検出28件のうち27件を修正・回帰テスト追加・自己検証済み、1件は
+  既存設計との一貫性を優先し不採用(Blocker/Critical/Major/Minor残件0)。
+  最新のマージ状態はGitHub PRとgit履歴を参照すること。マージ後は、実際に
+  RunPodを起動しての実接続検証(到達経路・認証方式の確定、モデル名の
+  実在確認・組み合わせ互換性確認・Custom Nodeバージョン固定・実際に
   `send_upload_request()`を試験的に呼び出す・ハルト1枚だけの実生成)を
   行う想定
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
