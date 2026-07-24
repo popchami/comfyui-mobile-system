@@ -141,7 +141,7 @@ CLIP Vision名を決め打ちしていない。すべて設定ファイル経由
 | 環境変数 | 用途 |
 |---|---|
 | `RUNPOD_API_KEY` | RunPod API認証キー(実送信時のみ、その場でAuthorizationヘッダーへ設定。dry-run結果には含めない) |
-| `RUNPOD_ENDPOINT_URL` | ComfyUIの`/prompt`エンドポイントURL(RunPod Pod起動後に決まる動的な値) |
+| `RUNPOD_ENDPOINT_URL` | ComfyUIサーバーのbase URL(パス・query・fragmentなし。RunPod Pod起動後に決まる動的な値。`scripts/comfyui_run_once.py`が`/prompt`・`/history/{prompt_id}`・`/view`・`/upload/image`を末尾へ付加するため、`/prompt`等のパスを含めると`INVALID_BASE_URL`で拒否される) |
 | `NEWS_GAME_TRANSLATOR_ROOT`(任意) | news-game-translatorのローカルチェックアウトパス。既定値は`/root/news-game-translator` |
 
 `.env`は`.gitignore`対象(既存)。`config.example.json`・このドキュメントの
@@ -281,8 +281,10 @@ python3 scripts/fetch_reference_images.py --character haruto
       パラメータ)が意図通りであることを目視確認済み
 - [ ] 生成枚数(`batch_size`)が1であることを確認済み(コスト最小化)
 - [ ] 実際の送信コード(`scripts/comfyui_upload.py`の
-      `send_upload_request()`をこのリポジトリのどこからも呼び出して
-      いない。実際に使う前に、下記項目を確認すること)が、
+      `send_upload_request()`。現在は`scripts/comfyui_run_once.py`の
+      `execute=True`経路からのみ呼び出されるが、このセッションでは
+      `session`をmockした状態でしか呼び出しておらず、実通信は未実施。
+      実際に使う前に、下記項目を確認すること)が、
       `RUNPOD_API_KEY`をログ・例外メッセージへ一切出力しないことを確認済み
 - [ ] RunPod Podを不要な時間起動したままにしない運用(既存の
       `scripts/runpod_status_check.py`等で確認)
@@ -308,35 +310,38 @@ python3 scripts/fetch_reference_images.py --character haruto
 
 ## 10. 今回の試験範囲・未実装
 
-今回実装したのは、dry-run(準備・検証)に加えて、画像アップロードの
-リクエスト構築・応答検証(`scripts/comfyui_upload.py`)と実ピクセル変換
-(`scripts/panel_pixel_convert.py`)までであり、以下は含まない。
+これまでに実装したのは、dry-run(準備・検証)、画像アップロードの
+リクエスト構築・応答検証(`scripts/comfyui_upload.py`)、実ピクセル変換
+(`scripts/panel_pixel_convert.py`)、そしてこれらを1回の明示操作で
+順番に実行できる単発実行経路(`scripts/comfyui_run_once.py`、13節参照)
+までであり、以下は含まない。
 
-- RunPodの起動・実際のプロンプト送信・GPU画像生成
-- ComfyUIへの画像アップロードの**実送信**(`send_upload_request()`は
-  実装済みだが、このリポジトリのどこからも呼び出していない。実送信には
-  実際の`base_url`と、6節記載のRunPod方式〔Pod直接 or Serverless API〕の
-  確定が必要)
+- RunPodの起動・実際のプロンプト送信・GPU画像生成(`comfyui_run_once.py`の
+  `execute=True`経路自体は実装済みだが、このリポジトリのテスト・実行では
+  常に`session`をmockしており、実際に呼び出したことは一度もない)
 - RunPod Serverless API(`api.runpod.ai/v2/...`)を経由する場合の
   リクエスト形式(`{"input": {...}}`等でのラップ)への対応
-  (現時点でPod直接プロキシURL方式のみを前提に実装している)
+  (`comfyui_run_once.py`は`api_mode="pod-direct"`のみ実装しており、
+  `api_mode="serverless"`を指定すると通信前に明確なエラーで拒否する)
 - 吹き出し描画・日本語文字描画・5コマ全体の合成
 - ハルト以外のキャラクター・他コマ(第2〜4コマ)向けの試験データ
 - 生成画像内に人物が実際にsafe_area相当の位置へ収まっているかどうかの
   自動検査(`convert_generation_to_panel()`は寸法・クロップのみを保証し、
   画像内容そのものは検査しない)
 
-**次工程**: 実環境(対象RunPod・ComfyUI)の読み取り確認(到達経路・認証
-方式・モデル実在・組み合わせ互換性)を行った上で、ハルト1枚だけを実際に
-生成する試験を行うこと。全キャラクター・全コマの本番生成は、その後の
-別工程とする。
+**次工程**: RunPodを1回起動し、実環境(対象RunPod・ComfyUI)の読み取り
+確認(到達経路・認証方式・モデル実在・組み合わせ互換性)を行った上で、
+同一セッション内でハルト1枚だけを実際に生成する試験を行うこと。
+全キャラクター・全コマの本番生成は、その後の別工程とする。
 
 ## 11. 画像アップロード契約(`scripts/comfyui_upload.py`)
 
 ComfyUIの`/upload/image`エンドポイントへ、正本参照画像PNGを送るための
 リクエスト構築・応答検証。**実際にRunPod・ComfyUIへ送信する処理
-(`send_upload_request()`)は実装したが、このリポジトリのどこからも
-呼び出していない。**テストは`requests.post`相当をmockしてのみ検証する。
+(`send_upload_request()`)は、`scripts/comfyui_run_once.py`の
+`execute=True`経路からのみ呼び出されるが、このリポジトリのテスト・実行では
+`session`をmockした状態でしか呼び出しておらず、実通信は一度も行っていない。**
+テストは`session`(またはmock対象の`requests.post`相当)をmockしてのみ検証する。
 
 - **アップロード対象の検証**(`validate_upload_source_path()`): 既存
   `resolve_performer_reference_image()`が返した検証済みPathのみを受け付ける
@@ -478,3 +483,232 @@ ComfyUIの`/upload/image`エンドポイントへ、正本参照画像PNGを送�
 「人物が実際にsafe_area相当の位置に収まっているか」はこの変換処理では
 検証できないことを明示するためのフィールドであり、次工程の画像内容検査が
 別途必要であることを示す(7節参照)。
+
+## 13. 単発実行経路の接続(`scripts/comfyui_run_once.py`)
+
+これまで個別に実装してきたPacket読み込み・画像アップロード・実ピクセル
+変換を、ハルト・panel_no=1・生成1枚に固定した単発実行として1回の明示操作で
+順番に実行できるようにする。**既定は常にdry-run(通信なし)であり、
+`execute=True`(CLIでは`--execute`)を明示した場合のみ、実際にRunPod・
+ComfyUIへ通信する経路(`session`未指定時は`trust_env=False`の内部
+`requests.Session()`を都度生成して使う。詳細は後述のHTTP境界の節を参照)
+に入る。このリポジトリの現時点のテスト・実行では、`execute=True`を
+mockなしで(実際のHTTP通信を使って)呼び出したことは一度もない。**
+
+### 実行段階
+
+1. Packet読み込み(`one_panel_pilot.run_dry_run()`を再利用)
+2. ハルト正本PNGのresolver解決(同上に内包)
+3. `/upload/image`(`comfyui_upload.send_upload_request()`を再利用)
+4. upload応答検証(同上に内包)
+5. 検証済み画像名をLoadImageへ反映(`comfyui_upload.apply_uploaded_image_to_workflow()`を再利用)
+6. `/prompt`送信(`submit_prompt()`、新規)
+7. prompt_id検証(同上に内包)
+8. `/history/{prompt_id}`ポーリング(`poll_history()`、新規)
+9. history応答からSaveImageノードの生成画像情報を検証(同上に内包)
+10. `/view`から生成画像取得(`download_generated_image()`、新規)
+11. 実ピクセル変換(`panel_pixel_convert.convert_generation_to_panel()`を再利用)
+12. 実行記録JSONの組み立て・返却
+
+**生成PNG原本(`generation_dest_path`)のライフサイクル**(4回目のCodex
+レビュー指摘、Minor対応: 以前は未文書化だった): `download_generated_image()`
+は生成PNGを`generation_dest_path`へ確定保存し(一時ファイルは
+`os.link()`確定後に削除)、その後の実ピクセル変換は別パス
+(`converted_dest_path`)へ1009×345版を保存する。**`generation_dest_path`の
+生成PNG原本は、変換の成功・失敗のいずれの場合も削除されず保持される**
+(削除されるのはダウンロード処理中の一時ファイルのみ)。変換失敗時も
+原本は残るため、利用者はこれを一時物と誤認せず、容量管理・失敗後の
+再実行判断の対象として扱うこと。
+
+dry-runは1〜5のうち実際のHTTP送信を伴わない部分(Packet読み込み・
+Workflow構築・検証・アップロードリクエストのdry-run構築)だけを行い、
+6以降には一切進まない。
+
+### 実行前の事前検証(HTTP通信の前に行う、Codexレビュー指摘・修正済み)
+
+`execute`・`overwrite`は厳密に`bool`型であることを検証する(例:
+`execute="false"`のようなtruthyな非bool値が誤ってexecute経路へ入ることを
+防ぐ)。`panel_no`も`bool`を明示的に拒否する(Python では`True == 1`の
+ため、`isinstance`チェックなしでは`panel_no=True`が`1`として通ってしまう)。
+
+`execute=True`の場合、`generation_dest_path`・`converted_dest_path`は
+いずれも必須で、両者が同一パスでないこと、`overwrite=True`でない限り
+どちらも未存在であることを、`/upload/image`を含むどのHTTP呼び出しよりも
+前に検証する。以前はこれらの衝突がpixel変換の段階まで判明せず、
+upload・prompt送信・downloadが完了した後に初めて失敗し、
+`generation_dest_path`だけが中途半端な成果物として残り得た。
+
+### HTTP境界(4つに分離、いずれもsession注入可能)
+
+- **upload image**: 既存`comfyui_upload.py`をそのまま再利用(重複実装しない)
+- **submit prompt**(`submit_prompt()`): `POST {base_url}/prompt`、
+  body `{"prompt": workflow, "client_id": <生成した一時UUID>}`。
+  `node_errors`が空でない場合は生成待ちへ進まず即座に停止する。
+  `prompt_id`は`^[A-Za-z0-9_-]{1,128}$`に一致する安全な文字列であることを
+  検証する(`/history/{prompt_id}`のURLパス組み立てに使うため)
+- **get history/status**(`poll_history()`): `GET {base_url}/history/{prompt_id}`
+  を有限回・有限時間だけポーリングする。対象prompt_idのentryが存在しない
+  限りは継続し、`poll_max_attempts`または`poll_total_timeout_seconds`の
+  いずれかに達したら明確なタイムアウトで停止する(監視用の無限ループは
+  作らない)。総timeoutは`time.monotonic()`基準の締切時刻として管理し、
+  各リクエストのtimeoutとsleep時間の両方を残り時間でクランプするため、
+  個々のHTTP・JSON処理に実時間がかかっても総待機時間が設定値を大きく
+  超過しない(Codexレビュー指摘・修正済み)。SaveImageノード(node_id="12")の
+  `images`が0枚または2枚以上の場合は拒否する(先頭を黙って採用しない)
+- **download generated image**(`download_generated_image()`): `GET
+  {base_url}/view?filename=...&subfolder=...&type=...`。Content-Typeが
+  `image/png`であること、応答サイズが上限(既定32MB、1536×640の
+  RGBA非圧縮換算〔約3.93MB〕の約8倍の余裕)以下であること、PNGシグネチャが
+  一致することを検証する。HTMLエラーページ等はContent-Type・PNG
+  シグネチャの両方で弾かれ、画像として保存されない
+
+各境界に共通する安全対策:
+
+- 有限timeout(既定30秒、bool・0以下・NaN・Infinity・120秒超の巨大値を
+  拒否)
+- HTTPステータス検証(200以外は拒否)
+- **redirectは一律拒否**(`allow_redirects=False`で送信し、3xx応答は
+  すべてエラーにする。別ホストへの意図しないredirectを、redirect自体を
+  一切追従しないことで構造的に防ぐ。upload・prompt送信・history・
+  downloadの4境界すべてで同一に適用)
+- **base_urlの検証**(`_validate_base_url()`): `urllib.parse.urlsplit()`で
+  分解し、scheme=`https`のみ許可、ホスト名必須、userinfo(認証情報の
+  混入)・query・fragment・末尾パスをすべて拒否する。検証後は
+  `scheme://host[:port]`へ正規化してから使う(Codexレビュー指摘・
+  修正済み: 以前は非空チェックのみで、認証情報混入や別ホストへの誤送信を
+  防げていなかった)。`run_once()`はこの検証を出力先パスの事前検証よりも
+  前、`/upload/image`を含むどのHTTP呼び出しよりも前に一度だけ実行し、
+  正規化済みのbase_urlを以降のすべての境界へ渡す(3回目のCodexレビュー
+  指摘、Critical対応: 以前は`submit_prompt()`以降でしか検証しておらず、
+  `/upload/image`だけが不正なbase_urlのまま送信され得た)
+- Content-Type検証(JSON系エンドポイントは`application/json`、画像
+  ダウンロードは`image/png`のみ許可)
+- 応答サイズ上限(JSON系は2MB、画像は既定32MB、`download_max_bytes`自体も
+  bool・0以下・64MB超を拒否)を、`stream=True` + `iter_content()`による
+  ストリーミング読み込みで超過時に即座に中断する形で適用(`submit_prompt()`・
+  `poll_history()`・`comfyui_upload.send_upload_request()`のいずれも
+  `stream=True`を指定済み。指定していないと`requests`が応答全体を
+  先に読み切ってしまい、サイズ上限がメモリ上限として機能しない)
+- 不正JSON・欠損キー・型違反の拒否(`/prompt`応答の`node_errors`は、
+  キー自体が欠損している場合のみ「エラーなし」として許容し、`[]`や`0`の
+  ような非dictの偽値、および明示的な`null`も型違反として拒否する。
+  キー欠損と`"node_errors": null`は区別して扱う)
+- 応答本文の読み込み中(`iter_content()`実行中)に発生するrequests例外
+  (Timeout・ConnectionError等)も、接続先URLを含んだまま漏らさず固定
+  メッセージへ変換し、応答を`close()`する(3回目のCodexレビュー指摘、
+  Major対応: `stream=True`化後、この読み込みループが従来のHTTP例外捕捉の
+  外にあった)
+- `raise ... from None`による例外チェーンの遮断(接続先URL・APIキーが
+  `__cause__`・traceback経由で漏れないようにする、`comfyui_upload.py`と
+  同じ対策)
+- retryなし(1回のリクエストのみ。ポーリングは完了待ちであり、送信の
+  やり直しではない)
+- `session`引数による差し替え(テストでは常にmockを使用)。`session`未指定
+  時は、`requests`モジュール自体ではなく`trust_env=False`の内部
+  `requests.Session()`を都度生成して使う(HTTP_PROXY/HTTPS_PROXY/
+  NO_PROXY環境変数や`~/.netrc`を意図せず継承しないため)。呼び出し元が
+  独自の`session`を渡した場合、そのsessionのtrust_env・proxy設定は
+  呼び出し元自身の責任とする
+
+history応答の`status`フィールドは、このリポジトリの既存ブラウザUI実装
+(`comfyui_sdxl_chibi.html`等)がWebSocketの`executing`イベントのみで
+完了を検知しており、`status`フィールドを一切参照していないため、当初
+このリポジトリ内では確認できていなかった。その後、ComfyUI本体のソース
+(`execution.py`の`PromptQueue.task_done()`・`main.py`のプロンプト実行
+ループ)を確認したところ、historyの各entryは常に`status`キーを持ち、
+その値は`{"status_str": "success"|"error", "completed": bool, "messages":
+[...]}`という形の辞書であることを確認した(4回目のCodexレビュー時に
+確認・グラウンディング)。これを踏まえ、本実装は`status`を必須のdictとし、
+`status_str == "success"`ではない場合(欠損・非dict・`"error"`・
+`"cancelled"`等すべてを含む)と、`status.completed`が厳密に`True`で
+ない場合(`False`・欠損含む)を、いずれも失敗として拒否する
+(`error_code="GENERATION_FAILED"`)。
+
+`poll_history()`は、応答本文の読み込みが完了した直後にも総timeoutの
+締切を再確認してから成功entryを返す(3回目のCodexレビュー指摘、Major
+対応: 個々のリクエストのtimeoutは残り時間以下に切り詰めているが、低速な
+ストリーミング応答は単発のtimeout未満のまま総予算を超過し得るため)。
+
+`run_once()`の出力先パス衝突チェックは、`Path`の字句比較ではなく
+`.resolve()`後の実体パスで比較する(3回目のCodexレビュー指摘、Critical
+対応: `..`や中間symlinkによる別表記で同一ファイルを指しているケースを
+見逃さないため。`scripts/panel_pixel_convert.py`の同一性チェックと同じ
+基準)。
+
+### `/prompt`送信・KSampler等の再検証
+
+`apply_uploaded_image_to_workflow()`で検証済みのアップロード画像名を
+LoadImageへ反映した直後、`one_panel_pilot.validate_workflow_shape()`を
+もう一度呼び出し、`batch_size==1`を含むKSampler・EmptyLatentImage・
+SaveImage等の必須ノード契約を送信直前に再検証する(既存の検証ロジックを
+再利用、重複実装しない)。ここで不正が見つかった場合、`/prompt`へは
+一切送信しない。
+
+### 実行記録JSON
+
+秘密情報を含まないJSON形式の実行結果を返す。含める項目: `schema_version`・
+`execution_mode`(`dry-run`/`execute`)・`character`・`panel_number`・
+`workflow_validated`・`upload_validated`・`prompt_submitted`・
+`prompt_id_hash`(生のprompt_idではなく、SHA-256先頭16桁の非可逆ハッシュ)・
+`generation_completed`・`downloaded_image_validated`・`source_dimensions`・
+`output_dimensions`・`safe_area_containment_verified`(常に`False`)・
+`stopped_stage`・`error_code`。**含めない**: APIキー・Authorization値・
+接続先の完全URL・Pod ID・ローカル絶対パス・HTTP応答本文・tracebackの
+内容・生のprompt_id。dry-runでは、実際に完了していない項目は`true`に
+しない(例: dry-runでは`prompt_submitted`は常に`false`)。
+
+`upload_validated`の意味: **サーバーへ実際にアップロードし、その応答を
+検証できた場合にのみ`True`になる**(`execute=True`経路のみ)。dry-runでは
+アップロードリクエストをローカルで構築できたことしか確認していないため、
+`upload_validated`は常に`False`のままとする(Codexレビュー指摘・修正済み:
+以前はdry-runでもローカル構築成功だけで`True`にしており、「サーバー側で
+検証済み」と誤解され得た)。
+
+Packet読み込み・Workflow構築・dry-run検証(`one_panel_pilot.run_dry_run()`)
+が失敗した場合、その例外メッセージにはPacket・config・参照画像のローカル
+絶対パスが含まれ得るため、`ComfyUIRunOnceError`へそのまま転記せず、
+固定の汎用メッセージに置き換える(Codexレビュー指摘・修正済み)。
+`error_code`は、`opp.PilotError`メッセージの先頭パターン(絶対パスを
+含まない固定文字列部分のみ)から`PACKET_NOT_FOUND`・`PACKET_INVALID_JSON`・
+`CONFIG_INVALID`・`REFERENCE_RESOLUTION_FAILED`等へ分類し、一致しない
+場合は`DRY_RUN_FAILED`へ安全側フォールバックする(3回目のCodexレビュー
+指摘、Minor対応: 以前はすべて`DRY_RUN_FAILED`へ一律に潰しており、絶対パス
+漏洩は解消していたものの、失敗段階の切り分けができなかった。この分類は
+`one_panel_pilot.py`側のメッセージ文言に依存する簡易な仕組みであり、
+同モジュールの文言が変わった場合は追随できず`DRY_RUN_FAILED`へ
+フォールバックする)。
+
+### Pod直接HTTPとServerless APIの対応状況
+
+`scripts/comfyui_upload.py`・`ONE_PANEL_PILOT.md`6節と同じ未確定事項を
+そのまま引き継ぐ。`comfyui_run_once.py`は`api_mode="pod-direct"`のみを
+実装しており、`api_mode="serverless"`を指定した場合は通信前に明確な
+`ComfyUIRunOnceError`(`error_code="UNSUPPORTED_API_MODE"`)で拒否する
+(未実装の方式で誤ったリクエスト形状を送らないため)。
+
+### 実接続時の料金注意
+
+CLIのヘルプ文言に「実行するとRunPod料金が発生し得る」ことを明記している
+(`--execute`オプションの説明文)。実際にRunPodを起動する前に、9節の
+チェックリストを完了させること。
+
+### 実接続前に必要な設定項目(名前のみ、実値はどこにも保存しない)
+
+- `RUNPOD_ENDPOINT_URL`(環境変数。CLI〔`scripts/comfyui_run_once.py`〕には
+  base_urlを直接指定する引数はなく、この環境変数のみで指定する。
+  `run_once()`をPythonから直接呼び出す場合は`base_url`引数でも指定できる):
+  ComfyUIサーバーへの到達URL(パスなし)
+- `RUNPOD_API_KEY`(環境変数、設定されている場合のみ`Authorization:
+  Bearer`ヘッダーへ反映。Pod直接プロキシURL方式では認証自体が不要な
+  場合もあり、その場合は未設定のままでよい)
+- ポーリング上限(`poll_interval_seconds`・`poll_max_attempts`・
+  `poll_total_timeout_seconds`、既定はそれぞれ2秒・150回・300秒)
+
+### 未実装・今回のスコープ外
+
+- 実際のRunPod起動・実接続(前述の通り、`execute=True`経路自体は実装済み
+  だがmockなしで呼び出したことは一度もない)
+- RunPod Serverless API方式への対応
+- 生成画像内に人物が実際にsafe_area相当の位置へ収まっているかどうかの
+  自動検査(引き続き画像内容検査は次工程)
+- 複数画像・複数コマ・他キャラクターへの拡張

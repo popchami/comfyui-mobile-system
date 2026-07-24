@@ -1,7 +1,8 @@
 # HANDOFF
 
 ## 最終更新
-2026-07-24 / 更新者: Claude Code(ハルト1人・1コマ生成試験のdry-run基盤〔PR #10〕をmainへsquash-merge済み〔squash commit `6b8c49cbbd47997beb3f6b3e687068dbc48d5438`〕。続けて次工程として「画像アップロード準備」(`scripts/comfyui_upload.py`)と「実ピクセル変換」(`scripts/panel_pixel_convert.py`)をブランチ`one-panel-runtime-prep-v1`で実装。Codexレビュー(Review A・B、各2ラウンド)完了、検出28件のうち27件を修正・回帰テスト追加済み、1件は既存設計〔`compute_panel_fit()`との一貫性〕を優先し不採用(Blocker/Critical/Major/Minor残件0)、305件全合格。**Draft PR #11**(https://github.com/popchami/comfyui-mobile-system/pull/11)を作成済み。**最新のマージ状態はGitHub PRとgit履歴を正とする**)
+2026-07-24 / 更新者: Claude Code(「画像アップロード準備」と「実ピクセル変換」〔PR #11〕をmainへsquash-merge済み〔squash commit `4eceb7ae9616c87db5b600983ed6fd2397824469`〕。続けて次工程として、ハルト・panel_no=1・生成1枚に固定した単発実行経路(`scripts/comfyui_run_once.py`)をブランチ`one-panel-runtime-wire-v1`で実装完了。既定は常にdry-run、`execute=True`を明示した場合のみ実通信する設計。**commit前の最終Codexレビュー(Review A・Review Bとも各2ラウンドで完了)を実施し、Blocker 0件・Critical 4件・Major 19件・Minor 12件(actionableな指摘35件)をすべて個別に再現・最小修正済み、残件0件**(詳細は完了済みセクション参照)。修正後377件全合格、`git diff --check`もexit 0。今回もすべて`session`をmockして検証しており、RunPod・ComfyUIへの実通信・GPU生成は一度も行っていない。対象7ファイルをcommit(`a5d582d68e16f944821225b72e094925b9609edb`)・push済みで、main向けDraft PR #12
+(https://github.com/popchami/comfyui-mobile-system/pull/12)を作成済み(state=OPEN, isDraft=true)。次は、Draft PRのレビュー・承認判断、その後の実RunPod接続検証待ち。**最新の状態はGitHub PR #12とgit履歴を正とする**)
 
 ## 完了済み
 - SSH認証統一(comfyui-mobile-system / kickxkick)
@@ -383,25 +384,182 @@
     **comfyui-mobile-system側は305件全合格**
     (`python3 -m unittest discover -s tests`)。外部通信を伴うテストは
     一切なし
-  - ブランチ`one-panel-runtime-prep-v1`(commit `0ef041d`)へpush済み、
-    **Draft PR #11**(https://github.com/popchami/comfyui-mobile-system/pull/11、
-    base=main・head=one-panel-runtime-prep-v1)を作成済み(最新のマージ
-    状態はGitHub PRとgit履歴を正本とする)
+  - **PR #11としてmainへsquash-merge済み**
+    (https://github.com/popchami/comfyui-mobile-system/pull/11、
+    squash commit `4eceb7ae9616c87db5b600983ed6fd2397824469`)。
+    マージ後もブランチ`one-panel-runtime-prep-v1`は削除せず維持
+- **単発実行経路の接続(dry-run既定・mock検証・RunPod未起動)**。詳細は
+  `profiles/sdxl/isekai_nihon_manga/ONE_PANEL_PILOT.md`13節参照
+  - **実装ブランチ**: `one-panel-runtime-wire-v1`(main、commit
+    `4eceb7ae9616c87db5b600983ed6fd2397824469`〔PR #11マージ後〕から分岐)
+  - `scripts/comfyui_run_once.py`: ハルト・panel_no=1・生成1枚に固定した
+    単発実行オーケストレーター。Packet読み込み・Workflow構築・検証
+    (`one_panel_pilot.run_dry_run()`を再利用)→`/upload/image`
+    (`comfyui_upload.send_upload_request()`を再利用)→応答検証・
+    LoadImage反映→`/prompt`送信(新規`submit_prompt()`)→prompt_id検証・
+    node_errors拒否→`/history/{prompt_id}`ポーリング(新規
+    `poll_history()`、有限回・有限時間、SaveImageノードの画像0枚/複数枚を
+    拒否)→`/view`ダウンロード(新規`download_generated_image()`、
+    Content-Type・サイズ上限・PNGシグネチャ検証、HTMLエラーページ等を
+    画像として保存しない)→実ピクセル変換
+    (`panel_pixel_convert.convert_generation_to_panel()`を再利用)までを
+    1回の明示操作で実行する
+  - **既定は常にdry-run**(通信なし)。`execute=True`(CLIでは`--execute`)
+    を明示しない限りHTTPクライアントを一切呼ばない。このリポジトリの
+    現時点のテスト・実行では、`execute=True`をmockなしで(実際の
+    `requests`を使って)呼び出したことは一度もない
+  - HTTP境界(upload/submit prompt/get history/download image)はそれぞれ
+    独立し、有限timeout・HTTPステータス検証・Content-Type検証・応答
+    サイズ上限・不正JSON拒否・**redirectは一律拒否**(別ホストへの
+    意図しないredirectを、redirect自体を追従しないことで構造的に防ぐ)・
+    `raise ... from None`による例外チェーン遮断(接続先URL・APIキーの
+    非漏洩)・retryなし・session注入可能を共通実装する
+  - 実行記録JSONは秘密情報を含まない(生のprompt_idの代わりにSHA-256先頭
+    16桁のハッシュのみ、URL・APIキー・ローカル絶対パス・HTTP応答本文は
+    一切含めない)。dry-runでは実際に完了していない項目を`true`にしない
+  - `api_mode="pod-direct"`のみ実装。`api_mode="serverless"`を指定すると
+    通信前に明確なエラーで拒否する(RunPod Serverless API方式は
+    引き続き未確定・未実装)
+  - CLIヘルプ文言に「実行するとRunPod料金が発生し得る」ことを明記
+  - `tests/test_comfyui_run_once.py`(新規)を追加。既存テストは
+    削除・弱体化していない。外部通信を伴うテストは一切なし
+  - **commit前の最終Codexレビュー(Review A: Python実装・HTTP・安全性)を
+    直接blocking方式(1回・10分上限)で実施、round 1で2件のCritical・
+    9件のMajor・3件のMinor(計14件)を検出**。すべて個別に再現・検証した
+    上で、妥当な指摘を最小修正した:
+    - base_urlの検証(`_validate_base_url()`新規、userinfo・query・
+      fragment・非httpsを拒否)を`submit_prompt()`・`poll_history()`・
+      `download_generated_image()`に追加(Critical)
+    - `execute`/`overwrite`の厳密なbool検証、`panel_no`のbool除外、
+      出力先パス(`generation_dest_path`/`converted_dest_path`)の衝突・
+      既存チェックをHTTP通信より前に実施するよう`run_once()`を修正
+      (Critical)
+    - `poll_history()`の総timeoutを`time.monotonic()`基準の締切時刻へ
+      変更(Major、実時間ベースで確実に上限を守る)
+    - `/prompt`応答の`node_errors`型検証を厳格化(`[]`等の非dict偽値を
+      拒否、Major)、history `status`をホワイトリスト方式へ変更
+      (`status_str=="success"`のみ許可、`cancelled`等を拒否、Major)
+    - `submit_prompt()`/`poll_history()`/`comfyui_upload.send_upload_request()`
+      に`stream=True`を追加(以前は応答全体を無条件でメモリへ読み切って
+      からサイズ上限チェックしていた、Major)。`comfyui_upload.py`の
+      アップロード応答にもredirect一律拒否・Content-Type検証・サイズ
+      上限・timeout上限を追加
+    - `session`省略時、`requests`モジュール自体ではなく
+      `trust_env=False`の内部`requests.Session()`を使うよう変更
+      (proxy環境変数・`~/.netrc`の意図しない継承を防ぐ、Major)
+    - dry-runの`upload_validated`を`True`から`False`へ変更(サーバー
+      応答を検証していないため、Minor)。Packet読み込み失敗時の
+      `opp.PilotError`メッセージ(絶対パスを含み得る)をそのまま転記
+      しないよう修正(Major)。upload応答検証失敗を`UNEXPECTED_ERROR`
+      ではなく`UPLOAD_FAILED`として正しく段階付けするよう修正(Minor)
+    - 回帰テストを追加(`tests/test_comfyui_run_once.py`・
+      `tests/test_comfyui_upload.py`)し、テスト中の実socket通信を
+      包括的に禁止・`RUNPOD_API_KEY`/`RUNPOD_ENDPOINT_URL`をテストごとに
+      隔離する仕組みも追加(Minor)
+    - 修正後、comfyui-mobile-system側は358件全合格、`git diff --check`も
+      exit 0。外部通信を伴うテストは一切なし
+    - **Review A round 2(修正差分のみを対象、直接blocking・10分上限)を
+      実施し、Critical 2件・Major 4件・Minor 3件(計9件)を検出・個別
+      再現・最小修正済み**:
+      - `run_once()`が`base_url`検証前に`/upload/image`へPOSTしていた
+        (Critical)→ 出力先パス検証より前に一度だけ`_validate_base_url()`
+        を呼び、正規化済みURLを以降すべてへ渡すよう修正
+      - 出力先パスの同一性判定が字句比較のみで`..`/symlinkによる別表記を
+        見逃していた(Critical)→ `.resolve()`後の実体パスで比較するよう修正
+      - `stream=True`化後の応答本文読み込み中の例外(Timeout等)が
+        接続先URLを含んだまま漏れ得た(Major)→ 読み込みループを
+        try/exceptで囲み、`response.close()`もfinallyで実行
+      - monotonic締切が応答本文読み込み完了直後に再確認されていなかった
+        (Major)→ 成功entry返却直前にも締切超過を確認するよう修正
+      - history `status_str`のホワイトリストが実装バグで`status={}`等を
+        通過させていた(Major、`status_str is not None and ...`という
+        誤った条件式)→ `status.get("status_str") != "success"`への単純化で修正
+      - `node_errors`のキー欠損と明示的な`null`が区別されていなかった
+        (Major)→ `"node_errors" in body`判定で明示的なnullも型違反として拒否
+      - 一部の回帰テストの検出力が弱かった(Minor)→ メッセージ内容の
+        確認・stream例外テスト・default_session配線テスト等を追加強化
+      - `opp.PilotError`のerror_codeが全件`DRY_RUN_FAILED`に潰れ、失敗
+        段階を切り分けられなかった(Minor)→ 絶対パスを含まない固定
+        メッセージ先頭パターンから`PACKET_NOT_FOUND`等へ分類する
+        `_classify_pilot_error_code()`を追加
+      - 文書に古い記述(`requests`モジュール自体を使うと誤記載)が残って
+        いた(Minor)→ `ONE_PANEL_PILOT.md`を修正
+      - 修正後、**comfyui-mobile-system側は369件全合格**
+        (`python3 -m unittest discover -s tests`)、`git diff --check`も
+        exit 0。2回目のCritical 2件のうち、base_url検証タイミングと
+        dest-path同一性判定については、修正を一時的に無効化した状態で
+        新規回帰テストが実際に失敗することを個別に確認した上で復元済み
+      - **Review A round 2で打ち切り(2回上限)**
+    - **Review B(ComfyUI契約・Workflow・統合・文書)round 1を実施し、
+      Major 5件・Minor 5件(Blocker/Criticalなし)を検出・個別再現・
+      最小修正済み**:
+      - `validate_workflow_shape()`はnode-idの存在・型のみ確認し、
+        `class_type`自体やSaveImageの一意性を検証していなかった(Major)
+        → ComfyUI本体のnode-idグラフ(node 9=EmptyLatentImage、
+        12=SaveImage等)に対する`_validate_fixed_workflow_contract()`を
+        新規追加し、送信直前に固定契約を再検証
+      - EmptyLatentImageのwidth/heightが1536×640に固定されていなかった
+        (Major)→ 同関数内でwidth/height/batch_sizeを明示検証
+      - history `status`欠損・非dictが成功条件を迂回できた(Major)→
+        ComfyUI本体(execution.py `PromptQueue.task_done()`)のソースを
+        確認し、`status`は常に`{status_str, completed, messages}`形の
+        dictであることを確認した上で、欠損・非dict・
+        `status_str!="success"`・`completed is not True`をすべて拒否
+      - SaveImage出力のhistory画像記述が`type=input/temp`も受理していた
+        (Major)→ ComfyUI本体(nodes.py `SaveImage.type="output"`固定)を
+        確認し、SaveImage出力は`type=="output"`のみ許可するよう厳格化
+      - 接続前文書(6節・13節)が実装と矛盾する`RUNPOD_ENDPOINT_URL`の
+        説明・存在しない`--base-url`引数を案内していた(Major)→ 修正
+      - `{prompt_id: null}`をキー欠損(待機継続)と区別できなかった
+        (Minor)→ `prompt_id in body`判定で明示的なnullも拒否
+      - 接続前チェックリストが`send_upload_request()`を「どこからも
+        呼び出していない」と誤記載(Minor)→ 修正
+      - 生成PNG原本の保持・失敗時ライフサイクルが未文書化(Minor)→
+        13節へ追記(変換成功・失敗いずれでも原本は削除されない)
+      - HANDOFF内でReview実施状況が自己矛盾していた(Minor)→ 修正
+      - 対象外の未追跡`.codex/hooks.json`が存在(Minor、指摘のみ・
+        レビュー対象外のため変更せず)
+      - 修正後、comfyui-mobile-system側は376件全合格、`git diff --check`も
+        exit 0。うち2件(node 12非SaveImage検知・EmptyLatentImage寸法
+        不一致検知)は修正を一時的に無効化した状態で新規回帰テストが
+        実際に失敗することを個別に確認した上で復元済み
+      - **Review B round 2(修正差分のみ対象)を実施し、Major 1件・
+        Minor 1件(Blocker/Criticalなし)を検出・個別再現・最小修正済み**:
+        - `EXPECTED_NODE_CLASS_TYPES`がnode "1"(CheckpointLoaderSimple)・
+          "6"/"8"(CLIPTextEncode×2)を網羅しておらず、これらのclass_type
+          改変が送信直前検証をすり抜けていた(Major)→ 対応表へ追加、
+          node "1"改変の回帰テストも追加
+        - `ONE_PANEL_PILOT.md`のhistory `status`説明が厳格化前の記述の
+          ままで、実装・HANDOFF記載と矛盾していた(Minor)→ ComfyUI本体
+          ソースで確認したstatus形状と実装の4条件に合わせて記述を更新
+        - 修正後、comfyui-mobile-system側は377件全合格、`git diff --check`
+          もexit 0。node "1"改変の指摘は、修正を一時的に無効化した状態で
+          新規回帰テストが実際に失敗することを個別に確認した上で復元済み
+        - **Review B round 2で打ち切り(2回上限)。Review A・Review Bとも
+          完了、残存Blocker/Critical/Major/Minorは0件**
+      - Review A・Review Bともに完了(各2ラウンド、残存Blocker/Critical/
+        Major/Minorは0件)。対象7ファイル(`docs/HANDOFF.md`・
+        `profiles/sdxl/isekai_nihon_manga/ONE_PANEL_PILOT.md`・
+        `scripts/comfyui_run_once.py`・`scripts/comfyui_upload.py`・
+        `tests/test_comfyui_run_once.py`・`tests/test_comfyui_upload.py`・
+        `tests/test_one_panel_runtime_prep_integration.py`)をcommit
+        (`a5d582d68e16f944821225b72e094925b9609edb`)・
+        `origin/one-panel-runtime-wire-v1`へpush済み。main向けDraft PR #12
+        (https://github.com/popchami/comfyui-mobile-system/pull/12)を
+        作成済み(state=OPEN, isDraft=true)。`.codex/`はスコープ外の
+        既存未追跡物のままcommit対象に含めていない
 
 ## 進行中・次にやること(担当者を明記)
 - **PR #9(https://github.com/popchami/comfyui-mobile-system/pull/9)の
   マージ判断**。最新状態はGitHub PRとgit履歴を参照すること
-- **Draft PR #11(https://github.com/popchami/comfyui-mobile-system/pull/11)
-  のマージ判断**。ブランチ`one-panel-runtime-prep-v1`(画像アップロード
-  準備・実ピクセル変換、上記完了済み参照)、base=main・
-  head=one-panel-runtime-prep-v1。Codexレビュー(Review A・B、各2ラウンド)
-  完了、検出28件のうち27件を修正・回帰テスト追加・自己検証済み、1件は
-  既存設計との一貫性を優先し不採用(Blocker/Critical/Major/Minor残件0)。
-  最新のマージ状態はGitHub PRとgit履歴を参照すること。マージ後は、実際に
-  RunPodを起動しての実接続検証(到達経路・認証方式の確定、モデル名の
-  実在確認・組み合わせ互換性確認・Custom Nodeバージョン固定・実際に
-  `send_upload_request()`を試験的に呼び出す・ハルト1枚だけの実生成)を
-  行う想定
+- ブランチ`one-panel-runtime-wire-v1`(単発実行経路の接続、上記完了済み
+  参照)は**Review A・Review Bとも完了(各2ラウンド、残件0件)、
+  commit・push・main向けDraft PR #12作成まで完了済み**(詳細は完了済み
+  セクション参照)。次はDraft PR #12のレビュー・承認判断待ち。承認・
+  マージ後、実際にRunPodを1回起動しての実接続検証(到達経路・認証方式の
+  確定、モデル名の実在確認・組み合わせ互換性確認・Custom Nodeバージョン
+  固定・実際に`comfyui_run_once.py --execute`を試験的に呼び出す)を行い、
+  同一セッション内でハルト1枚だけの実生成を試みる想定
 - [ChatGPT分析済み・Claude Code実行待ち] flux1_dev_icon_24/32/48GB workflowの新規作成
   (normal/のTIER差分:weight_dtypeがflux1-dev-fp8.safetensors[16/24/32GB]→
   flux1-dev.safetensors[48GBのみ]、workflow内weight_dtypeはfp8_e4m3fn[16/24/32GB]→

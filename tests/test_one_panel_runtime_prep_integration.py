@@ -63,11 +63,20 @@ class OnePanelRuntimePrepIntegrationTest(IsolatedReferenceImagesTestCase):
         secret_api_key = "sk-super-secret-runpod-key-99999"
         fake_response = mock.MagicMock()
         fake_response.status_code = 200
-        fake_response.json.return_value = {
-            "name": upload_request["upload_filename"],
-            "subfolder": "",
-            "type": "input",
-        }
+        fake_response.headers = {"Content-Type": "application/json"}
+        fake_response.iter_content = mock.MagicMock(
+            return_value=iter(
+                [
+                    json.dumps(
+                        {
+                            "name": upload_request["upload_filename"],
+                            "subfolder": "",
+                            "type": "input",
+                        }
+                    ).encode("utf-8")
+                ]
+            )
+        )
         fake_session = mock.MagicMock()
         fake_session.post.return_value = fake_response
 

@@ -10,7 +10,9 @@ tests/test_one_panel_pilot.py の`IsolatedReferenceImagesTestCase`を
 """
 import copy
 import json
+import os
 import pathlib
+import socket
 import sys
 import tempfile
 import unittest
@@ -32,6 +34,12 @@ class IsolatedUploadTestCase(IsolatedReferenceImagesTestCase):
     アップロード契約はPNGシグネチャ・サイズ等を実際に検証するため、
     親クラスのfake bytes(`b"fake-neutral-png-bytes"`)ではPNGシグネチャ
     検証に失敗してしまうための追加セットアップ。
+
+    加えて、テスト中の実ソケット通信を包括的に禁止し(2回目のCodexレビュー
+    指摘、Minor対応: 従来はrequests.post/getのmockのみで、mockし忘れた
+    経路が実DNS・実TCP接続に到達する可能性を排除できていなかった)、
+    RUNPOD_API_KEY・RUNPOD_ENDPOINT_URLをテストごとに隔離する(個別の
+    テストがmock.patch.dictで明示的に設定した場合はそちらが優先される)。
     """
 
     def setUp(self):
@@ -39,6 +47,18 @@ class IsolatedUploadTestCase(IsolatedReferenceImagesTestCase):
         real_png_bytes = cu.PNG_SIGNATURE + b"\x00" * 64
         for name in ("00-neutral.png", "04-surprise-weak.png"):
             (self.root / "haruto" / "images" / name).write_bytes(real_png_bytes)
+
+        socket_patcher = mock.patch(
+            "socket.socket", side_effect=AssertionError("real socket通信がテスト中に試みられました")
+        )
+        socket_patcher.start()
+        self.addCleanup(socket_patcher.stop)
+
+        env_patcher = mock.patch.dict(os.environ, {}, clear=False)
+        env_patcher.start()
+        self.addCleanup(env_patcher.stop)
+        os.environ.pop("RUNPOD_API_KEY", None)
+        os.environ.pop("RUNPOD_ENDPOINT_URL", None)
 
     def resolved_path(self, expression="neutral", filename="00-neutral.png"):
         performer = {
@@ -423,14 +443,23 @@ class SendUploadRequestTest(IsolatedUploadTestCase):
     通信は一切発生しない。
     """
 
-    def _fake_session(self, status_code=200, json_body=None, side_effect=None):
+    def _fake_session(
+        self, status_code=200, json_body=None, side_effect=None, headers=None, raw_body=None
+    ):
+        # 2回目のCodexレビュー指摘、Major対応: send_upload_request()が
+        # Content-Type検証・ストリーミング読み込み(iter_content())を行う
+        # ようになったため、`.json.return_value`だけでなく`.headers`・
+        # `.iter_content()`も実際の応答形状に合わせてmockする。
         session = mock.MagicMock()
         if side_effect is not None:
             session.post.side_effect = side_effect
         else:
             response = mock.MagicMock()
             response.status_code = status_code
-            response.json.return_value = json_body
+            response.headers = headers if headers is not None else {"Content-Type": "application/json"}
+            if raw_body is None:
+                raw_body = json.dumps(json_body if json_body is not None else {}).encode("utf-8")
+            response.iter_content = mock.MagicMock(return_value=iter([raw_body]))
             session.post.return_value = response
         return session
 
@@ -457,11 +486,7 @@ class SendUploadRequestTest(IsolatedUploadTestCase):
 
     def test_invalid_json_response_raises(self):
         path = self.resolved_path()
-        response = mock.MagicMock()
-        response.status_code = 200
-        response.json.side_effect = ValueError("not json")
-        session = mock.MagicMock()
-        session.post.return_value = response
+        session = self._fake_session(raw_body=b"{not valid json")
         with self.assertRaises(cu.ComfyUIUploadError):
             cu.send_upload_request("https://fake-pod.example", path, rri, session=session)
 
@@ -585,7 +610,7 @@ class SendUploadRequestTest(IsolatedUploadTestCase):
         self.assertEqual(session.post.call_count, 1)
         args, kwargs = session.post.call_args
         self.assertEqual(args, ("https://fake-pod.example/upload/image",))
-        self.assertEqual(set(kwargs.keys()), {"files", "data", "timeout"})
+        self.assertEqual(set(kwargs.keys()), {"files", "data", "timeout", "allow_redirects", "stream"})
         self.assertIn("image", kwargs["files"])
         filename, content, content_type = kwargs["files"]["image"]
         self.assertTrue(filename.endswith(".png"))
@@ -593,6 +618,8 @@ class SendUploadRequestTest(IsolatedUploadTestCase):
         self.assertEqual(content_type, "image/png")
         self.assertEqual(kwargs["data"], {"type": "input", "overwrite": "true"})
         self.assertEqual(kwargs["timeout"], cu.DEFAULT_UPLOAD_TIMEOUT_SECONDS)
+        self.assertFalse(kwargs["allow_redirects"])
+        self.assertTrue(kwargs["stream"])
 
     def test_response_with_unsafe_name_rejected_even_on_200(self):
         path = self.resolved_path()
@@ -607,6 +634,78 @@ class SendUploadRequestTest(IsolatedUploadTestCase):
         session = mock.MagicMock()
         with self.assertRaises(cu.ComfyUIUploadError):
             cu.send_upload_request("https://fake-pod.example", link, rri, session=session)
+        self.assertFalse(session.post.called)
+
+    def test_redirect_response_rejected(self):
+        # 2回目のCodexレビュー指摘、Major対応の回帰テスト: uploadだけ
+        # redirectに追従していた問題を修正した(他の3境界と同様に一律拒否)。
+        # 3回目のCodexレビュー指摘: 単に例外発生を確認するだけでは、
+        # 汎用のHTTPエラー処理(status_code!=200)がたまたま302も拒否して
+        # いるだけで「意味のあるテスト」になっていない恐れがあるため、
+        # redirect専用の分岐が実際に発火したことをメッセージで確認する。
+        path = self.resolved_path()
+        session = self._fake_session(status_code=302, headers={"Location": "https://evil.example/steal"})
+        with self.assertRaises(cu.ComfyUIUploadError) as ctx:
+            cu.send_upload_request("https://fake-pod.example", path, rri, session=session)
+        self.assertIn("redirect", str(ctx.exception))
+
+    def test_response_size_limit_exceeded_rejected(self):
+        path = self.resolved_path()
+        oversized_body = json.dumps({"name": "x" * (cu.MAX_UPLOAD_RESPONSE_BYTES + 1), "subfolder": "", "type": "input"}).encode(
+            "utf-8"
+        )
+        session = self._fake_session(raw_body=oversized_body)
+        with self.assertRaises(cu.ComfyUIUploadError) as ctx:
+            cu.send_upload_request("https://fake-pod.example", path, rri, session=session)
+        self.assertIn("上限", str(ctx.exception))
+
+    def test_response_size_exactly_at_limit_accepted(self):
+        # サイズ上限ちょうどは拒否されない(オフバイワンの回帰テスト)。
+        path = self.resolved_path()
+        padding = cu.MAX_UPLOAD_RESPONSE_BYTES - len(
+            json.dumps({"name": "", "subfolder": "", "type": "input"}).encode("utf-8")
+        )
+        body = json.dumps({"name": "x" * max(padding, 0), "subfolder": "", "type": "input"}).encode("utf-8")
+        self.assertLessEqual(len(body), cu.MAX_UPLOAD_RESPONSE_BYTES)
+        session = self._fake_session(raw_body=body)
+        result = cu.send_upload_request("https://fake-pod.example", path, rri, session=session)
+        self.assertEqual(result["name"], "x" * max(padding, 0))
+
+    def test_non_json_content_type_rejected(self):
+        path = self.resolved_path()
+        session = self._fake_session(headers={"Content-Type": "text/html"}, raw_body=b"<html></html>")
+        with self.assertRaises(cu.ComfyUIUploadError) as ctx:
+            cu.send_upload_request("https://fake-pod.example", path, rri, session=session)
+        self.assertIn("Content-Type", str(ctx.exception))
+
+    def test_stream_read_exception_wrapped_and_response_closed(self):
+        # 3回目のCodexレビュー指摘、Major対応の回帰テスト: stream=True化後、
+        # 応答本文の読み込み中に送出されるrequests例外(接続先URLを含み得る)
+        # がそのまま漏れず、固定メッセージへ変換され、応答が閉じられること。
+        import requests
+
+        path = self.resolved_path()
+        secret_url = "https://secret-pod.example/upload/image"
+        response = mock.MagicMock()
+        response.status_code = 200
+        response.headers = {"Content-Type": "application/json"}
+        response.iter_content = mock.MagicMock(
+            side_effect=requests.exceptions.ConnectionError(secret_url)
+        )
+        session = mock.MagicMock()
+        session.post.return_value = response
+        with self.assertRaises(cu.ComfyUIUploadError) as ctx:
+            cu.send_upload_request("https://fake-pod.example", path, rri, session=session)
+        self.assertNotIn(secret_url, str(ctx.exception))
+        response.close.assert_called_once()
+
+    def test_timeout_above_upper_bound_rejected(self):
+        path = self.resolved_path()
+        session = self._fake_session()
+        with self.assertRaises(cu.ComfyUIUploadError):
+            cu.send_upload_request(
+                "https://fake-pod.example", path, rri, session=session, timeout=cu.MAX_UPLOAD_TIMEOUT_SECONDS + 1
+            )
         self.assertFalse(session.post.called)
 
 
